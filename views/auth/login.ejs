@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Telemed Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="login-page">
+  <main class="login-panel">
+    <div class="login-brand">
+      <span class="brand-mark"><i class="bi bi-heart-pulse"></i></span>
+      <div>
+        <h1>Telemed Dashboard</h1>
+        <p>โรงพยาบาล</p>
+      </div>
+    </div>
+
+    <% if (error) { %>
+      <div class="alert"><%= error %></div>
+    <% } %>
+
+    <form action="/login" method="post" class="login-form">
+      <input type="hidden" name="next" value="<%= next %>">
+      <label>
+        ชื่อผู้ใช้
+        <input type="text" name="username" autocomplete="username" required autofocus>
+      </label>
+      <label>
+        รหัสผ่าน
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit" class="primary-button">
+        <i class="bi bi-shield-lock"></i>
+        เข้าสู่ระบบ
+      </button>
+    </form>
+  </main>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<section class="filter-panel">
+  <% if (dbError) { %>
+    <div class="alert db-alert">
+      <div>
+        <strong>ยังไม่พร้อมแสดงข้อมูล Telemed</strong>
+        <p><%= dbError %></p>
+      </div>
+      <% if (currentUser && currentUser.role === 'admin') { %>
+        <a class="primary-button" href="/settings">
+          <i class="bi bi-database-gear"></i>
+          ตั้งค่าฐานข้อมูล
+        </a>
+      <% } %>
+    </div>
+  <% } %>
+
+  <div class="query-info-bar">
+    <span><i class="bi bi-database-check"></i> ใช้สูตร: <strong id="queryName"><%= data.queryInfo.name %></strong></span>
+    <span>แหล่งข้อมูล: <strong id="queryDataSource"><%= data.queryInfo.dataSource %></strong></span>
+    <span>อัปเดตล่าสุด: <strong id="lastUpdated"><%= new Date(data.queryInfo.loadedAt).toLocaleString('th-TH') %></strong></span>
+    <span>ช่วงวันที่: <strong id="queryDateRange"><%= filters.startDate %> ถึง <%= filters.endDate %></strong></span>
+    <button type="button" id="refreshDashboardButton" class="refresh-button">
+      <i class="bi bi-arrow-clockwise"></i>
+      <span>รีเฟรชข้อมูล</span>
+    </button>
+  </div>
+
+  <div id="dashboardStatus" class="dashboard-status" aria-live="polite"></div>
+  <div id="dashboardAlert">
+    <% if (data.total === 0) { %>
+      <div class="alert warning dashboard-alert">ไม่พบข้อมูล Telemed ในช่วงวันที่ที่เลือก</div>
+    <% } else if (data.totals.b2b === 0) { %>
+      <div class="alert warning dashboard-alert">ไม่พบข้อมูล B2B ในช่วงวันที่ที่เลือก กรุณาตรวจสอบการบันทึกคำว่า B2B ใน ovstist.name หรือ opdscreen.cc</div>
+    <% } %>
+  </div>
+
+  <form id="telemedFilterForm" action="/telemed" method="get" class="filter-grid">
+    <label>
+      วันที่เริ่มต้น
+      <input type="date" name="startDate" value="<%= filters.startDate %>">
+    </label>
+    <label>
+      วันที่สิ้นสุด
+      <input type="date" name="endDate" value="<%= filters.endDate %>">
+    </label>
+    <label>
+      ปีงบประมาณ
+      <input type="number" name="fiscalYear" min="2500" max="2700" placeholder="เช่น 2569" value="<%= filters.fiscalYear || '' %>">
+    </label>
+    <label>
+      มุมมอง
+      <select name="granularity">
+        <option value="day" <%= filters.granularity === 'day' ? 'selected' : '' %>>รายวัน</option>
+        <option value="month" <%= filters.granularity === 'month' ? 'selected' : '' %>>รายเดือน</option>
+      </select>
+    </label>
+    <div class="filter-actions">
+      <button type="submit" class="primary-button"><i class="bi bi-funnel"></i> แสดงผล</button>
+      <a class="secondary-button" id="exportExcelLink" href="/telemed/export.xlsx?startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&granularity=<%= filters.granularity %><%= filters.fiscalYear ? '&fiscalYear=' + filters.fiscalYear : '' %>">
+        <i class="bi bi-file-earmark-excel"></i>
+        Export Excel
+      </a>
+      <a class="secondary-button" id="exportPdfLink" href="/telemed/export.pdf?startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&granularity=<%= filters.granularity %><%= filters.fiscalYear ? '&fiscalYear=' + filters.fiscalYear : '' %>">
+        <i class="bi bi-filetype-pdf"></i>
+        Export PDF
+      </a>
+    </div>
+  </form>
+</section>
+
+<section class="kpi-grid">
+  <article class="kpi-card total">
+    <span class="kpi-icon"><i class="bi bi-activity"></i></span>
+    <div>
+      <p>Total</p>
+      <strong data-kpi="total"><%= data.total.toLocaleString('th-TH') %></strong>
+    </div>
+  </article>
+  <% categories.forEach((category) => { %>
+    <article class="kpi-card">
+      <span class="kpi-icon <%= category.includes('DM') ? 'dm' : 'ht' %>"><i class="bi <%= category.includes('DM') ? 'bi-droplet-half' : 'bi-heart-pulse' %>"></i></span>
+      <div>
+        <p><%= category %></p>
+        <strong data-kpi="<%= category %>"><%= data.kpis[category].toLocaleString('th-TH') %></strong>
+      </div>
+    </article>
+  <% }) %>
+</section>
+
+<section class="summary-kpi-grid">
+  <article class="mini-kpi-card"><p>DM รวม</p><strong data-total="dm"><%= data.totals.dm.toLocaleString('th-TH') %></strong></article>
+  <article class="mini-kpi-card"><p>HT รวม</p><strong data-total="ht"><%= data.totals.ht.toLocaleString('th-TH') %></strong></article>
+  <article class="mini-kpi-card"><p>B2B รวม</p><strong data-total="b2b"><%= data.totals.b2b.toLocaleString('th-TH') %></strong></article>
+  <article class="mini-kpi-card"><p>B2C รวม</p><strong data-total="b2c"><%= data.totals.b2c.toLocaleString('th-TH') %></strong></article>
+</section>
+
+<section class="dashboard-grid">
+  <article class="panel wide">
+    <div class="panel-heading">
+      <h2>แนวโน้มบริการ</h2>
+      <span id="trendSubtitle"><%= filters.granularity === 'month' ? 'รายเดือน' : 'รายวัน' %> | <%= filters.startDate %> ถึง <%= filters.endDate %></span>
+    </div>
+    <canvas id="trendChart" height="120"></canvas>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h2>สัดส่วน B2B / B2C</h2>
+      <span>รวมทุกกลุ่มโรค</span>
+    </div>
+    <canvas id="channelChart" height="210"></canvas>
+    <div class="channel-summary">
+      <div><strong>B2B:</strong> <span id="b2bSummary"><%= data.totals.b2b.toLocaleString('th-TH') %> ราย (<%= data.percentages.b2b.toFixed(2) %>%)</span></div>
+      <div><strong>B2C:</strong> <span id="b2cSummary"><%= data.totals.b2c.toLocaleString('th-TH') %> ราย (<%= data.percentages.b2c.toFixed(2) %>%)</span></div>
+    </div>
+  </article>
+</section>
+
+<%
+  const maxTotal = data.dailySummary.reduce((max, row) => Math.max(max, Number(row.total || 0)), 0);
+  const tableTotals = data.dailySummary.reduce((sum, row) => {
+    sum.total += Number(row.total || 0);
+    sum.dm_total += Number(row.dm_total || 0);
+    sum.ht_total += Number(row.ht_total || 0);
+    sum.b2b_total += Number(row.b2b_total || 0);
+    sum.b2c_total += Number(row.b2c_total || 0);
+    categories.forEach((category) => {
+      sum[category] += Number(row[category] || 0);
+    });
+    return sum;
+  }, {
+    total: 0,
+    dm_total: 0,
+    ht_total: 0,
+    b2b_total: 0,
+    b2c_total: 0,
+    ...Object.fromEntries(categories.map((category) => [category, 0]))
+  });
+%>
+
+<section class="panel table-panel">
+  <div class="panel-heading table-heading">
+    <div>
+      <h2 id="tableTitle"><%= filters.granularity === 'month' ? 'ตารางสรุปรายเดือน' : 'ตารางสรุปรายวัน' %></h2>
+      <span id="tableCount"><%= data.dailySummary.length.toLocaleString('th-TH') %> <%= filters.granularity === 'month' ? 'เดือน' : 'วัน' %></span>
+    </div>
+    <div class="table-view-toggle" role="group" aria-label="สลับมุมมองตาราง">
+      <button type="button" class="table-view-button active" data-table-view="summary">สรุป</button>
+      <button type="button" class="table-view-button" data-table-view="detail">รายละเอียด</button>
+    </div>
+  </div>
+
+  <p class="table-note">หมายเหตุ: Total คือจำนวนบริการ Telemed ทั้งหมด ส่วน DM/HT นับเฉพาะ visit ที่พบ ICD10 E11/I10 ดังนั้น Total อาจไม่เท่ากับ DM รวม + HT รวม</p>
+
+  <div class="table-wrap enhanced-table-wrap">
+    <table id="telemedSummaryTable" class="telemed-summary-table summary-mode">
+      <thead>
+        <tr>
+          <th id="periodHeader"><%= filters.granularity === 'month' ? 'เดือน' : 'วันที่' %></th>
+          <th class="number">Total</th>
+          <th class="number">DM รวม</th>
+          <th class="number">HT รวม</th>
+          <th class="number">B2B รวม</th>
+          <th class="number">B2C รวม</th>
+          <% categories.forEach((category) => { %>
+            <th class="number detail-column"><%= category %></th>
+          <% }) %>
+        </tr>
+      </thead>
+      <tbody id="telemedTableBody">
+        <% if (data.dailySummary.length === 0) { %>
+          <tr><td colspan="10" class="empty">ไม่พบข้อมูลในช่วงวันที่ที่เลือก</td></tr>
+        <% } %>
+        <% data.dailySummary.forEach((row) => { %>
+          <% const isMaxRow = maxTotal > 0 && Number(row.total || 0) === maxTotal; %>
+          <tr class="<%= isMaxRow ? 'max-total-row' : '' %>">
+            <td>
+              <span class="date-cell">
+                <%= row.date %>
+                <% if (isMaxRow) { %><span class="max-badge">สูงสุด</span><% } %>
+              </span>
+            </td>
+            <td class="number"><%= row.total.toLocaleString('th-TH') %></td>
+            <td class="number"><%= row.dm_total.toLocaleString('th-TH') %></td>
+            <td class="number"><%= row.ht_total.toLocaleString('th-TH') %></td>
+            <td class="number"><%= row.b2b_total.toLocaleString('th-TH') %></td>
+            <td class="number"><%= row.b2c_total.toLocaleString('th-TH') %></td>
+            <% categories.forEach((category) => { %>
+              <td class="number detail-column"><%= row[category].toLocaleString('th-TH') %></td>
+            <% }) %>
+          </tr>
+        <% }) %>
+      </tbody>
+      <tfoot id="telemedTableFoot">
+        <% if (data.dailySummary.length > 0) { %>
+          <tr>
+            <td>รวมทั้งหมด</td>
+            <td class="number"><%= tableTotals.total.toLocaleString('th-TH') %></td>
+            <td class="number"><%= tableTotals.dm_total.toLocaleString('th-TH') %></td>
+            <td class="number"><%= tableTotals.ht_total.toLocaleString('th-TH') %></td>
+            <td class="number"><%= tableTotals.b2b_total.toLocaleString('th-TH') %></td>
+            <td class="number"><%= tableTotals.b2c_total.toLocaleString('th-TH') %></td>
+            <% categories.forEach((category) => { %>
+              <td class="number detail-column"><%= tableTotals[category].toLocaleString('th-TH') %></td>
+            <% }) %>
+          </tr>
+        <% } %>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<div id="telemedPayload" hidden><%= JSON.stringify({ trend: data.trend, channel: data.channel, categories, data, filters }) %></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="/js/dashboard.js"></script>
