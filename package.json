@@ -5,7 +5,12 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "node app.js"
+    "dev": "node app.js",
+    "start:prod": "node app.js",
+    "deploy:start": "powershell -ExecutionPolicy Bypass -File .\\deploy\\start-telemed.ps1",
+    "deploy:start:hidden": "powershell -ExecutionPolicy Bypass -File .\\deploy\\start-telemed.ps1 -Hidden",
+    "deploy:stop": "powershell -ExecutionPolicy Bypass -File .\\deploy\\stop-telemed.ps1",
+    "deploy:status": "powershell -ExecutionPolicy Bypass -File .\\deploy\\status-telemed.ps1"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
