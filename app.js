@@ -15,11 +15,13 @@ const { ensureAuth, ensureRole } = require('./src/middleware/auth');
 
 const app = express();
 const port = Number(process.env.PORT || 4300);
+const enableHsts = String(process.env.ENABLE_HSTS || '').trim().toLowerCase() === 'true';
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(helmet({
+  hsts: enableHsts,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
