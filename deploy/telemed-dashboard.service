@@ -1,0 +1,18 @@
+[Unit]
+Description=Telemed Dashboard
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/telemed/TelemedDashboard
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+User=telemed
+Group=telemed
+StandardOutput=append:/home/telemed/TelemedDashboard/output/telemed-server.out.log
+StandardError=append:/home/telemed/TelemedDashboard/output/telemed-server.err.log
+
+[Install]
+WantedBy=multi-user.target
