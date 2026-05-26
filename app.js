@@ -16,6 +16,7 @@ const { ensureAuth, ensureRole } = require('./src/middleware/auth');
 const app = express();
 const port = Number(process.env.PORT || 4300);
 const enableHsts = String(process.env.ENABLE_HSTS || '').trim().toLowerCase() === 'true';
+const enableHttpsUpgrade = String(process.env.ENABLE_HTTPS_UPGRADE || '').trim().toLowerCase() === 'true';
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -29,7 +30,8 @@ app.use(helmet({
       styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
       fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
       imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"]
+      connectSrc: ["'self'"],
+      upgradeInsecureRequests: enableHttpsUpgrade ? [] : null
     }
   }
 }));
