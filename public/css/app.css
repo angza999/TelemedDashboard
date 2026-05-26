@@ -315,6 +315,18 @@ textarea {
   color: var(--text);
 }
 
+.secondary-button.compact {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 0.88rem;
+}
+
+.secondary-button.danger {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #be123c;
+}
+
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(150px, 1fr));
@@ -666,6 +678,59 @@ tfoot td {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.panel-actions,
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.users-heading {
+  align-items: flex-start;
+}
+
+.user-table-wrap table {
+  min-width: 1120px;
+}
+
+.row-actions form {
+  margin: 0;
+}
+
+.status-badge {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 78px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.status-badge.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding-top: 26px;
+}
+
+.checkbox-field input {
+  width: 18px;
+  height: 18px;
 }
 
 .query-table-wrap table {

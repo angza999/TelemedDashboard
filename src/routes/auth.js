@@ -18,6 +18,14 @@ router.post('/login', async (req, res) => {
   const user = findUserByUsername(username);
   const isValid = user ? await bcrypt.compare(String(password || ''), user.passwordHash) : false;
 
+  if (isValid && user.isActive === false) {
+    return res.status(403).render('auth/login', {
+      title: 'เข้าสู่ระบบ',
+      error: 'บัญชีผู้ใช้นี้ถูกปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
+      next: next || '/telemed'
+    });
+  }
+
   if (!isValid) {
     return res.status(401).render('auth/login', {
       title: 'เข้าสู่ระบบ',
