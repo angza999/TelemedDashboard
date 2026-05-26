@@ -41,4 +41,8 @@ function findUserByUsername(username) {
   return users.find((user) => user.username.toLowerCase() === String(username || '').toLowerCase());
 }
 
-module.exports = { findUserByUsername };
+function listUsers() {
+  return users.map(({ passwordHash, ...user }) => user);
+}
+
+module.exports = { findUserByUsername, listUsers };

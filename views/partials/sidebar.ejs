@@ -1,0 +1,38 @@
+<aside class="sidebar">
+  <a class="brand" href="/telemed">
+    <span class="brand-mark"><i class="bi bi-heart-pulse"></i></span>
+    <span>
+      <strong>Telemed</strong>
+      <small>Hospital Dashboard</small>
+    </span>
+  </a>
+  <nav class="nav-menu" aria-label="เมนูหลัก">
+    <a class="nav-link <%= active === 'telemed' ? 'active' : '' %>" href="/telemed">
+      <i class="bi bi-grid-1x2"></i>
+      <span>Telemed Dashboard</span>
+    </a>
+
+    <% if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'executive')) { %>
+      <a class="nav-link <%= active === 'executive' ? 'active' : '' %>" href="/executive">
+        <i class="bi bi-bar-chart-line"></i>
+        <span>Executive Dashboard</span>
+      </a>
+    <% } %>
+
+    <% if (currentUser && currentUser.role === 'admin') { %>
+      <div class="nav-section">Admin</div>
+      <a class="nav-link <%= active === 'settings' ? 'active' : '' %>" href="/settings">
+        <i class="bi bi-database-gear"></i>
+        <span>ตั้งค่าฐานข้อมูล</span>
+      </a>
+      <a class="nav-link <%= active === 'query-tool' ? 'active' : '' %>" href="/admin/query-tool">
+        <i class="bi bi-terminal"></i>
+        <span>Query Tool</span>
+      </a>
+      <a class="nav-link <%= active === 'users' ? 'active' : '' %>" href="/admin/users">
+        <i class="bi bi-people"></i>
+        <span>จัดการผู้ใช้งาน</span>
+      </a>
+    <% } %>
+  </nav>
+</aside>

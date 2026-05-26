@@ -549,6 +549,20 @@ tfoot td {
   font-weight: 700;
 }
 
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
 .login-page {
   display: grid;
   place-items: center;

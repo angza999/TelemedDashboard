@@ -10,34 +10,7 @@
 </head>
 <body>
   <div class="app-shell">
-    <aside class="sidebar">
-      <a class="brand" href="/telemed">
-        <span class="brand-mark"><i class="bi bi-heart-pulse"></i></span>
-        <span>
-          <strong>Telemed</strong>
-          <small>Hospital Dashboard</small>
-        </span>
-      </a>
-      <nav class="nav-menu" aria-label="เมนูหลัก">
-        <a class="nav-link" href="/telemed">
-          <i class="bi bi-grid-1x2"></i>
-          <span>Telemed Dashboard</span>
-        </a>
-        <a class="nav-link" href="/executive">
-          <i class="bi bi-bar-chart-line"></i>
-          <span>Executive Dashboard</span>
-        </a>
-        <div class="nav-section">Admin</div>
-        <a class="nav-link active" href="/settings">
-          <i class="bi bi-database-gear"></i>
-          <span>ตั้งค่าฐานข้อมูล</span>
-        </a>
-        <a class="nav-link" href="/admin/query-tool">
-          <i class="bi bi-terminal"></i>
-          <span>Query Tool</span>
-        </a>
-      </nav>
-    </aside>
+    <%- include('../partials/sidebar', { active: 'settings' }) %>
 
     <main class="main">
       <header class="topbar">
