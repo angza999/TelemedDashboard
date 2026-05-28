@@ -28,75 +28,251 @@
         <% } %>
       </header>
 
-      <section class="filter-panel">
-        <% if (dbError) { %>
-          <div class="alert db-alert"><strong><%= dbError %></strong></div>
-        <% } %>
-        <form action="/executive" method="get" class="filter-grid executive-filter">
-          <label>
-            วันที่เริ่มต้น
-            <input type="date" name="startDate" value="<%= filters.startDate %>">
-          </label>
-          <label>
-            วันที่สิ้นสุด
-            <input type="date" name="endDate" value="<%= filters.endDate %>">
-          </label>
-          <label>
-            แนวโน้ม
-            <select name="granularity">
-              <option value="day" <%= filters.granularity === 'day' ? 'selected' : '' %>>รายวัน</option>
-              <option value="month" <%= filters.granularity === 'month' ? 'selected' : '' %>>รายเดือน</option>
-            </select>
-          </label>
-          <div class="filter-actions">
-            <button type="submit" class="primary-button"><i class="bi bi-funnel"></i> แสดงผล</button>
-            <a class="secondary-button" href="/executive/export.pdf?startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&granularity=<%= filters.granularity %>">
-              <i class="bi bi-filetype-pdf"></i>
-              Export PDF
-            </a>
-          </div>
-        </form>
+      <div class="executive-tabs" role="tablist" aria-label="Executive Dashboard tabs">
+        <button type="button" class="tab-button <%= activeTab === 'overview' ? 'active' : '' %>" data-exec-tab="overview">ภาพรวมผู้บริหาร</button>
+        <button type="button" class="tab-button <%= activeTab === 'department-target' ? 'active' : '' %>" data-exec-tab="department-target">เป้าหมายรายห้อง</button>
+      </div>
+
+      <section class="tab-panel <%= activeTab === 'overview' ? 'active' : '' %>" data-exec-panel="overview">
+        <section class="filter-panel">
+          <% if (dbError) { %>
+            <div class="alert db-alert"><strong><%= dbError %></strong></div>
+          <% } %>
+          <form action="/executive" method="get" class="filter-grid executive-filter">
+            <input type="hidden" name="tab" value="overview">
+            <label>
+              วันที่เริ่มต้น
+              <input type="date" name="startDate" value="<%= filters.startDate %>">
+            </label>
+            <label>
+              วันที่สิ้นสุด
+              <input type="date" name="endDate" value="<%= filters.endDate %>">
+            </label>
+            <label>
+              แนวโน้ม
+              <select name="granularity">
+                <option value="day" <%= filters.granularity === 'day' ? 'selected' : '' %>>รายวัน</option>
+                <option value="month" <%= filters.granularity === 'month' ? 'selected' : '' %>>รายเดือน</option>
+              </select>
+            </label>
+            <div class="filter-actions">
+              <button type="submit" class="primary-button"><i class="bi bi-funnel"></i> แสดงผล</button>
+              <a class="secondary-button" href="/executive/export.pdf?startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&granularity=<%= filters.granularity %>">
+                <i class="bi bi-filetype-pdf"></i>
+                Export PDF
+              </a>
+            </div>
+          </form>
+        </section>
+
+        <section class="executive-kpis">
+          <article class="executive-kpi primary"><p>Total Telemed</p><strong><%= data.total.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>DM รวม</p><strong><%= metrics.dm.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>HT รวม</p><strong><%= metrics.ht.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>B2B รวม</p><strong><%= metrics.b2b.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>B2C รวม</p><strong><%= metrics.b2c.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>B2B / B2C</p><strong><%= metrics.b2bPercent.toFixed(1) %>% / <%= metrics.b2cPercent.toFixed(1) %>%</strong></article>
+        </section>
+
+        <section class="panel executive-summary">
+          <h2>Executive Summary</h2>
+          <p><%= metrics.summary %></p>
+        </section>
+
+        <section class="dashboard-grid executive-charts">
+          <article class="panel wide">
+            <div class="panel-heading">
+              <h2>แนวโน้ม Telemed</h2>
+              <span><%= filters.startDate %> ถึง <%= filters.endDate %></span>
+            </div>
+            <canvas id="execTrendChart" height="120"></canvas>
+          </article>
+          <article class="panel">
+            <div class="panel-heading">
+              <h2>B2B vs B2C</h2>
+            </div>
+            <canvas id="execChannelChart" height="210"></canvas>
+          </article>
+          <article class="panel">
+            <div class="panel-heading">
+              <h2>DM vs HT</h2>
+            </div>
+            <canvas id="execDiseaseChart" height="210"></canvas>
+          </article>
+        </section>
       </section>
 
-      <section class="executive-kpis">
-        <article class="executive-kpi primary"><p>Total Telemed</p><strong><%= data.total.toLocaleString('th-TH') %></strong></article>
-        <article class="executive-kpi"><p>DM รวม</p><strong><%= metrics.dm.toLocaleString('th-TH') %></strong></article>
-        <article class="executive-kpi"><p>HT รวม</p><strong><%= metrics.ht.toLocaleString('th-TH') %></strong></article>
-        <article class="executive-kpi"><p>B2B รวม</p><strong><%= metrics.b2b.toLocaleString('th-TH') %></strong></article>
-        <article class="executive-kpi"><p>B2C รวม</p><strong><%= metrics.b2c.toLocaleString('th-TH') %></strong></article>
-        <article class="executive-kpi"><p>B2B / B2C</p><strong><%= metrics.b2bPercent.toFixed(1) %>% / <%= metrics.b2cPercent.toFixed(1) %>%</strong></article>
-      </section>
+      <section class="tab-panel <%= activeTab === 'department-target' ? 'active' : '' %>" data-exec-panel="department-target">
+        <section class="filter-panel">
+          <% if (dbError || targetError) { %>
+            <div class="alert db-alert"><strong><%= targetError || dbError %></strong></div>
+          <% } %>
+          <div class="panel-note target-intro">
+            หน้านี้ใช้ติดตามจำนวน Telemed ของแต่ละห้องส่งตรวจ เทียบกับเป้าหมาย 50% ของจำนวนผู้รับบริการ OPD ในช่วงวันที่ที่เลือก
+          </div>
+          <% if (target.rows.length > 0 && !target.hasB2b) { %>
+            <div class="alert warning">ไม่พบข้อมูล B2B ในช่วงวันที่นี้ กรุณาตรวจสอบการบันทึกคำว่า B2B ใน ovstist.name หรือ opdscreen.cc</div>
+          <% } %>
+          <form action="/executive" method="get" class="filter-grid department-target-filter">
+            <input type="hidden" name="tab" value="department-target">
+            <label>
+              วันที่เริ่มต้น
+              <input type="date" name="startDate" value="<%= filters.startDate %>">
+            </label>
+            <label>
+              วันที่สิ้นสุด
+              <input type="date" name="endDate" value="<%= filters.endDate %>">
+            </label>
+            <label>
+              เลือกห้องส่งตรวจ
+              <select name="depcode">
+                <option value="all" <%= targetFilters.depcode === 'all' ? 'selected' : '' %>>ทั้งหมด</option>
+                <% target.departments.forEach((department) => { %>
+                  <option value="<%= department.depcode %>" <%= targetFilters.depcode === department.depcode ? 'selected' : '' %>><%= department.department %></option>
+                <% }) %>
+              </select>
+            </label>
+            <label>
+              สถานะ
+              <select name="status">
+                <option value="all" <%= targetFilters.status === 'all' ? 'selected' : '' %>>ทั้งหมด</option>
+                <option value="passed" <%= targetFilters.status === 'passed' ? 'selected' : '' %>>ผ่านเป้าหมาย</option>
+                <option value="failed" <%= targetFilters.status === 'failed' ? 'selected' : '' %>>ยังไม่ถึงเป้าหมาย</option>
+              </select>
+            </label>
+            <label>
+              การเรียงลำดับ
+              <select name="sortBy">
+                <option value="target_gap" <%= targetFilters.sortBy === 'target_gap' ? 'selected' : '' %>>ขาดเป้าหมายมากสุด</option>
+                <option value="percent_low" <%= targetFilters.sortBy === 'percent_low' ? 'selected' : '' %>>% ต่ำสุด</option>
+                <option value="telemed_desc" <%= targetFilters.sortBy === 'telemed_desc' ? 'selected' : '' %>>Telemed มากสุด</option>
+                <option value="opd_desc" <%= targetFilters.sortBy === 'opd_desc' ? 'selected' : '' %>>OPD มากสุด</option>
+              </select>
+            </label>
+            <div class="filter-actions">
+              <button type="submit" class="primary-button"><i class="bi bi-funnel"></i> แสดงผล</button>
+              <a class="secondary-button" href="/executive/department-target.xlsx?startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&depcode=<%= targetFilters.depcode %>&status=<%= targetFilters.status %>&sortBy=<%= targetFilters.sortBy %>">
+                <i class="bi bi-file-earmark-excel"></i>
+                Export Excel
+              </a>
+            </div>
+          </form>
+        </section>
 
-      <section class="panel executive-summary">
-        <h2>Executive Summary</h2>
-        <p><%= metrics.summary %></p>
-      </section>
+        <section class="executive-kpis target-kpis">
+          <article class="executive-kpi primary"><p>OPD รวม</p><strong><%= target.summary.opd_total.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>Telemed รวม</p><strong><%= target.summary.telemed_total.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>เป้าหมาย 50%</p><strong><%= target.summary.target_50_total.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>ทำได้จริง</p><strong><%= target.summary.telemed_percent.toFixed(2) %>%</strong></article>
+          <article class="executive-kpi"><p>ผ่านเป้า</p><strong><%= target.summary.passed_department_count.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>ยังไม่ผ่าน</p><strong><%= target.summary.failed_department_count.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>ขาดมากที่สุด</p><strong><%= target.summary.worst_department ? target.summary.worst_department.department : '-' %></strong></article>
+        </section>
 
-      <section class="dashboard-grid executive-charts">
-        <article class="panel wide">
+        <section class="dashboard-grid executive-charts target-charts">
+          <article class="panel wide">
+            <div class="panel-heading">
+              <h2>Telemed เทียบเป้าหมายรายห้อง</h2>
+              <span>เป้าหมาย 50%</span>
+            </div>
+            <canvas id="departmentTargetChart" height="130"></canvas>
+          </article>
+          <article class="panel wide">
+            <div class="panel-heading">
+              <h2>เปอร์เซ็นต์ทำได้รายห้อง</h2>
+              <span>เส้นเป้าหมาย 50%</span>
+            </div>
+            <canvas id="departmentPercentChart" height="130"></canvas>
+          </article>
+          <article class="panel">
+            <div class="panel-heading">
+              <h2>Top 5 ขาดเป้าหมาย</h2>
+            </div>
+            <div class="shortage-list">
+              <% target.rows.filter((row) => row.diff_from_target < 0).slice(0, 5).forEach((row) => { %>
+                <div class="shortage-item">
+                  <span><%= row.department %></span>
+                  <strong><%= row.diff_from_target.toLocaleString('th-TH') %> ราย</strong>
+                </div>
+              <% }) %>
+              <% if (!target.rows.some((row) => row.diff_from_target < 0)) { %>
+                <p class="panel-note">ไม่มีห้องที่ขาดเป้าหมายในช่วงวันที่นี้</p>
+              <% } %>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel table-panel">
           <div class="panel-heading">
-            <h2>แนวโน้ม Telemed</h2>
-            <span><%= filters.startDate %> ถึง <%= filters.endDate %></span>
+            <div>
+              <h2>ติดตามเป้าหมาย Telemed รายห้อง</h2>
+              <p class="panel-note">เรียงห้องที่ยังไม่ถึงเป้าหมายและขาดเป้าหมายมากที่สุดก่อน</p>
+            </div>
           </div>
-          <canvas id="execTrendChart" height="120"></canvas>
-        </article>
-        <article class="panel">
-          <div class="panel-heading">
-            <h2>B2B vs B2C</h2>
+          <div class="table-wrap department-target-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ลำดับ</th>
+                  <th>รหัสห้อง</th>
+                  <th>ห้องส่งตรวจ</th>
+                  <th>OPD ทั้งหมด</th>
+                  <th>Telemed ทั้งหมด</th>
+                  <th>B2B</th>
+                  <th>B2C</th>
+                  <th>เป้าหมาย 50%</th>
+                  <th>ทำได้ %</th>
+                  <th>ขาด/เกินเป้าหมาย</th>
+                  <th>สถานะ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (target.rows.length === 0) { %>
+                  <tr><td colspan="11" class="empty">ไม่พบข้อมูลในช่วงวันที่ที่เลือก</td></tr>
+                <% } %>
+                <% target.rows.forEach((row, index) => { %>
+                  <tr class="<%= row.target_status === 'ยังไม่ถึงเป้าหมาย' ? 'target-row-failed' : '' %>">
+                    <td><%= index + 1 %></td>
+                    <td><%= row.depcode %></td>
+                    <td><%= row.department %></td>
+                    <td><%= row.opd_total.toLocaleString('th-TH') %></td>
+                    <td><%= row.telemed_total.toLocaleString('th-TH') %></td>
+                    <td><%= row.b2b_total.toLocaleString('th-TH') %></td>
+                    <td><%= row.b2c_total.toLocaleString('th-TH') %></td>
+                    <td><%= row.target_50.toLocaleString('th-TH') %></td>
+                    <td><%= row.telemed_percent.toFixed(2) %>%</td>
+                    <td><%= row.diff_from_target.toLocaleString('th-TH') %></td>
+                    <td>
+                      <span class="target-status <%= row.telemed_total >= row.target_50 ? 'passed' : (row.telemed_percent >= 45 ? 'near' : 'failed') %>">
+                        <%= row.target_status %>
+                      </span>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+              <% if (target.rows.length > 0) { %>
+                <tfoot>
+                  <tr>
+                    <th colspan="3">รวมทั้งหมด</th>
+                    <th><%= target.summary.opd_total.toLocaleString('th-TH') %></th>
+                    <th><%= target.summary.telemed_total.toLocaleString('th-TH') %></th>
+                    <th><%= target.summary.b2b_total.toLocaleString('th-TH') %></th>
+                    <th><%= target.summary.b2c_total.toLocaleString('th-TH') %></th>
+                    <th><%= target.summary.target_50_total.toLocaleString('th-TH') %></th>
+                    <th><%= target.summary.telemed_percent.toFixed(2) %>%</th>
+                    <th><%= target.summary.diff_from_target.toLocaleString('th-TH') %></th>
+                    <th></th>
+                  </tr>
+                </tfoot>
+              <% } %>
+            </table>
           </div>
-          <canvas id="execChannelChart" height="210"></canvas>
-        </article>
-        <article class="panel">
-          <div class="panel-heading">
-            <h2>DM vs HT</h2>
-          </div>
-          <canvas id="execDiseaseChart" height="210"></canvas>
-        </article>
+        </section>
       </section>
     </main>
   </div>
 
-  <div id="executivePayload" hidden><%= JSON.stringify({ metrics, channel: data.channel }) %></div>
+  <div id="executivePayload" hidden><%= JSON.stringify({ metrics, channel: data.channel, target }) %></div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="/js/executive.js"></script>
 </body>

@@ -18,6 +18,10 @@ function telemedFilename(filters, extension) {
   return `telemed_report_${ymd(filters.startDate)}_${ymd(filters.endDate)}.${extension}`;
 }
 
+function departmentTargetFilename(filters) {
+  return `telemed_department_target_${ymd(filters.startDate)}_${ymd(filters.endDate)}.xlsx`;
+}
+
 function totalRow(data) {
   return {
     date: 'รวม',
@@ -78,6 +82,98 @@ async function writeTelemedExcel(res, filters, data) {
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename="${telemedFilename(filters, 'xlsx')}"`);
+  await workbook.xlsx.write(res);
+  res.end();
+}
+
+async function writeDepartmentTargetExcel(res, filters, targetData) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Telemed Dashboard';
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet('Department Target');
+  sheet.mergeCells('A1:K1');
+  sheet.getCell('A1').value = 'รายงานติดตามเป้าหมาย Telemed รายห้อง';
+  sheet.getCell('A1').font = { bold: true, size: 16 };
+  sheet.getCell('A2').value = `ช่วงวันที่: ${filters.startDate} ถึง ${filters.endDate}`;
+  sheet.getCell('A3').value = 'เป้าหมาย: 50% ของ OPD รายห้อง';
+  sheet.getCell('A4').value = `วันที่ export: ${nowText()}`;
+
+  sheet.columns = [
+    { key: 'no', width: 8 },
+    { key: 'depcode', width: 14 },
+    { key: 'department', width: 28 },
+    { key: 'opd_total', width: 14 },
+    { key: 'telemed_total', width: 16 },
+    { key: 'b2b_total', width: 12 },
+    { key: 'b2c_total', width: 12 },
+    { key: 'target_50', width: 14 },
+    { key: 'telemed_percent', width: 12 },
+    { key: 'diff_from_target', width: 16 },
+    { key: 'target_status', width: 18 }
+  ];
+
+  sheet.addRow([]);
+  const header = sheet.addRow([
+    'ลำดับ',
+    'รหัสห้อง',
+    'ห้องส่งตรวจ',
+    'OPD ทั้งหมด',
+    'Telemed ทั้งหมด',
+    'B2B',
+    'B2C',
+    'เป้าหมาย 50%',
+    'ทำได้ %',
+    'ขาด/เกินเป้าหมาย',
+    'สถานะ'
+  ]);
+  header.font = { bold: true };
+  header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F2FF' } };
+
+  targetData.rows.forEach((row, index) => {
+    sheet.addRow([
+      index + 1,
+      row.depcode,
+      row.department,
+      row.opd_total,
+      row.telemed_total,
+      row.b2b_total,
+      row.b2c_total,
+      row.target_50,
+      row.telemed_percent,
+      row.diff_from_target,
+      row.target_status
+    ]);
+  });
+
+  const summary = targetData.summary;
+  const footer = sheet.addRow([
+    'รวมทั้งหมด',
+    '',
+    '',
+    summary.opd_total,
+    summary.telemed_total,
+    summary.b2b_total,
+    summary.b2c_total,
+    summary.target_50_total,
+    summary.telemed_percent,
+    summary.diff_from_target,
+    ''
+  ]);
+  footer.font = { bold: true };
+  footer.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6FFFA' } };
+
+  sheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD9E2EC' } },
+        bottom: { style: 'thin', color: { argb: 'FFD9E2EC' } }
+      };
+    });
+  });
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${departmentTargetFilename(filters)}"`);
   await workbook.xlsx.write(res);
   res.end();
 }
@@ -228,6 +324,8 @@ function drawFooter(doc) {
 module.exports = {
   HOSPCODE,
   telemedFilename,
+  departmentTargetFilename,
   writeTelemedExcel,
+  writeDepartmentTargetExcel,
   writeTelemedPdf
 };

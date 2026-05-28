@@ -6,7 +6,14 @@ const {
   parseFilters,
   fetchTelemedSummary
 } = require('../services/telemedService');
-const { writeTelemedPdf } = require('../services/reportExportService');
+const {
+  emptyDepartmentTargetModel,
+  fetchDepartmentTargetData
+} = require('../services/executiveService');
+const {
+  writeDepartmentTargetExcel,
+  writeTelemedPdf
+} = require('../services/reportExportService');
 
 const router = express.Router();
 
@@ -21,16 +28,41 @@ function effectiveFilters(query) {
   return parseFilters(query);
 }
 
+function targetFilters(query, filters = effectiveFilters(query)) {
+  return {
+    ...filters,
+    depcode: query.depcode || 'all',
+    status: ['passed', 'failed'].includes(query.status) ? query.status : 'all',
+    sortBy: ['target_gap', 'percent_low', 'telemed_desc', 'opd_desc'].includes(query.sortBy)
+      ? query.sortBy
+      : 'target_gap'
+  };
+}
+
 router.get('/', async (req, res, next) => {
   try {
     const filters = effectiveFilters(req.query);
     const data = await fetchTelemedSummary(filters);
+    let target = emptyDepartmentTargetModel();
+    let targetError = null;
+
+    try {
+      target = await fetchDepartmentTargetData(targetFilters(req.query, filters));
+    } catch (err) {
+      if (!isDatabaseSetupError(err)) throw err;
+      targetError = databaseSetupMessage(err);
+    }
+
     res.render('executive/dashboard', {
       title: 'Executive Dashboard',
       filters,
+      targetFilters: targetFilters(req.query, filters),
       data,
       metrics: buildExecutiveMetrics(data),
-      dbError: null
+      target,
+      activeTab: req.query.tab === 'department-target' ? 'department-target' : 'overview',
+      dbError: null,
+      targetError
     });
   } catch (err) {
     if (isDatabaseSetupError(err)) {
@@ -39,10 +71,46 @@ router.get('/', async (req, res, next) => {
       return res.status(200).render('executive/dashboard', {
         title: 'Executive Dashboard',
         filters,
+        targetFilters: targetFilters(req.query, filters),
         data,
         metrics: buildExecutiveMetrics(data),
-        dbError: databaseSetupMessage(err)
+        target: emptyDepartmentTargetModel(),
+        activeTab: req.query.tab === 'department-target' ? 'department-target' : 'overview',
+        dbError: databaseSetupMessage(err),
+        targetError: null
       });
+    }
+    next(err);
+  }
+});
+
+router.get('/department-target-data', async (req, res, next) => {
+  try {
+    const filters = targetFilters(req.query);
+    const target = await fetchDepartmentTargetData(filters);
+    res.json({
+      summary: target.summary,
+      rows: target.rows,
+      departments: target.departments,
+      hasB2b: target.hasB2b,
+      lastUpdated: target.lastUpdated
+    });
+  } catch (err) {
+    if (isDatabaseSetupError(err)) {
+      return res.status(503).json({ error: databaseSetupMessage(err) });
+    }
+    next(err);
+  }
+});
+
+router.get('/department-target.xlsx', async (req, res, next) => {
+  try {
+    const filters = targetFilters(req.query);
+    const target = await fetchDepartmentTargetData(filters);
+    await writeDepartmentTargetExcel(res, filters, target);
+  } catch (err) {
+    if (isDatabaseSetupError(err)) {
+      return res.status(503).send(databaseSetupMessage(err));
     }
     next(err);
   }
