@@ -283,6 +283,18 @@
     });
   });
 
+  const departmentTargetTable = document.querySelector('.department-target-table');
+  document.querySelectorAll('[data-target-table-view]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const view = button.dataset.targetTableView === 'detail' ? 'detail' : 'summary';
+      document.querySelectorAll('[data-target-table-view]').forEach((item) => item.classList.toggle('active', item === button));
+      if (departmentTargetTable) {
+        departmentTargetTable.classList.toggle('summary-mode', view === 'summary');
+        departmentTargetTable.classList.toggle('detail-mode', view === 'detail');
+      }
+    });
+  });
+
   let resizeTimer = null;
   window.addEventListener('resize', () => {
     window.clearTimeout(resizeTimer);
