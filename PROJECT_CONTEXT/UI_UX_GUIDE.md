@@ -11,6 +11,9 @@
 - Main content uses panels, KPI cards, charts, and responsive tables.
 - Keep operational pages dense but readable.
 - Keep executive pages simpler and more summary-focused.
+- Executive target charts should stack as full-width panels when labels are long or datasets are dense.
+- For Chart.js horizontal bar charts, control height through the chart wrapper, not a fixed `<canvas height="">` attribute.
+- Set a max bar thickness for horizontal bars so a single row or small dataset does not become an oversized block.
 
 ## Colors
 Current style uses:
@@ -25,6 +28,7 @@ Current style uses:
 - Add total rows for summary tables.
 - Use status badges instead of raw text when possible.
 - Do not make tables too dense for executive views.
+- Use progress bars for executive target percentages when quick scanning matters.
 
 ## Buttons
 - Primary button for main action.
@@ -40,4 +44,3 @@ Current style uses:
 - KPI cards should stack.
 - Filter forms should become single column.
 - Wide tables should scroll horizontally, not shrink into unreadable columns.
-

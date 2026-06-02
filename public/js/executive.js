@@ -72,7 +72,9 @@
 
   function resizeCanvas(canvas, rowCount) {
     if (!canvas) return;
-    canvas.height = Math.max(280, Math.min(900, rowCount * 34 + 80));
+    const height = Math.max(260, Math.min(620, rowCount * 42 + 96));
+    const wrapper = canvas.closest('.target-chart-canvas-wrap');
+    if (wrapper) wrapper.style.height = `${height}px`;
   }
 
   function tooltipAfterBody(items) {
@@ -164,12 +166,20 @@
             label: 'Telemed จริง',
             data: targetDataRows.map((row) => row.telemed_total),
             backgroundColor: '#0f766e',
+            barThickness: 14,
+            maxBarThickness: 18,
+            categoryPercentage: 0.72,
+            barPercentage: 0.82,
             borderWidth: 0
           },
           {
             label: 'เป้าหมาย 50%',
             data: targetDataRows.map((row) => row.target_50),
             backgroundColor: '#f59e0b',
+            barThickness: 14,
+            maxBarThickness: 18,
+            categoryPercentage: 0.72,
+            barPercentage: 0.82,
             borderWidth: 0
           }
         ]
@@ -190,6 +200,7 @@
             }
           }
         },
+        layout: { padding: { top: 4, right: 10, bottom: 4, left: 4 } },
         scales: {
           x: { beginAtZero: true, ticks: { precision: 0 } },
           y: { grid: { display: false } }
@@ -209,6 +220,10 @@
             label: 'ทำได้ %',
             data: percentDataRows.map((row) => row.telemed_percent),
             backgroundColor: percentDataRows.map((row) => statusColor(row.telemed_percent)),
+            barThickness: 16,
+            maxBarThickness: 20,
+            categoryPercentage: 0.72,
+            barPercentage: 0.82,
             borderWidth: 0
           },
           {
@@ -240,6 +255,7 @@
             }
           }
         },
+        layout: { padding: { top: 4, right: 10, bottom: 4, left: 4 } },
         scales: {
           x: { beginAtZero: true, suggestedMax: 100, ticks: { callback: (value) => `${value}%` } },
           y: { grid: { display: false } }

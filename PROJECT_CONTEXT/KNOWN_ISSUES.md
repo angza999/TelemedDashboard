@@ -17,6 +17,9 @@ Even though Query Tool is SELECT-only, admin can still query sensitive patient d
 ## HTTP LAN Browser Behavior
 Chrome/Edge may remember HTTPS attempts for `192.168.1.231:4300`. If CSS appears unstyled due `ERR_SSL_PROTOCOL_ERROR`, clear browser HSTS/site state or use a fresh browser profile.
 
+## Browser Cache After UI Updates
+If a recently fixed dashboard still shows oversized charts or old styling, hard refresh the browser or clear cached `/css/app.css` and `/js/executive.js`.
+
 ## Runtime Files Are Not In Git
 The following are intentionally not committed:
 - `data/users.json`
@@ -25,4 +28,3 @@ The following are intentionally not committed:
 - `.env`
 
 Server deployment needs these files configured locally.
-

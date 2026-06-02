@@ -30,6 +30,8 @@
 - Added executive overview page for admin/executive.
 - Added PDF export for executive report.
 - Added tab `เป้าหมายรายห้อง` to compare Telemed count against 50% OPD target by department.
+- Improved the `เป้าหมายรายห้อง` tab for executive scanning: total gap KPI, worst-gap card, executive summary, horizontal charts with Top 10/20/all controls, and table progress bars.
+- Fixed department target chart sizing so horizontal bars do not become oversized blocks or make the page visually unbalanced.
 
 ### User Management
 - Added persistent user management via `data/users.json`.
@@ -44,6 +46,5 @@
   - `ENABLE_HTTPS_UPGRADE=false`
 - These prevent Chrome/Edge from forcing HTTPS on LAN HTTP deployment.
 
-## Last Known Commit
-- `c96f66b feat: add executive department target tab`
-
+## Commit Reference
+Use `git log -1 --oneline` for the latest commit. This file records feature history and should be updated with every project change.
