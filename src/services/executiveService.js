@@ -87,6 +87,11 @@ function summarizeRows(rows) {
     .filter((row) => row.diff_from_target < 0)
     .slice()
     .sort((a, b) => a.diff_from_target - b.diff_from_target)[0] || null;
+  summary.top_failed_departments = rows
+    .filter((row) => row.diff_from_target < 0)
+    .slice()
+    .sort((a, b) => a.diff_from_target - b.diff_from_target)
+    .slice(0, 3);
   return summary;
 }
 
