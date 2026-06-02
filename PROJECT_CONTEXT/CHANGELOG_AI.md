@@ -32,6 +32,7 @@
 - Added tab `เป้าหมายรายห้อง` to compare Telemed count against 50% OPD target by department.
 - Improved the `เป้าหมายรายห้อง` tab for executive scanning: total gap KPI, worst-gap card, executive summary, horizontal charts with Top 10/20/all controls, and table progress bars.
 - Fixed department target chart sizing so horizontal bars do not become oversized blocks or make the page visually unbalanced.
+- Hardened department target chart sizing by disabling Chart.js auto-responsive sizing for these two charts, setting explicit canvas dimensions from the wrapper, and adding cache-busting query strings for Executive assets.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

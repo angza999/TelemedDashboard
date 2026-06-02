@@ -20,6 +20,8 @@ Chrome/Edge may remember HTTPS attempts for `192.168.1.231:4300`. If CSS appears
 ## Browser Cache After UI Updates
 If a recently fixed dashboard still shows oversized charts or old styling, hard refresh the browser or clear cached `/css/app.css` and `/js/executive.js`.
 
+Executive Dashboard may use asset query strings such as `?v=executive-target-chart-fix-2` after UI fixes to force browsers to load the new CSS/JS.
+
 ## Runtime Files Are Not In Git
 The following are intentionally not committed:
 - `data/users.json`

@@ -13,6 +13,7 @@
 - Keep executive pages simpler and more summary-focused.
 - Executive target charts should stack as full-width panels when labels are long or datasets are dense.
 - For Chart.js horizontal bar charts, control height through the chart wrapper, not a fixed `<canvas height="">` attribute.
+- For Executive target charts, avoid `height: 100% !important` on canvas and prefer explicit JS sizing when Chart.js auto-responsive behavior stretches the page.
 - Set a max bar thickness for horizontal bars so a single row or small dataset does not become an oversized block.
 
 ## Colors

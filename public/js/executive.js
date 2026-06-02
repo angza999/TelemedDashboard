@@ -9,8 +9,6 @@
     charts.forEach((chart) => {
       if (chart && chart.canvas) chart.resize();
     });
-    if (departmentTargetChart && departmentTargetChart.canvas) departmentTargetChart.resize();
-    if (departmentPercentChart && departmentPercentChart.canvas) departmentPercentChart.resize();
   }
 
   document.querySelectorAll('[data-exec-tab]').forEach((button) => {
@@ -70,11 +68,18 @@
     return limitRows(sorted, limit);
   }
 
-  function resizeCanvas(canvas, rowCount) {
+  function sizeCanvas(canvas, rowCount) {
     if (!canvas) return;
-    const height = Math.max(260, Math.min(620, rowCount * 42 + 96));
     const wrapper = canvas.closest('.target-chart-canvas-wrap');
+    const height = Math.max(240, Math.min(520, rowCount * 38 + 96));
+    const width = Math.max(wrapper ? wrapper.clientWidth : canvas.clientWidth, 480);
+
     if (wrapper) wrapper.style.height = `${height}px`;
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = '100%';
+    canvas.style.height = `${height}px`;
+    canvas.style.display = 'block';
   }
 
   function tooltipAfterBody(items) {
@@ -146,12 +151,14 @@
 
   let departmentTargetChart = null;
   let departmentPercentChart = null;
+  let activeTargetChartLimit = '10';
 
   function renderDepartmentCharts(limit = '10') {
+    activeTargetChartLimit = limit;
     const targetDataRows = targetChartRows(limit);
     const percentDataRows = percentChartRows(limit);
-    resizeCanvas(departmentTargetEl, targetDataRows.length);
-    resizeCanvas(departmentPercentEl, percentDataRows.length);
+    sizeCanvas(departmentTargetEl, targetDataRows.length);
+    sizeCanvas(departmentPercentEl, percentDataRows.length);
 
     if (departmentTargetChart) departmentTargetChart.destroy();
     if (departmentPercentChart) departmentPercentChart.destroy();
@@ -187,7 +194,7 @@
       options: {
         indexAxis: 'y',
         maintainAspectRatio: false,
-        responsive: true,
+        responsive: false,
         plugins: {
           legend: { position: 'bottom' },
           tooltip: {
@@ -241,7 +248,7 @@
       options: {
         indexAxis: 'y',
         maintainAspectRatio: false,
-        responsive: true,
+        responsive: false,
         plugins: {
           legend: { position: 'bottom' },
           tooltip: {
@@ -274,5 +281,11 @@
       renderDepartmentCharts(button.dataset.targetChartLimit || '10');
       window.setTimeout(resizeCharts, 0);
     });
+  });
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => renderDepartmentCharts(activeTargetChartLimit), 150);
   });
 })();
