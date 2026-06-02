@@ -1,0 +1,49 @@
+# AI Changelog
+
+## Current Baseline
+- Project is on GitHub under `angza999/TelemedDashboard`.
+- Linux deployment is configured for server `192.168.1.231`.
+- Latest known production path is `/home/telemed/TelemedDashboard`.
+
+## Major Changes Already Implemented
+
+### Telemed Dashboard Core
+- Added dashboard for Telemedicine data from HOSxP / HOSxP XE.
+- Core Telemed filter uses `ovstist.export_code = '5'`.
+- Uses province-style logic for DM/HT and B2B/B2C summary.
+- Added date filters, fiscal year support, daily/monthly view, KPI cards, charts, table, refresh, Excel/PDF export.
+
+### Database Settings
+- Added admin-only database settings page.
+- Saved connection config is stored in `data/db-config.json`.
+- Password is not shown back on screen.
+
+### Query Tool
+- Added admin-only Query Tool.
+- Allows SELECT only.
+- Blocks dangerous SQL keywords and multiple statements.
+- Limits results to 1000 rows.
+- Logs query usage to `data/query-tool.log.jsonl`.
+- Supports Excel export of current result.
+
+### Executive Dashboard
+- Added executive overview page for admin/executive.
+- Added PDF export for executive report.
+- Added tab `เป้าหมายรายห้อง` to compare Telemed count against 50% OPD target by department.
+
+### User Management
+- Added persistent user management via `data/users.json`.
+- Admin can add/edit users, reset password, toggle active/inactive.
+- Passwords are hashed with bcryptjs.
+- Last active admin cannot be disabled or demoted.
+
+### Deployment Fixes
+- Added Linux deploy scripts and systemd service.
+- Added config switches:
+  - `ENABLE_HSTS=false`
+  - `ENABLE_HTTPS_UPGRADE=false`
+- These prevent Chrome/Edge from forcing HTTPS on LAN HTTP deployment.
+
+## Last Known Commit
+- `c96f66b feat: add executive department target tab`
+
