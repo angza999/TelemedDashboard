@@ -142,7 +142,7 @@ function buildExecutiveMetrics(data) {
   const b2cPercent = channelTotal > 0 ? (b2c / channelTotal) * 100 : 0;
   const trend = data.trend.map((row) => ({
     period: row.period,
-    total: CATEGORY_KEYS.reduce((sum, key) => sum + Number(row[key] || 0), 0),
+    total: Number(row.total || 0),
     dm: Number(row['DM B2B'] || 0) + Number(row['DM B2C'] || 0),
     ht: Number(row['HT B2B'] || 0) + Number(row['HT B2C'] || 0)
   }));

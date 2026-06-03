@@ -14,6 +14,11 @@ Some PowerShell/terminal output may display Thai as mojibake. The files are UTF-
 ## Query Tool Is Powerful
 Even though Query Tool is SELECT-only, admin can still query sensitive patient data. Keep it admin-only and remind users not to export patient-level data unnecessarily.
 
+The Query Tool now warns when returned column names look sensitive, but this is a column-name scan only. It cannot guarantee that every patient-identifying value is detected.
+
+## PDF Thai Fonts On Linux
+PDF export checks common Windows and Linux Thai font paths. If Thai still renders incorrectly on a server, install a Thai font package such as Noto Sans Thai or place `NotoSansThai-Regular.ttf` at `assets/fonts/NotoSansThai-Regular.ttf`.
+
 ## HTTP LAN Browser Behavior
 Chrome/Edge may remember HTTPS attempts for `192.168.1.231:4300`. If CSS appears unstyled due `ERR_SSL_PROTOCOL_ERROR`, clear browser HSTS/site state or use a fresh browser profile.
 

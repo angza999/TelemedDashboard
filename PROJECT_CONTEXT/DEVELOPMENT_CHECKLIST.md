@@ -43,6 +43,9 @@ Manual checks:
 - Test Telemed Dashboard filters.
 - Test Excel/PDF exports.
 - Test Query Tool SELECT and blocked DELETE/UPDATE.
+- Test Query Tool result with sensitive columns such as `hn` or `cid`; warning should appear and Excel metadata should include the warning.
+- Test Executive overview trend: `Total Telemed` chart should use actual Telemed `total`, not DM/HT-only totals.
+- Test PDF export on Linux server for readable Thai text; install Noto Sans Thai if needed.
 
 ## Server Update
 
@@ -53,4 +56,3 @@ npm install --omit=dev
 sudo systemctl restart telemed-dashboard
 sudo systemctl status telemed-dashboard --no-pager
 ```
-

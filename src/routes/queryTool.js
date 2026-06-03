@@ -10,6 +10,7 @@ const logPath = path.join(dataDir, 'query-tool.log.jsonl');
 
 const forbiddenPattern = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|REPLACE|RENAME|GRANT|REVOKE|LOAD|CALL|EXECUTE|SET|USE|LOCK|UNLOCK|ANALYZE|OPTIMIZE|REPAIR|INTO|OUTFILE|DUMPFILE)\b/i;
 const commentPattern = /(--|\/\*|\*\/|#)/;
+const sensitiveColumnPattern = /(^|_)(cid|idcard|id_card|cardno|card_no|hn|an|vn|patient|ptname|pname|fname|lname|person|birth|birthday|dob|addr|address|phone|mobile|tel|email)(_|$)/i;
 
 router.get('/', (req, res) => {
   res.render('admin/query-tool', {
@@ -19,7 +20,9 @@ router.get('/', (req, res) => {
     rows: [],
     rowCount: null,
     error: null,
-    status: null
+    status: null,
+    privacyWarning: null,
+    sensitiveColumns: []
   });
 });
 
@@ -36,6 +39,8 @@ router.post('/run', async (req, res) => {
     const pool = getPool();
     const [rows, fields] = await pool.query(safeSql);
     const columns = fields.map((field) => field.name);
+    const sensitiveColumns = detectSensitiveColumns(columns);
+    const privacyWarning = privacyWarningText(sensitiveColumns);
     const safeRows = rows.slice(0, 1000).map((row) => plainRow(row, columns));
 
     req.session.queryToolResult = {
@@ -43,7 +48,9 @@ router.post('/run', async (req, res) => {
       columns,
       rows: safeRows,
       rowCount: safeRows.length,
-      executedAt: new Date().toISOString()
+      executedAt: new Date().toISOString(),
+      sensitiveColumns,
+      privacyWarning
     };
 
     await writeQueryLog(req, sql, safeRows.length, 'success');
@@ -55,6 +62,8 @@ router.post('/run', async (req, res) => {
       rows: safeRows,
       rowCount: safeRows.length,
       error: null,
+      privacyWarning,
+      sensitiveColumns,
       status: safeRows.length === 1000
         ? 'แสดงผลลัพธ์สูงสุด 1000 rows'
         : `คืนค่า ${safeRows.length} rows`
@@ -68,7 +77,9 @@ router.post('/run', async (req, res) => {
       rows: [],
       rowCount: null,
       error: err.publicMessage || friendlyQueryError(err),
-      status: null
+      status: null,
+      privacyWarning: null,
+      sensitiveColumns: []
     });
   }
 });
@@ -100,6 +111,8 @@ router.get('/export.xlsx', async (req, res) => {
   meta.addRows([
     { field: 'Executed at', value: result.executedAt },
     { field: 'Rows', value: result.rowCount },
+    { field: 'Privacy warning', value: result.privacyWarning || 'No sensitive columns detected by column-name scan' },
+    { field: 'Sensitive columns', value: Array.isArray(result.sensitiveColumns) ? result.sensitiveColumns.join(', ') : '' },
     { field: 'SQL', value: result.sql }
   ]);
   meta.getRow(1).font = { bold: true };
@@ -122,6 +135,15 @@ function prepareSelect(sql) {
   if (forbiddenPattern.test(sql)) throwValidation('พบคำสั่งที่ไม่อนุญาต Query Tool นี้ใช้สำหรับอ่านข้อมูลเท่านั้น');
 
   return `SELECT * FROM (${sql}) AS query_tool_result LIMIT 1000`;
+}
+
+function detectSensitiveColumns(columns) {
+  return columns.filter((column) => sensitiveColumnPattern.test(String(column || '').toLowerCase()));
+}
+
+function privacyWarningText(columns) {
+  if (!columns.length) return null;
+  return `ตรวจพบ column ที่อาจเป็นข้อมูลอ่อนไหว: ${columns.join(', ')} กรุณาตรวจสอบความจำเป็นก่อน Export และอย่าเผยแพร่ข้อมูลรายบุคคล`;
 }
 
 function throwValidation(message) {

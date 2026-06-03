@@ -12,13 +12,26 @@ function normalizeDate(value, fallback) {
   return match ? value : fallback;
 }
 
+function bangkokDateString(date) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 function getDefaultRange() {
   const now = new Date();
-  const end = now.toISOString().slice(0, 10);
+  const end = bangkokDateString(now);
   const startDate = new Date(now);
   startDate.setDate(startDate.getDate() - 30);
   return {
-    startDate: startDate.toISOString().slice(0, 10),
+    startDate: bangkokDateString(startDate),
     endDate: end
   };
 }

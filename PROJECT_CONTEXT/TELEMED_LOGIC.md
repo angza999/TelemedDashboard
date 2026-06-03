@@ -60,6 +60,8 @@ Top KPI summary should be calculated from returned rows:
 ## Important Note
 `Total` is all Telemed visits. DM/HT are visits with ICD10 E11/I10. Therefore `Total` may not equal `DM total + HT total`.
 
+Executive overview trend line labeled `Total Telemed` must use this actual `total` field. Do not calculate it from `DM B2B + DM B2C + HT B2B + HT B2C`.
+
 ## Department Target Logic
 Used in Executive Dashboard tab `เป้าหมายรายห้อง`.
 
@@ -69,4 +71,3 @@ Used in Executive Dashboard tab `เป้าหมายรายห้อง`.
 - Percent = `telemed_total / opd_total * 100`
 - Difference = `telemed_total - target_50`
 - Passed if `telemed_total >= target_50`
-

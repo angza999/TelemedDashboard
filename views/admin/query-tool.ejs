@@ -43,6 +43,12 @@
         <% if (error) { %>
           <div class="alert"><%= error %></div>
         <% } %>
+        <% if (privacyWarning) { %>
+          <div class="alert warning">
+            <strong>แจ้งเตือนข้อมูลอ่อนไหว</strong>
+            <p><%= privacyWarning %></p>
+          </div>
+        <% } %>
         <div class="alert warning">
           Query Tool นี้สำหรับผู้ดูแลระบบเท่านั้น หาก query มีชื่อผู้ป่วย เลขบัตรประชาชน หรือข้อมูลระบุตัวบุคคล กรุณาใช้อย่างระมัดระวังและไม่เผยแพร่ต่อ
         </div>

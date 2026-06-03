@@ -180,9 +180,15 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
 
 function thaiFontPath() {
   const candidates = [
+    path.join(__dirname, '..', '..', 'assets', 'fonts', 'NotoSansThai-Regular.ttf'),
     'C:\\Windows\\Fonts\\tahoma.ttf',
     'C:\\Windows\\Fonts\\THSarabunNew.ttf',
-    'C:\\Windows\\Fonts\\NotoSansThai-Regular.ttf'
+    'C:\\Windows\\Fonts\\NotoSansThai-Regular.ttf',
+    '/usr/share/fonts/truetype/noto/NotoSansThai-Regular.ttf',
+    '/usr/share/fonts/truetype/noto/NotoSansThaiUI-Regular.ttf',
+    '/usr/share/fonts/opentype/noto/NotoSansThai-Regular.ttf',
+    '/usr/share/fonts/truetype/tlwg/Garuda.ttf',
+    '/usr/share/fonts/truetype/thai/Garuda.ttf'
   ];
   return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
@@ -266,7 +272,7 @@ function drawSummary(doc, data) {
   doc.fontSize(10).fillColor('#334155')
     .text(`ช่วงวันที่นี้มีบริการ Telemed รวม ${data.total.toLocaleString('th-TH')} ครั้ง`)
     .text(`กลุ่ม DM รวม ${dm.toLocaleString('th-TH')} ครั้ง และกลุ่ม HT รวม ${ht.toLocaleString('th-TH')} ครั้ง`)
-    .text(`สัดส่วน B2B คิดเป็น ${b2bPercent.toFixed(1)}% ของ Total Telemed`);
+    .text(`สัดส่วน B2B คิดเป็น ${b2bPercent.toFixed(1)}% ของกลุ่ม DM/HT ที่จัด B2B/B2C ได้`);
   doc.moveDown(1);
 }
 

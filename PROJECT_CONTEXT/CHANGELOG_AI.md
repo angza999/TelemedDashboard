@@ -25,6 +25,7 @@
 - Limits results to 1000 rows.
 - Logs query usage to `data/query-tool.log.jsonl`.
 - Supports Excel export of current result.
+- Added column-name privacy warning for Query Tool results and export metadata when columns look like patient-identifying data.
 
 ### Executive Dashboard
 - Added executive overview page for admin/executive.
@@ -34,6 +35,8 @@
 - Fixed department target chart sizing so horizontal bars do not become oversized blocks or make the page visually unbalanced.
 - Hardened department target chart sizing by disabling Chart.js auto-responsive sizing for these two charts, setting explicit canvas dimensions from the wrapper, and adding cache-busting query strings for Executive assets.
 - Refined the `เป้าหมายรายห้อง` executive workflow: added an overall target progress bar, moved Top 5 shortage rooms above charts, kept charts compact with Top 10 default controls, and added table modes `ผู้บริหาร` / `รายละเอียด`.
+- Fixed Executive overview trend so `Total Telemed` uses the actual Telemed total rather than DM/HT-only totals.
+- Improved PDF reporting for Linux deployments by checking common Thai font paths and clarified that PDF B2B percentage is based on the DM/HT B2B/B2C grouping.
 
 ### User Management
 - Added persistent user management via `data/users.json`.
