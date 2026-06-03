@@ -91,7 +91,7 @@
       : `เกิน ${numberFormat.format(row.diff_from_target)} ราย`;
     return [
       `OPD: ${numberFormat.format(row.opd_total)} ราย`,
-      `Telemed: ${numberFormat.format(row.telemed_total)} ราย`,
+      `จำนวน Telemed ที่ทำได้: ${numberFormat.format(row.telemed_total)} ราย`,
       `เป้าหมาย: ${numberFormat.format(row.target_50)} ราย`,
       diffText
     ];
@@ -170,7 +170,7 @@
         labels: targetDataRows.map((row) => displayName(row.department)),
         datasets: [
           {
-            label: 'Telemed จริง',
+            label: 'จำนวน Telemed ที่ทำได้',
             data: targetDataRows.map((row) => row.telemed_total),
             backgroundColor: '#0f766e',
             barThickness: 14,

@@ -5,6 +5,7 @@
 - Clean, professional, calm
 - Focus on readable numbers and quick scanning
 - Avoid decorative clutter
+- Use plain action-oriented Thai labels in executive charts, such as `จำนวน Telemed ที่ทำได้`, instead of ambiguous shorthand.
 
 ## Layout Rules
 - Sidebar is role-aware.
