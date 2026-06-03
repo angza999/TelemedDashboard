@@ -34,7 +34,7 @@
 2. Route loads normal executive overview data.
 3. Route also calls `fetchDepartmentTargetData()`.
 4. If target SQL mapping fails, overview still renders and target tab shows a mapping message.
-5. Target tab shows KPI, overall target progress, executive summary, Top 5 shortage rooms, compact charts, and a department table with `ผู้บริหาร` / `รายละเอียด` modes.
+5. Target tab shows Action Required, executive summary, overall target progress, KPI, Top 5 shortage rooms, compact charts, and a department table with `ผู้บริหาร` / `รายละเอียด` modes.
 
 ## Admin User Flow
 1. Admin opens `/admin/users`.

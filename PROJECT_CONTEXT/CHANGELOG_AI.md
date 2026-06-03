@@ -37,6 +37,7 @@
 - Refined the `เป้าหมายรายห้อง` executive workflow: added an overall target progress bar, moved Top 5 shortage rooms above charts, kept charts compact with Top 10 default controls, and added table modes `ผู้บริหาร` / `รายละเอียด`.
 - Fixed Executive overview trend so `Total Telemed` uses the actual Telemed total rather than DM/HT-only totals.
 - Improved PDF reporting for Linux deployments by checking common Thai font paths and clarified that PDF B2B percentage is based on the DM/HT B2B/B2C grouping.
+- Reworked the `เป้าหมายรายห้อง` tab for action-first executive scanning: added an Action Required panel above KPIs, made total target gap the primary KPI, changed the second chart to department target gap, added percent/current Telemed to Top 5 rooms, softened B2B data quality warning, and reduced full-row warning weight in the table.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

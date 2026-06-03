@@ -6,7 +6,7 @@
   <title><%= title %> | Telemed Dashboard</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/app.css?v=executive-target-workflow-1">
+  <link rel="stylesheet" href="/css/app.css?v=executive-action-focus-1">
 </head>
 <body>
   <div class="app-shell">
@@ -111,7 +111,10 @@
             หน้านี้ใช้ติดตามจำนวน Telemed ของแต่ละห้องส่งตรวจ เทียบกับเป้าหมาย 50% ของจำนวนผู้รับบริการ OPD ในช่วงวันที่ที่เลือก
           </div>
           <% if (target.rows.length > 0 && !target.hasB2b) { %>
-            <div class="alert warning">ไม่พบข้อมูล B2B ในช่วงวันที่นี้ กรุณาตรวจสอบการบันทึกคำว่า B2B ใน ovstist.name หรือ opdscreen.cc</div>
+            <div class="data-quality-note">
+              <i class="bi bi-info-circle"></i>
+              <span>ข้อสังเกตข้อมูล: ยังไม่พบ B2B ในช่วงวันที่นี้ ตรวจสอบคำว่า B2B ใน ovstist.name หรือ opdscreen.cc หากคาดว่าควรมีข้อมูล</span>
+            </div>
           <% } %>
           <form action="/executive" method="get" class="filter-grid department-target-filter">
             <input type="hidden" name="tab" value="department-target">
@@ -169,6 +172,8 @@
             ? (target.summary.telemed_total / target.summary.target_50_total) * 100
             : 0;
           const targetGoalProgress = Math.min(targetGoalPercent, 100);
+          const targetPercentGap = Math.max(0, 50 - Number(target.summary.telemed_percent || 0));
+          const topActionRooms = topFailedDepartments.slice(0, 3);
           let targetExecutiveSummary = 'ไม่พบข้อมูลในช่วงวันที่ที่เลือก';
           if (target.rows.length > 0) {
             targetExecutiveSummary = `ช่วงวันที่ ${filters.startDate} - ${filters.endDate} มี OPD รวม ${target.summary.opd_total.toLocaleString('th-TH')} ราย มี Telemed รวม ${target.summary.telemed_total.toLocaleString('th-TH')} ราย คิดเป็น ${target.summary.telemed_percent.toFixed(2)}% ของ OPD ทั้งหมด เป้าหมาย 50% คือ ${target.summary.target_50_total.toLocaleString('th-TH')} ราย `;
@@ -181,27 +186,26 @@
           }
         %>
 
-        <section class="executive-kpis target-kpis">
-          <article class="executive-kpi primary"><p>OPD รวม</p><strong><%= target.summary.opd_total.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>Telemed รวม</p><strong><%= target.summary.telemed_total.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>เป้าหมาย 50%</p><strong><%= target.summary.target_50_total.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>ทำได้จริง</p><strong><%= target.summary.telemed_percent.toFixed(2) %>%</strong></article>
-          <article class="executive-kpi target-gap-kpi <%= targetGap < 0 ? 'behind' : 'passed' %>">
-            <p><%= targetGap < 0 ? 'ขาดเป้ารวม' : 'เกินเป้ารวม' %></p>
-            <strong><%= targetGap < 0 ? `ขาด ${targetGapAbs.toLocaleString('th-TH')}` : (targetGap > 0 ? `+${targetGap.toLocaleString('th-TH')}` : 'ถึงเป้าหมายแล้ว') %></strong>
-            <% if (targetGap !== 0) { %><span>ราย</span><% } %>
-          </article>
-          <article class="executive-kpi"><p>ผ่านเป้า</p><strong><%= target.summary.passed_department_count.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>ยังไม่ผ่าน</p><strong><%= target.summary.failed_department_count.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi worst-gap-kpi">
-            <p>ขาดมากที่สุด</p>
-            <% if (worstDepartment) { %>
-              <strong><%= worstDepartment.department %></strong>
-              <span>ขาด <%= Math.abs(worstDepartment.diff_from_target).toLocaleString('th-TH') %> ราย</span>
+        <section class="panel action-required-panel">
+          <div>
+            <p class="eyebrow">Action Required</p>
+            <h2><%= targetGap < 0 ? `ยังขาดเป้าหมาย ${targetGapAbs.toLocaleString('th-TH')} ราย` : 'ถึงเป้าหมายรวมแล้ว' %></h2>
+            <p>
+              ทำได้จริง <strong><%= target.summary.telemed_percent.toFixed(2) %>%</strong> จากเป้าหมาย 50%
+              <% if (targetPercentGap > 0) { %>
+                ยังต่ำกว่าเป้า <strong><%= targetPercentGap.toFixed(2) %> จุด</strong>
+              <% } %>
+            </p>
+          </div>
+          <div class="action-room-list">
+            <% if (topActionRooms.length > 0) { %>
+              <% topActionRooms.forEach((row) => { %>
+                <span><%= row.department %> <strong>ขาด <%= Math.abs(row.diff_from_target).toLocaleString('th-TH') %></strong></span>
+              <% }) %>
             <% } else { %>
-              <strong>ไม่มีห้องที่ขาดเป้า</strong>
+              <span><strong>ไม่มีห้องที่ขาดเป้าหมาย</strong></span>
             <% } %>
-          </article>
+          </div>
         </section>
 
         <section class="panel target-executive-summary">
@@ -228,6 +232,33 @@
           </div>
         </section>
 
+        <section class="executive-kpis target-kpis">
+          <article class="executive-kpi"><p>OPD รวม</p><strong><%= target.summary.opd_total.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>Telemed รวม</p><strong><%= target.summary.telemed_total.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>เป้าหมาย 50%</p><strong><%= target.summary.target_50_total.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi">
+            <p>ทำได้จริง</p>
+            <strong><%= target.summary.telemed_percent.toFixed(2) %>%</strong>
+            <span>จากเป้าหมาย 50%</span>
+          </article>
+          <article class="executive-kpi primary target-gap-kpi <%= targetGap < 0 ? 'behind' : 'passed' %>">
+            <p><%= targetGap < 0 ? 'ขาดเป้ารวม' : 'เกินเป้ารวม' %></p>
+            <strong><%= targetGap < 0 ? `ขาด ${targetGapAbs.toLocaleString('th-TH')}` : (targetGap > 0 ? `+${targetGap.toLocaleString('th-TH')}` : 'ถึงเป้าหมายแล้ว') %></strong>
+            <% if (targetGap !== 0) { %><span>ราย</span><% } %>
+          </article>
+          <article class="executive-kpi"><p>ผ่านเป้า</p><strong><%= target.summary.passed_department_count.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>ยังไม่ผ่าน</p><strong><%= target.summary.failed_department_count.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi worst-gap-kpi">
+            <p>ขาดมากที่สุด</p>
+            <% if (worstDepartment) { %>
+              <strong><%= worstDepartment.department %></strong>
+              <span>ขาด <%= Math.abs(worstDepartment.diff_from_target).toLocaleString('th-TH') %> ราย</span>
+            <% } else { %>
+              <strong>ไม่มีห้องที่ขาดเป้า</strong>
+            <% } %>
+          </article>
+        </section>
+
         <section class="panel urgent-followup-panel">
           <div class="panel-heading">
             <div>
@@ -240,6 +271,7 @@
               <div class="shortage-item priority-item">
                 <span><strong><%= index + 1 %>.</strong> <%= row.department %></span>
                 <strong>ขาด <%= Math.abs(row.diff_from_target).toLocaleString('th-TH') %> ราย</strong>
+                <small>ทำได้ <%= Number(row.telemed_percent || 0).toFixed(2) %>% | Telemed <%= row.telemed_total.toLocaleString('th-TH') %> ราย</small>
               </div>
             <% }) %>
             <% if (!target.rows.some((row) => row.diff_from_target < 0)) { %>
@@ -264,8 +296,8 @@
           </article>
           <article class="panel wide">
             <div class="panel-heading">
-              <h2>เปอร์เซ็นต์ทำได้รายห้อง</h2>
-              <span>เส้นเป้าหมาย 50%</span>
+              <h2>ขาดเป้าหมายรายห้อง</h2>
+              <span>จำนวนรายที่ต้องเพิ่มเพื่อถึงเป้าหมาย 50%</span>
             </div>
             <div class="target-chart-canvas-wrap">
               <canvas id="departmentPercentChart"></canvas>
@@ -297,7 +329,7 @@
                   <th class="target-detail-column">B2C</th>
                   <th class="target-detail-column">เป้าหมาย 50%</th>
                   <th>ทำได้ %</th>
-                  <th>ขาด/เกินเป้าหมาย</th>
+                  <th>ต้องเพิ่ม/เกินเป้า</th>
                   <th>สถานะ</th>
                 </tr>
               </thead>
@@ -323,7 +355,7 @@
                         </div>
                       </div>
                     </td>
-                    <td><%= row.diff_from_target.toLocaleString('th-TH') %></td>
+                    <td><%= row.diff_from_target < 0 ? `ต้องเพิ่ม ${Math.abs(row.diff_from_target).toLocaleString('th-TH')}` : `เกิน ${row.diff_from_target.toLocaleString('th-TH')}` %></td>
                     <td>
                       <span class="target-status <%= row.telemed_total >= row.target_50 ? 'passed' : (row.telemed_percent >= 45 ? 'near' : 'failed') %>">
                         <%= row.target_status %>
@@ -351,7 +383,7 @@
                         </div>
                       </div>
                     </th>
-                    <th><%= target.summary.diff_from_target.toLocaleString('th-TH') %></th>
+                    <th><%= target.summary.diff_from_target < 0 ? `ต้องเพิ่ม ${Math.abs(target.summary.diff_from_target).toLocaleString('th-TH')}` : `เกิน ${target.summary.diff_from_target.toLocaleString('th-TH')}` %></th>
                     <th></th>
                   </tr>
                 </tfoot>
@@ -365,6 +397,6 @@
 
   <div id="executivePayload" hidden><%= JSON.stringify({ metrics, channel: data.channel, target }) %></div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="/js/executive.js?v=executive-target-workflow-1"></script>
+  <script src="/js/executive.js?v=executive-action-focus-1"></script>
 </body>
 </html>

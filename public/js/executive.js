@@ -58,12 +58,12 @@
     return limitRows(sorted, limit);
   }
 
-  function percentChartRows(limit) {
+  function gapChartRows(limit) {
     const sorted = targetRows.slice().sort((a, b) => {
-      const failedA = a.telemed_percent < 50 ? 0 : 1;
-      const failedB = b.telemed_percent < 50 ? 0 : 1;
+      const failedA = a.diff_from_target < 0 ? 0 : 1;
+      const failedB = b.diff_from_target < 0 ? 0 : 1;
       if (failedA !== failedB) return failedA - failedB;
-      return a.telemed_percent - b.telemed_percent;
+      return a.diff_from_target - b.diff_from_target;
     });
     return limitRows(sorted, limit);
   }
@@ -156,9 +156,9 @@
   function renderDepartmentCharts(limit = '10') {
     activeTargetChartLimit = limit;
     const targetDataRows = targetChartRows(limit);
-    const percentDataRows = percentChartRows(limit);
+    const gapDataRows = gapChartRows(limit);
     sizeCanvas(departmentTargetEl, targetDataRows.length);
-    sizeCanvas(departmentPercentEl, percentDataRows.length);
+    sizeCanvas(departmentPercentEl, gapDataRows.length);
 
     if (departmentTargetChart) departmentTargetChart.destroy();
     if (departmentPercentChart) departmentPercentChart.destroy();
@@ -221,27 +221,17 @@
       departmentPercentChart = new Chart(departmentPercentEl, {
       type: 'bar',
       data: {
-        labels: percentDataRows.map((row) => displayName(row.department)),
+        labels: gapDataRows.map((row) => displayName(row.department)),
         datasets: [
           {
-            label: 'ทำได้ %',
-            data: percentDataRows.map((row) => row.telemed_percent),
-            backgroundColor: percentDataRows.map((row) => statusColor(row.telemed_percent)),
+            label: 'ต้องเพิ่มเพื่อถึงเป้า',
+            data: gapDataRows.map((row) => Math.max(0, -Number(row.diff_from_target || 0))),
+            backgroundColor: gapDataRows.map((row) => (row.diff_from_target < 0 ? '#f97316' : '#16a34a')),
             barThickness: 16,
             maxBarThickness: 20,
             categoryPercentage: 0.72,
             barPercentage: 0.82,
             borderWidth: 0
-          },
-          {
-            label: 'เป้าหมาย 50%',
-            data: percentDataRows.map(() => 50),
-            type: 'line',
-            borderColor: '#dc2626',
-            backgroundColor: '#dc2626',
-            borderWidth: 2,
-            pointRadius: 0,
-            tension: 0
           }
         ]
       },
@@ -254,22 +244,22 @@
           tooltip: {
             callbacks: {
               title: (items) => {
-                const row = percentDataRows[items[0] ? items[0].dataIndex : 0];
+                const row = gapDataRows[items[0] ? items[0].dataIndex : 0];
                 return row ? row.department : '';
               },
-              label: (item) => `${item.dataset.label}: ${item.raw}%`,
+              label: (item) => `${item.dataset.label}: ${numberFormat.format(item.raw)} ราย`,
               afterBody: tooltipAfterBody
             }
           }
         },
         layout: { padding: { top: 4, right: 10, bottom: 4, left: 4 } },
         scales: {
-          x: { beginAtZero: true, suggestedMax: 100, ticks: { callback: (value) => `${value}%` } },
+          x: { beginAtZero: true, ticks: { precision: 0 } },
           y: { grid: { display: false } }
         }
       }
       });
-      departmentPercentChart.$targetRows = percentDataRows;
+      departmentPercentChart.$targetRows = gapDataRows;
     }
   }
 
