@@ -92,7 +92,7 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
   workbook.created = new Date();
 
   const sheet = workbook.addWorksheet('Department Target');
-  sheet.mergeCells('A1:K1');
+  sheet.mergeCells('A1:L1');
   sheet.getCell('A1').value = 'รายงานติดตามเป้าหมาย Telemed รายห้อง';
   sheet.getCell('A1').font = { bold: true, size: 16 };
   sheet.getCell('A2').value = `ช่วงวันที่: ${filters.startDate} ถึง ${filters.endDate}`;
@@ -103,6 +103,7 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
     { key: 'no', width: 8 },
     { key: 'depcode', width: 14 },
     { key: 'department', width: 28 },
+    { key: 'service_group', width: 18 },
     { key: 'opd_total', width: 14 },
     { key: 'telemed_total', width: 16 },
     { key: 'b2b_total', width: 12 },
@@ -118,6 +119,7 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
     'ลำดับ',
     'รหัสห้อง',
     'ห้องส่งตรวจ',
+    'กลุ่มบริการ',
     'OPD ทั้งหมด',
     'Telemed ทั้งหมด',
     'B2B',
@@ -135,6 +137,7 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
       index + 1,
       row.depcode,
       row.department,
+      row.service_group,
       row.opd_total,
       row.telemed_total,
       row.b2b_total,
@@ -149,6 +152,7 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
   const summary = targetData.summary;
   const footer = sheet.addRow([
     'รวมทั้งหมด',
+    '',
     '',
     '',
     summary.opd_total,

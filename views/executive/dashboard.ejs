@@ -6,7 +6,7 @@
   <title><%= title %> | Telemed Dashboard</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/css/app.css?v=executive-action-focus-1">
+  <link rel="stylesheet" href="/css/app.css?v=department-target-master-list-1">
 </head>
 <body>
   <div class="app-shell">
@@ -131,7 +131,7 @@
               <select name="depcode">
                 <option value="all" <%= targetFilters.depcode === 'all' ? 'selected' : '' %>>ทั้งหมด</option>
                 <% target.departments.forEach((department) => { %>
-                  <option value="<%= department.depcode %>" <%= targetFilters.depcode === department.depcode ? 'selected' : '' %>><%= department.department %></option>
+                  <option value="<%= department.depcode %>" <%= targetFilters.depcode === department.depcode ? 'selected' : '' %>><%= department.department %> (<%= department.service_group %>)</option>
                 <% }) %>
               </select>
             </label>
@@ -323,6 +323,7 @@
                   <th>ลำดับ</th>
                   <th class="target-detail-column">รหัสห้อง</th>
                   <th>ห้องส่งตรวจ</th>
+                  <th class="target-detail-column">กลุ่มบริการ</th>
                   <th>OPD ทั้งหมด</th>
                   <th>Telemed ทั้งหมด</th>
                   <th class="target-detail-column">B2B</th>
@@ -335,13 +336,14 @@
               </thead>
               <tbody>
                 <% if (target.rows.length === 0) { %>
-                  <tr><td colspan="11" class="empty">ไม่พบข้อมูลในช่วงวันที่ที่เลือก</td></tr>
+                  <tr><td colspan="12" class="empty">ไม่พบข้อมูลในช่วงวันที่ที่เลือก</td></tr>
                 <% } %>
                 <% target.rows.forEach((row, index) => { %>
                   <tr class="<%= row.target_status === 'ยังไม่ถึงเป้าหมาย' ? 'target-row-failed' : '' %>">
                     <td><%= index + 1 %></td>
                     <td class="target-detail-column"><%= row.depcode %></td>
                     <td><%= row.department %></td>
+                    <td class="target-detail-column"><%= row.service_group %></td>
                     <td><%= row.opd_total.toLocaleString('th-TH') %></td>
                     <td><%= row.telemed_total.toLocaleString('th-TH') %></td>
                     <td class="target-detail-column"><%= row.b2b_total.toLocaleString('th-TH') %></td>
@@ -370,6 +372,7 @@
                     <th>รวม</th>
                     <th class="target-detail-column"></th>
                     <th>ทั้งหมด</th>
+                    <th class="target-detail-column"></th>
                     <th><%= target.summary.opd_total.toLocaleString('th-TH') %></th>
                     <th><%= target.summary.telemed_total.toLocaleString('th-TH') %></th>
                     <th class="target-detail-column"><%= target.summary.b2b_total.toLocaleString('th-TH') %></th>
@@ -397,6 +400,6 @@
 
   <div id="executivePayload" hidden><%= JSON.stringify({ metrics, channel: data.channel, target }) %></div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="/js/executive.js?v=executive-chart-label-1"></script>
+  <script src="/js/executive.js?v=department-target-master-list-1"></script>
 </body>
 </html>

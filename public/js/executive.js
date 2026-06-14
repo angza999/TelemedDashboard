@@ -90,6 +90,7 @@
       ? `ขาด ${numberFormat.format(Math.abs(row.diff_from_target))} ราย`
       : `เกิน ${numberFormat.format(row.diff_from_target)} ราย`;
     return [
+      `กลุ่มบริการ: ${row.service_group || 'ไม่ระบุกลุ่ม'}`,
       `OPD: ${numberFormat.format(row.opd_total)} ราย`,
       `จำนวน Telemed ที่ทำได้: ${numberFormat.format(row.telemed_total)} ราย`,
       `เป้าหมาย: ${numberFormat.format(row.target_50)} ราย`,

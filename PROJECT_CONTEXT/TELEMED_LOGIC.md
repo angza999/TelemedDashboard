@@ -71,3 +71,27 @@ Used in Executive Dashboard tab `เป้าหมายรายห้อง`.
 - Percent = `telemed_total / opd_total * 100`
 - Difference = `telemed_total - target_50`
 - Passed if `telemed_total >= target_50`
+
+### Department Target Master List
+The `เป้าหมายรายห้อง` tab is limited to the hospital Telemed room reference list configured in `src/services/executiveService.js`.
+
+Columns:
+- `depcode`: HOSxP `ovst.main_dep` department code
+- `department`: display name used in the dashboard
+- `service_group`: reporting group used for audit context
+
+Configured rows:
+- `086` B2B Telemed / Telemed
+- `082` ER Telemed / Telemed
+- `066` NCD Telemed / Telemed
+- `085` NCDCSG Telemed / Telemed
+- `080` OPD Telemed / Telemed
+- `079` PHDTelemed / Telemed
+- `077` คลินิกความดัน-Telemed / Telemed
+- `084` จิตเวช Telemed / Telemed
+- `083` ทันตกรรม Telemed / Telemed
+- `081` ห้องจ่ายยา Telemed / Telemed
+- `037` กายภาพบำบัด / กายภาพ
+- `078` กายภาพบำบัด(รองเท้ารองช้ำ) / กายภาพ
+- `004` อุบัติเหตุ - ฉุกเฉิน / อุบัติเหตุฉุกเฉิน
+- `007` งานแพทย์แผนไทย / แผนไทย

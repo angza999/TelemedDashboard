@@ -1,6 +1,36 @@
 const { getPool } = require('../db');
 
 const TARGET_RATE = 0.5;
+const TARGET_DEPARTMENTS = [
+  { depcode: '086', department: 'B2B Telemed', service_group: 'Telemed' },
+  { depcode: '082', department: 'ER Telemed', service_group: 'Telemed' },
+  { depcode: '066', department: 'NCD Telemed', service_group: 'Telemed' },
+  { depcode: '085', department: 'NCDCSG Telemed', service_group: 'Telemed' },
+  { depcode: '080', department: 'OPD Telemed', service_group: 'Telemed' },
+  { depcode: '079', department: 'PHDTelemed', service_group: 'Telemed' },
+  { depcode: '077', department: 'คลินิกความดัน-Telemed', service_group: 'Telemed' },
+  { depcode: '084', department: 'จิตเวช Telemed', service_group: 'Telemed' },
+  { depcode: '083', department: 'ทันตกรรม Telemed', service_group: 'Telemed' },
+  { depcode: '081', department: 'ห้องจ่ายยา Telemed', service_group: 'Telemed' },
+  { depcode: '037', department: 'กายภาพบำบัด', service_group: 'กายภาพ' },
+  { depcode: '078', department: 'กายภาพบำบัด(รองเท้ารองช้ำ)', service_group: 'กายภาพ' },
+  { depcode: '004', department: 'อุบัติเหตุ - ฉุกเฉิน', service_group: 'อุบัติเหตุฉุกเฉิน' },
+  { depcode: '007', department: 'งานแพทย์แผนไทย', service_group: 'แผนไทย' }
+];
+
+function targetDepartmentSql() {
+  return TARGET_DEPARTMENTS
+    .map(() => 'SELECT ? AS depcode, ? AS department, ? AS service_group')
+    .join('\n      UNION ALL\n      ');
+}
+
+function targetDepartmentParams() {
+  return TARGET_DEPARTMENTS.flatMap((department) => [
+    department.depcode,
+    department.department,
+    department.service_group
+  ]);
+}
 
 function b2bCondition(aliasOvstist = 'oi', aliasScreen = 's') {
   return `
@@ -23,6 +53,7 @@ function normalizeDepartment(row) {
   return {
     depcode: row.depcode || 'ไม่ระบุ',
     department: row.department || 'ไม่ระบุห้อง',
+    service_group: row.service_group || 'ไม่ระบุกลุ่ม',
     opd_total: opdTotal,
     telemed_total: telemedTotal,
     b2b_total: b2bTotal,
@@ -97,9 +128,11 @@ function summarizeRows(rows) {
 
 function buildDepartmentTargetModel(rawRows, filters = {}) {
   const allRows = rawRows.map(normalizeDepartment);
-  const departments = allRows
-    .map((row) => ({ depcode: row.depcode, department: row.department }))
-    .sort((a, b) => a.department.localeCompare(b.department, 'th'));
+  const departments = TARGET_DEPARTMENTS.map((department) => ({
+    depcode: department.depcode,
+    department: department.department,
+    service_group: department.service_group
+  }));
   const rows = sortRows(filterRows(allRows, filters), filters.sortBy);
 
   return {
@@ -119,24 +152,29 @@ function emptyDepartmentTargetModel() {
 async function fetchDepartmentTargetData(filters) {
   const pool = getPool();
   const b2b = b2bCondition('oi', 's');
+  const depcodes = TARGET_DEPARTMENTS.map((department) => department.depcode);
+  const depcodePlaceholders = depcodes.map(() => '?').join(', ');
   const [rawRows] = await pool.execute(`
     SELECT
-      opd.depcode,
-      opd.department,
-      opd.opd_total,
+      td.depcode,
+      td.department,
+      td.service_group,
+      COALESCE(opd.opd_total, 0) AS opd_total,
       COALESCE(t.telemed_total, 0) AS telemed_total,
       COALESCE(t.b2b_total, 0) AS b2b_total,
       COALESCE(t.b2c_total, 0) AS b2c_total
     FROM (
+      ${targetDepartmentSql()}
+    ) td
+    LEFT JOIN (
       SELECT
         v.main_dep AS depcode,
-        k.department AS department,
         COUNT(DISTINCT v.vn) AS opd_total
       FROM ovst v
-      LEFT JOIN kskdepartment k ON k.depcode = v.main_dep
       WHERE v.vstdate BETWEEN ? AND ?
-      GROUP BY v.main_dep, k.department
-    ) opd
+        AND v.main_dep IN (${depcodePlaceholders})
+      GROUP BY v.main_dep
+    ) opd ON opd.depcode = td.depcode
     LEFT JOIN (
       SELECT
         o.main_dep AS depcode,
@@ -154,16 +192,27 @@ async function fetchDepartmentTargetData(filters) {
       LEFT JOIN opdscreen s ON s.vn = o.vn
       WHERE o.vstdate BETWEEN ? AND ?
         AND oi.export_code = '5'
+        AND o.main_dep IN (${depcodePlaceholders})
       GROUP BY o.main_dep
-    ) t ON t.depcode <=> opd.depcode
-    WHERE opd.opd_total > 0
-  `, [filters.startDate, filters.endDate, filters.startDate, filters.endDate]);
+    ) t ON t.depcode = td.depcode
+    WHERE COALESCE(opd.opd_total, 0) > 0
+      OR COALESCE(t.telemed_total, 0) > 0
+  `, [
+    ...targetDepartmentParams(),
+    filters.startDate,
+    filters.endDate,
+    ...depcodes,
+    filters.startDate,
+    filters.endDate,
+    ...depcodes
+  ]);
 
   return buildDepartmentTargetModel(rawRows, filters);
 }
 
 module.exports = {
   TARGET_RATE,
+  TARGET_DEPARTMENTS,
   emptyDepartmentTargetModel,
   fetchDepartmentTargetData,
   buildDepartmentTargetModel
