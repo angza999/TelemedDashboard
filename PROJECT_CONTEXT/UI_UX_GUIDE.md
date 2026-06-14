@@ -15,6 +15,7 @@
 - Executive target charts should stack as full-width panels when labels are long or datasets are dense.
 - For Chart.js horizontal bar charts, control height through the chart wrapper, not a fixed `<canvas height="">` attribute.
 - For Executive target charts, avoid `height: 100% !important` on canvas and prefer explicit JS sizing when Chart.js auto-responsive behavior stretches the page.
+- For Executive target Chart.js canvases, wait for fonts and visible container layout before rendering, set a clear `devicePixelRatio`, and resize/update after tab or chart-limit changes to keep labels sharp.
 - Set a max bar thickness for horizontal bars so a single row or small dataset does not become an oversized block.
 - In the Executive department target tab, order content for quick action: Action Required, executive summary, overall target progress, KPI cards, Top 5 shortage rooms, compact charts, then the full table.
 - Keep department target charts focused on Top 10 by default. Top 20/all are optional views for deeper inspection.

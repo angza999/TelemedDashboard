@@ -41,6 +41,7 @@
 - Renamed the department target chart series from `Telemed จริง` to `จำนวน Telemed ที่ทำได้` for clearer executive wording.
 - Updated the `เป้าหมายรายห้อง` tab to use the configured Telemed room master list from the hospital reference sheet, including `depcode`, room name, and `service_group`, instead of showing every HOSxP department.
 - Fixed Thai room names in the `เป้าหมายรายห้อง` tab by sending only `depcode` through MySQL and mapping Thai display names/service groups in Node.js after the query to avoid database connection charset issues.
+- Improved Executive department target chart sharpness by adding restart-based asset cache busting, waiting for fonts/layout before drawing Chart.js canvases, avoiding hidden-tab rendering, and forcing resize/update after tab or chart-limit changes.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

@@ -4,10 +4,61 @@
   const trend = payload.metrics.trend || [];
   const targetRows = (payload.target && payload.target.rows) || [];
   const charts = [];
+  const chartFontFamily = "'Segoe UI', Tahoma, 'Noto Sans Thai', 'Sarabun', sans-serif";
 
   function resizeCharts() {
     charts.forEach((chart) => {
-      if (chart && chart.canvas) chart.resize();
+      if (chart && chart.canvas) {
+        chart.resize();
+        chart.update('none');
+      }
+    });
+    refreshDepartmentCharts();
+  }
+
+  function chartFont(size = 12, weight = '500') {
+    return {
+      family: chartFontFamily,
+      size,
+      weight
+    };
+  }
+
+  function textChartOptions() {
+    return {
+      devicePixelRatio: window.devicePixelRatio || 1,
+      font: {
+        family: chartFontFamily
+      }
+    };
+  }
+
+  function waitForFonts() {
+    if (document.fonts && document.fonts.ready) {
+      return document.fonts.ready.catch(() => undefined);
+    }
+    return Promise.resolve();
+  }
+
+  function afterLayout() {
+    return new Promise((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(resolve);
+      });
+    });
+  }
+
+  function isVisibleCanvas(canvas) {
+    const wrapper = canvas ? canvas.closest('.target-chart-canvas-wrap') : null;
+    return Boolean(wrapper && wrapper.offsetWidth > 0 && wrapper.offsetHeight > 0);
+  }
+
+  function refreshDepartmentCharts() {
+    [departmentTargetChart, departmentPercentChart].forEach((chart) => {
+      if (chart && chart.canvas && isVisibleCanvas(chart.canvas)) {
+        chart.resize();
+        chart.update('none');
+      }
     });
   }
 
@@ -21,7 +72,11 @@
       const url = new URL(window.location.href);
       url.searchParams.set('tab', tab);
       window.history.replaceState({}, '', url);
-      window.setTimeout(resizeCharts, 0);
+      if (tab === 'department-target') {
+        scheduleDepartmentCharts(activeTargetChartLimit, 120);
+      } else {
+        window.setTimeout(resizeCharts, 120);
+      }
     });
   });
 
@@ -31,6 +86,7 @@
   const departmentTargetEl = document.getElementById('departmentTargetChart');
   const departmentPercentEl = document.getElementById('departmentPercentChart');
   const numberFormat = new Intl.NumberFormat('th-TH');
+  const departmentTargetPanel = document.querySelector('[data-exec-panel="department-target"]');
 
   function statusColor(percent) {
     if (percent >= 50) return '#16a34a';
@@ -69,17 +125,20 @@
   }
 
   function sizeCanvas(canvas, rowCount) {
-    if (!canvas) return;
+    if (!canvas) return false;
     const wrapper = canvas.closest('.target-chart-canvas-wrap');
     const height = Math.max(240, Math.min(520, rowCount * 38 + 96));
-    const width = Math.max(wrapper ? wrapper.clientWidth : canvas.clientWidth, 480);
+    const wrapperWidth = wrapper ? Math.floor(wrapper.clientWidth) : Math.floor(canvas.clientWidth);
+    if (!wrapperWidth) return false;
+    const width = wrapperWidth;
 
     if (wrapper) wrapper.style.height = `${height}px`;
     canvas.width = width;
     canvas.height = height;
-    canvas.style.width = '100%';
+    canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     canvas.style.display = 'block';
+    return true;
   }
 
   function tooltipAfterBody(items) {
@@ -114,11 +173,12 @@
         }]
       },
       options: {
+        ...textChartOptions(),
         responsive: true,
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: true, ticks: { precision: 0 } },
-          x: { grid: { display: false } }
+          y: { beginAtZero: true, ticks: { precision: 0, font: chartFont(12) } },
+          x: { grid: { display: false }, ticks: { font: chartFont(12) } }
         }
       }
     }));
@@ -131,7 +191,12 @@
         labels: ['B2B', 'B2C'],
         datasets: [{ data: [payload.metrics.b2b || 0, payload.metrics.b2c || 0], backgroundColor: ['#2563eb', '#f59e0b'], borderWidth: 0 }]
       },
-      options: { responsive: true, cutout: '64%', plugins: { legend: { position: 'bottom' } } }
+      options: {
+        ...textChartOptions(),
+        responsive: true,
+        cutout: '64%',
+        plugins: { legend: { position: 'bottom', labels: { font: chartFont(13, '600') } } }
+      }
     }));
   }
 
@@ -143,9 +208,13 @@
         datasets: [{ data: [payload.metrics.dm || 0, payload.metrics.ht || 0], backgroundColor: ['#14b8a6', '#fb7185'], borderWidth: 0 }]
       },
       options: {
+        ...textChartOptions(),
         responsive: true,
         plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } }
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0, font: chartFont(12) } },
+          x: { grid: { display: false }, ticks: { font: chartFont(12) } }
+        }
       }
     }));
   }
@@ -153,18 +222,42 @@
   let departmentTargetChart = null;
   let departmentPercentChart = null;
   let activeTargetChartLimit = '10';
+  let departmentRenderTimer = null;
+
+  function isDepartmentTargetActive() {
+    return Boolean(
+      departmentTargetPanel
+      && departmentTargetPanel.classList.contains('active')
+      && departmentTargetPanel.offsetWidth > 0
+    );
+  }
+
+  async function scheduleDepartmentCharts(limit = '10', delay = 0) {
+    activeTargetChartLimit = limit;
+    window.clearTimeout(departmentRenderTimer);
+    departmentRenderTimer = window.setTimeout(async () => {
+      await waitForFonts();
+      await afterLayout();
+      if (!isDepartmentTargetActive()) return;
+      renderDepartmentCharts(limit);
+      window.setTimeout(refreshDepartmentCharts, 150);
+    }, delay);
+  }
 
   function renderDepartmentCharts(limit = '10') {
+    if (!isDepartmentTargetActive()) return;
     activeTargetChartLimit = limit;
     const targetDataRows = targetChartRows(limit);
     const gapDataRows = gapChartRows(limit);
-    sizeCanvas(departmentTargetEl, targetDataRows.length);
-    sizeCanvas(departmentPercentEl, gapDataRows.length);
+    const targetCanvasReady = sizeCanvas(departmentTargetEl, targetDataRows.length);
+    const percentCanvasReady = sizeCanvas(departmentPercentEl, gapDataRows.length);
+
+    if (!targetCanvasReady && !percentCanvasReady) return;
 
     if (departmentTargetChart) departmentTargetChart.destroy();
     if (departmentPercentChart) departmentPercentChart.destroy();
 
-    if (departmentTargetEl) {
+    if (departmentTargetEl && targetCanvasReady) {
       departmentTargetChart = new Chart(departmentTargetEl, {
       type: 'bar',
       data: {
@@ -193,11 +286,13 @@
         ]
       },
       options: {
+        ...textChartOptions(),
         indexAxis: 'y',
         maintainAspectRatio: false,
         responsive: false,
+        animation: false,
         plugins: {
-          legend: { position: 'bottom' },
+          legend: { position: 'bottom', labels: { font: chartFont(13, '600') } },
           tooltip: {
             callbacks: {
               title: (items) => {
@@ -210,15 +305,15 @@
         },
         layout: { padding: { top: 4, right: 10, bottom: 4, left: 4 } },
         scales: {
-          x: { beginAtZero: true, ticks: { precision: 0 } },
-          y: { grid: { display: false } }
+          x: { beginAtZero: true, alignToPixels: true, ticks: { precision: 0, font: chartFont(12) } },
+          y: { alignToPixels: true, grid: { display: false }, ticks: { font: chartFont(12, '500') } }
         }
       }
       });
       departmentTargetChart.$targetRows = targetDataRows;
     }
 
-    if (departmentPercentEl) {
+    if (departmentPercentEl && percentCanvasReady) {
       departmentPercentChart = new Chart(departmentPercentEl, {
       type: 'bar',
       data: {
@@ -237,11 +332,13 @@
         ]
       },
       options: {
+        ...textChartOptions(),
         indexAxis: 'y',
         maintainAspectRatio: false,
         responsive: false,
+        animation: false,
         plugins: {
-          legend: { position: 'bottom' },
+          legend: { position: 'bottom', labels: { font: chartFont(13, '600') } },
           tooltip: {
             callbacks: {
               title: (items) => {
@@ -255,22 +352,23 @@
         },
         layout: { padding: { top: 4, right: 10, bottom: 4, left: 4 } },
         scales: {
-          x: { beginAtZero: true, ticks: { precision: 0 } },
-          y: { grid: { display: false } }
+          x: { beginAtZero: true, alignToPixels: true, ticks: { precision: 0, font: chartFont(12) } },
+          y: { alignToPixels: true, grid: { display: false }, ticks: { font: chartFont(12, '500') } }
         }
       }
       });
       departmentPercentChart.$targetRows = gapDataRows;
     }
+
+    refreshDepartmentCharts();
   }
 
-  renderDepartmentCharts('10');
+  scheduleDepartmentCharts('10', 80);
 
   document.querySelectorAll('[data-target-chart-limit]').forEach((button) => {
     button.addEventListener('click', () => {
       document.querySelectorAll('[data-target-chart-limit]').forEach((item) => item.classList.toggle('active', item === button));
-      renderDepartmentCharts(button.dataset.targetChartLimit || '10');
-      window.setTimeout(resizeCharts, 0);
+      scheduleDepartmentCharts(button.dataset.targetChartLimit || '10', 40);
     });
   });
 
@@ -289,6 +387,6 @@
   let resizeTimer = null;
   window.addEventListener('resize', () => {
     window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(() => renderDepartmentCharts(activeTargetChartLimit), 150);
+    resizeTimer = window.setTimeout(() => scheduleDepartmentCharts(activeTargetChartLimit, 0), 150);
   });
 })();

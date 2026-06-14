@@ -5,6 +5,7 @@ const express = require('express');
 const session = require('express-session');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const packageJson = require('./package.json');
 
 const authRoutes = require('./src/routes/auth');
 const telemedRoutes = require('./src/routes/telemed');
@@ -21,6 +22,7 @@ const enableHttpsUpgrade = String(process.env.ENABLE_HTTPS_UPGRADE || '').trim()
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.locals.assetVersion = process.env.ASSET_VERSION || `${packageJson.version}-${Date.now()}`;
 
 app.use(helmet({
   hsts: enableHsts,
@@ -62,6 +64,7 @@ app.use(rateLimit({
 
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
+  res.locals.assetVersion = app.locals.assetVersion;
   next();
 });
 
