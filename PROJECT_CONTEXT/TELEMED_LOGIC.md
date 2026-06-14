@@ -80,6 +80,8 @@ Columns:
 - `department`: display name used in the dashboard
 - `service_group`: reporting group used for audit context
 
+Implementation note: SQL should send only `depcode` values to MySQL. Thai `department` and `service_group` labels are mapped in Node.js after the query returns, because some HOSxP/MySQL connections can garble Thai text sent as query parameters.
+
 Configured rows:
 - `086` B2B Telemed / Telemed
 - `082` ER Telemed / Telemed

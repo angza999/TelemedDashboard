@@ -20,16 +20,16 @@ const TARGET_DEPARTMENTS = [
 
 function targetDepartmentSql() {
   return TARGET_DEPARTMENTS
-    .map(() => 'SELECT ? AS depcode, ? AS department, ? AS service_group')
+    .map(() => 'SELECT ? AS depcode')
     .join('\n      UNION ALL\n      ');
 }
 
 function targetDepartmentParams() {
-  return TARGET_DEPARTMENTS.flatMap((department) => [
-    department.depcode,
-    department.department,
-    department.service_group
-  ]);
+  return TARGET_DEPARTMENTS.map((department) => department.depcode);
+}
+
+function targetDepartmentByCode(depcode) {
+  return TARGET_DEPARTMENTS.find((department) => department.depcode === depcode) || null;
 }
 
 function b2bCondition(aliasOvstist = 'oi', aliasScreen = 's') {
@@ -157,8 +157,6 @@ async function fetchDepartmentTargetData(filters) {
   const [rawRows] = await pool.execute(`
     SELECT
       td.depcode,
-      td.department,
-      td.service_group,
       COALESCE(opd.opd_total, 0) AS opd_total,
       COALESCE(t.telemed_total, 0) AS telemed_total,
       COALESCE(t.b2b_total, 0) AS b2b_total,
@@ -207,7 +205,16 @@ async function fetchDepartmentTargetData(filters) {
     ...depcodes
   ]);
 
-  return buildDepartmentTargetModel(rawRows, filters);
+  const rows = rawRows.map((row) => {
+    const targetDepartment = targetDepartmentByCode(row.depcode);
+    return {
+      ...row,
+      department: targetDepartment ? targetDepartment.department : row.depcode,
+      service_group: targetDepartment ? targetDepartment.service_group : 'ไม่ระบุกลุ่ม'
+    };
+  });
+
+  return buildDepartmentTargetModel(rows, filters);
 }
 
 module.exports = {
