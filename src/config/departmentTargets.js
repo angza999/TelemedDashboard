@@ -50,10 +50,11 @@ const DEPARTMENT_TARGETS = [
     display_depcode: '084',
     display_name: 'จิตเวช Telemed',
     service_group: 'Telemed',
-    opd_source_deps: ['052'],
-    telemed_count_deps: ['052', '084'],
+    opd_source_deps: ['052', '067'],
+    telemed_count_deps: ['052', '067', '084'],
     telemed_mode: 'B2C_ONLY',
-    is_active: true
+    is_active: true,
+    note: 'รวมรหัสห้อง 067 เข้ากับจิตเวช Telemed ตาม mapping โรงพยาบาล'
   },
   {
     display_depcode: '083',
@@ -97,10 +98,11 @@ const DEPARTMENT_TARGETS = [
     display_depcode: '004',
     display_name: 'อุบัติเหตุ - ฉุกเฉิน',
     service_group: 'อุบัติเหตุฉุกเฉิน',
-    opd_source_deps: ['004'],
-    telemed_count_deps: ['004', '082'],
+    opd_source_deps: ['004', '051'],
+    telemed_count_deps: ['004', '051', '082'],
     telemed_mode: 'B2C_ONLY',
-    is_active: true
+    is_active: true,
+    note: 'รวมรหัสห้อง 051 เข้ากับอุบัติเหตุ - ฉุกเฉิน ตาม mapping โรงพยาบาล'
   },
   {
     display_depcode: '007',

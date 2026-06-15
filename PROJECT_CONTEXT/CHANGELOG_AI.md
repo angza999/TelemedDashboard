@@ -47,6 +47,7 @@
 - Reworked the Executive department target tab to use a central OPD-source/Telemed-source mapping for every row. Rows now come from `src/config/departmentTargets.js`, count OPD from `opd_source_deps`, count Telemed achieved from `telemed_count_deps` using `B2C_ONLY` or `B2B_ONLY`, keep zero-data rooms visible, and export source/mode/note columns to Excel.
 - Hid the duplicate `ER Telemed` (`082`) target row and kept its `004,082` Telemed source counted under `อุบัติเหตุ - ฉุกเฉิน` only, so executive reporting does not show the same emergency source pair twice.
 - Hid the duplicate `กายภาพบำบัด(รองเท้ารองช้ำ)` (`078`) target row and rolled its OPD/Telemed sources into `กายภาพบำบัด` (`037`), so the Executive target tab shows one physical therapy row without losing the `078` totals.
+- Added room `067` into the `จิตเวช Telemed` calculation and room `051` into the `อุบัติเหตุ - ฉุกเฉิน` calculation for both OPD target source and Telemed achieved source in the Executive department target mapping.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

@@ -98,11 +98,11 @@ Configured rows:
 - `066` NCD Telemed: OPD `014`, Telemed `014,066`, `B2C_ONLY`
 - `085` NCDCSG Telemed: OPD `055`, Telemed `055,085`, `B2C_ONLY`
 - `077` คลินิกความดัน-Telemed: OPD `015`, Telemed `015,077,075`, `B2C_ONLY`
-- `084` จิตเวช Telemed: OPD `052`, Telemed `052,084`, `B2C_ONLY`
+- `084` จิตเวช Telemed: OPD `052,067`, Telemed `052,067,084`, `B2C_ONLY`
 - `083` ทันตกรรม Telemed: OPD `005`, Telemed `005,083`, `B2C_ONLY`
 - `081` ห้องจ่ายยา Telemed: OPD `012,070`, Telemed `012,070,081`, `B2C_ONLY`
 - `037` กายภาพบำบัด: OPD `037,078`, Telemed `037,078`, `B2C_ONLY`
-- `004` อุบัติเหตุ - ฉุกเฉิน: OPD `004`, Telemed `004,082`, `B2C_ONLY`
+- `004` อุบัติเหตุ - ฉุกเฉิน: OPD `004,051`, Telemed `004,051,082`, `B2C_ONLY`
 - `007` งานแพทย์แผนไทย: OPD `007`, Telemed `007`, `B2C_ONLY`
 - `079` PHDTelemed: OPD `079`, Telemed `079`, `B2C_ONLY`
 - `086` B2B Telemed: OPD `086`, Telemed `086`, `B2B_ONLY`
