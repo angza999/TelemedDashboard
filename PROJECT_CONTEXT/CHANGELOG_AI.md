@@ -45,6 +45,8 @@
 - Refined Executive department target wording and filters: renamed visible `Telemed ทั้งหมด` labels to `จำนวน Telemed ที่ทำได้`, clarified `สัดส่วน Telemed ต่อ OPD` versus `ความคืบหน้าสู่เป้าหมาย`, added service-group quick filters, improved chart tooltips/end labels, shortened table statuses, and aligned Excel export wording.
 - Added a hospital-specific calculation rule for `OPD Telemed` (`depcode 080`) in the Executive department target tab: OPD total comes from `main_dep = 111`, while Telemed achieved counts only B2C Telemed from `main_dep IN (111, 080)`, with the same values flowing to table, summary, charts, and Excel export.
 - Reworked the Executive department target tab to use a central OPD-source/Telemed-source mapping for every row. Rows now come from `src/config/departmentTargets.js`, count OPD from `opd_source_deps`, count Telemed achieved from `telemed_count_deps` using `B2C_ONLY` or `B2B_ONLY`, keep zero-data rooms visible, and export source/mode/note columns to Excel.
+- Hid the duplicate `ER Telemed` (`082`) target row and kept its `004,082` Telemed source counted under `อุบัติเหตุ - ฉุกเฉิน` only, so executive reporting does not show the same emergency source pair twice.
+- Hid the duplicate `กายภาพบำบัด(รองเท้ารองช้ำ)` (`078`) target row and rolled its OPD/Telemed sources into `กายภาพบำบัด` (`037`), so the Executive target tab shows one physical therapy row without losing the `078` totals.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

@@ -95,16 +95,18 @@ Excel export must use the same `fetchDepartmentTargetData()` service model as th
 
 Configured rows:
 - `080` OPD Telemed: OPD `111`, Telemed `111,080`, `B2C_ONLY`
-- `082` ER Telemed: OPD `004`, Telemed `004,082`, `B2C_ONLY`
 - `066` NCD Telemed: OPD `014`, Telemed `014,066`, `B2C_ONLY`
 - `085` NCDCSG Telemed: OPD `055`, Telemed `055,085`, `B2C_ONLY`
 - `077` คลินิกความดัน-Telemed: OPD `015`, Telemed `015,077,075`, `B2C_ONLY`
 - `084` จิตเวช Telemed: OPD `052`, Telemed `052,084`, `B2C_ONLY`
 - `083` ทันตกรรม Telemed: OPD `005`, Telemed `005,083`, `B2C_ONLY`
 - `081` ห้องจ่ายยา Telemed: OPD `012,070`, Telemed `012,070,081`, `B2C_ONLY`
-- `037` กายภาพบำบัด: OPD `037`, Telemed `037`, `B2C_ONLY`
-- `078` กายภาพบำบัด(รองเท้ารองช้ำ): OPD `078`, Telemed `078`, `B2C_ONLY`
+- `037` กายภาพบำบัด: OPD `037,078`, Telemed `037,078`, `B2C_ONLY`
 - `004` อุบัติเหตุ - ฉุกเฉิน: OPD `004`, Telemed `004,082`, `B2C_ONLY`
 - `007` งานแพทย์แผนไทย: OPD `007`, Telemed `007`, `B2C_ONLY`
 - `079` PHDTelemed: OPD `079`, Telemed `079`, `B2C_ONLY`
 - `086` B2B Telemed: OPD `086`, Telemed `086`, `B2B_ONLY`
+
+Inactive rows kept in mapping for reference:
+- `082` ER Telemed is inactive because it shares OPD/Telemed sources with `004` อุบัติเหตุ - ฉุกเฉิน. Show only the `004` row to avoid duplicate executive reporting.
+- `078` กายภาพบำบัด(รองเท้ารองช้ำ) is inactive because it is now rolled into `037` กายภาพบำบัด. Show only the `037` row while keeping `078` counted in OPD and Telemed totals.

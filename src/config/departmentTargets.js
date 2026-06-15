@@ -16,7 +16,8 @@ const DEPARTMENT_TARGETS = [
     opd_source_deps: ['004'],
     telemed_count_deps: ['004', '082'],
     telemed_mode: 'B2C_ONLY',
-    is_active: true
+    is_active: false,
+    note: 'ปิดการแสดงผลเพื่อเลี่ยงการนับซ้ำ โดยรวมข้อมูล ER Telemed ไว้ที่แถวอุบัติเหตุ - ฉุกเฉิน'
   },
   {
     display_depcode: '066',
@@ -76,10 +77,11 @@ const DEPARTMENT_TARGETS = [
     display_depcode: '037',
     display_name: 'กายภาพบำบัด',
     service_group: 'กายภาพ',
-    opd_source_deps: ['037'],
-    telemed_count_deps: ['037'],
+    opd_source_deps: ['037', '078'],
+    telemed_count_deps: ['037', '078'],
     telemed_mode: 'B2C_ONLY',
-    is_active: true
+    is_active: true,
+    note: 'รวมข้อมูลกายภาพบำบัด(รองเท้ารองช้ำ) depcode 078 ไว้ในแถวกายภาพบำบัด'
   },
   {
     display_depcode: '078',
@@ -88,7 +90,8 @@ const DEPARTMENT_TARGETS = [
     opd_source_deps: ['078'],
     telemed_count_deps: ['078'],
     telemed_mode: 'B2C_ONLY',
-    is_active: true
+    is_active: false,
+    note: 'ปิดการแสดงผลเพื่อเลี่ยงการแยกซ้ำ โดยรวมข้อมูลไว้ที่แถวกายภาพบำบัด'
   },
   {
     display_depcode: '004',
