@@ -53,6 +53,11 @@
 
 - `src/services/executiveService.js`
   - Department target query and model
+  - Builds target rows from OPD source / Telemed source mapping
+
+- `src/config/departmentTargets.js`
+  - Department target mapping for Executive `เป้าหมายรายห้อง`
+  - Defines `display_depcode`, `display_name`, `service_group`, `opd_source_deps`, `telemed_count_deps`, `telemed_mode`, and notes
 
 - `views/executive/dashboard.ejs`
   - Executive tabs and target UI
@@ -79,4 +84,3 @@
 
 - `public/css/app.css`
   - All UI styling
-

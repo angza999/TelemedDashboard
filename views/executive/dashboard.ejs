@@ -110,14 +110,19 @@
           <div class="panel-note target-intro">
             หน้านี้ใช้ติดตามจำนวน Telemed ของแต่ละห้องส่งตรวจ เทียบกับเป้าหมาย 50% ของจำนวนผู้รับบริการ OPD ในช่วงวันที่ที่เลือก
           </div>
-          <% if (target.rows.length > 0 && !target.hasB2b) { %>
+          <% if (currentUser && currentUser.role === 'admin' && target.rows.length > 0 && !target.hasB2b) { %>
             <div class="data-quality-note">
               <i class="bi bi-info-circle"></i>
-              <span>ข้อสังเกตข้อมูล: ยังไม่พบ B2B ในช่วงวันที่นี้ ตรวจสอบคำว่า B2B ใน ovstist.name หรือ opdscreen.cc หากคาดว่าควรมีข้อมูล</span>
+              <span>ข้อสังเกตข้อมูล: ยังไม่พบข้อมูล B2B ในช่วงวันที่เลือก กรุณาตรวจสอบการบันทึกคำว่า B2B ใน ovstist.name หรือ opdscreen.cc หากคาดว่าควรมีข้อมูล</span>
             </div>
           <% } %>
+          <div class="target-method-note">
+            <i class="bi bi-info-circle"></i>
+            <span>OPD รวม นับจากจำนวน VN ของห้องส่งตรวจที่กำหนดไว้ ส่วนจำนวน Telemed ที่ทำได้ นับจาก visit ที่อยู่ในเงื่อนไข Telemed ตามระบบ และนำมาเทียบกับเป้าหมาย 50% ของ OPD รายห้อง</span>
+          </div>
           <form action="/executive" method="get" class="filter-grid department-target-filter">
             <input type="hidden" name="tab" value="department-target">
+            <input type="hidden" name="serviceGroup" value="<%= targetFilters.serviceGroup %>" data-service-group-input>
             <label>
               วันที่เริ่มต้น
               <input type="date" name="startDate" value="<%= filters.startDate %>">
@@ -148,13 +153,27 @@
               <select name="sortBy">
                 <option value="target_gap" <%= targetFilters.sortBy === 'target_gap' ? 'selected' : '' %>>ขาดเป้าหมายมากสุด</option>
                 <option value="percent_low" <%= targetFilters.sortBy === 'percent_low' ? 'selected' : '' %>>% ต่ำสุด</option>
-                <option value="telemed_desc" <%= targetFilters.sortBy === 'telemed_desc' ? 'selected' : '' %>>Telemed มากสุด</option>
+                <option value="telemed_desc" <%= targetFilters.sortBy === 'telemed_desc' ? 'selected' : '' %>>จำนวน Telemed ที่ทำได้มากสุด</option>
                 <option value="opd_desc" <%= targetFilters.sortBy === 'opd_desc' ? 'selected' : '' %>>OPD มากสุด</option>
               </select>
             </label>
+            <div class="service-group-filter">
+              <span>กลุ่มบริการ</span>
+              <div class="service-group-buttons" role="group" aria-label="เลือกกลุ่มบริการ">
+                <% [
+                  { value: 'all', label: 'ทั้งหมด' },
+                  { value: 'Telemed', label: 'Telemed' },
+                  { value: 'กายภาพ', label: 'กายภาพ' },
+                  { value: 'อุบัติเหตุฉุกเฉิน', label: 'อุบัติเหตุฉุกเฉิน' },
+                  { value: 'แผนไทย', label: 'แผนไทย' }
+                ].forEach((group) => { %>
+                  <button type="button" data-service-group="<%= group.value %>" class="service-group-button <%= targetFilters.serviceGroup === group.value ? 'active' : '' %>"><%= group.label %></button>
+                <% }) %>
+              </div>
+            </div>
             <div class="filter-actions">
               <button type="submit" class="primary-button"><i class="bi bi-funnel"></i> แสดงผล</button>
-              <a class="secondary-button" href="/executive/department-target.xlsx?startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&depcode=<%= targetFilters.depcode %>&status=<%= targetFilters.status %>&sortBy=<%= targetFilters.sortBy %>">
+              <a class="secondary-button" href="/executive/department-target.xlsx?startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&depcode=<%= targetFilters.depcode %>&serviceGroup=<%= encodeURIComponent(targetFilters.serviceGroup) %>&status=<%= targetFilters.status %>&sortBy=<%= targetFilters.sortBy %>">
                 <i class="bi bi-file-earmark-excel"></i>
                 Export Excel
               </a>
@@ -167,16 +186,33 @@
           const targetGapAbs = Math.abs(targetGap);
           const worstDepartment = target.summary.worst_department;
           const topFailedDepartments = target.summary.top_failed_departments || [];
+          const failedDepartments = target.rows.filter((row) => row.diff_from_target < 0);
           const followUpRooms = topFailedDepartments.map((row) => row.department).join(', ');
+          const followUpLabel = failedDepartments.length === 0
+            ? 'ไม่มีห้องที่ต้องติดตามในช่วงวันที่นี้'
+            : failedDepartments.length < 5
+              ? `ห้องที่ต้องติดตาม ${failedDepartments.length.toLocaleString('th-TH')} ห้อง`
+              : 'Top 5 ห้องที่ขาดเป้าหมายมากที่สุด';
           const targetGoalPercent = target.summary.target_50_total > 0
             ? (target.summary.telemed_total / target.summary.target_50_total) * 100
             : 0;
           const targetGoalProgress = Math.min(targetGoalPercent, 100);
           const targetPercentGap = Math.max(0, 50 - Number(target.summary.telemed_percent || 0));
           const topActionRooms = topFailedDepartments.slice(0, 3);
+          const targetDiffLabel = (value) => {
+            const diff = Number(value || 0);
+            if (diff < 0) return `ต้องเพิ่ม ${Math.abs(diff).toLocaleString('th-TH')} ราย`;
+            if (diff > 0) return `เกินเป้า ${diff.toLocaleString('th-TH')} ราย`;
+            return 'ถึงเป้า';
+          };
+          const targetStatusLabel = (row) => {
+            if (row.telemed_total >= row.target_50) return 'ผ่าน';
+            if (row.telemed_percent >= 45) return 'ใกล้ถึง';
+            return 'ไม่ผ่าน';
+          };
           let targetExecutiveSummary = 'ไม่พบข้อมูลในช่วงวันที่ที่เลือก';
           if (target.rows.length > 0) {
-            targetExecutiveSummary = `ช่วงวันที่ ${filters.startDate} - ${filters.endDate} มี OPD รวม ${target.summary.opd_total.toLocaleString('th-TH')} ราย มี Telemed รวม ${target.summary.telemed_total.toLocaleString('th-TH')} ราย คิดเป็น ${target.summary.telemed_percent.toFixed(2)}% ของ OPD ทั้งหมด เป้าหมาย 50% คือ ${target.summary.target_50_total.toLocaleString('th-TH')} ราย `;
+            targetExecutiveSummary = `ช่วงวันที่ ${filters.startDate} - ${filters.endDate} มี OPD รวม ${target.summary.opd_total.toLocaleString('th-TH')} ราย มีจำนวน Telemed ที่ทำได้รวม ${target.summary.telemed_total.toLocaleString('th-TH')} ราย คิดเป็นสัดส่วน Telemed ต่อ OPD ${target.summary.telemed_percent.toFixed(2)}% เป้าหมาย 50% คือ ${target.summary.target_50_total.toLocaleString('th-TH')} ราย `;
             targetExecutiveSummary += targetGap < 0
               ? `ยังขาดเป้าหมาย ${targetGapAbs.toLocaleString('th-TH')} ราย`
               : 'ถึงเป้าหมายแล้ว';
@@ -191,7 +227,7 @@
             <p class="eyebrow">Action Required</p>
             <h2><%= targetGap < 0 ? `ยังขาดเป้าหมาย ${targetGapAbs.toLocaleString('th-TH')} ราย` : 'ถึงเป้าหมายรวมแล้ว' %></h2>
             <p>
-              ทำได้จริง <strong><%= target.summary.telemed_percent.toFixed(2) %>%</strong> จากเป้าหมาย 50%
+              สัดส่วน Telemed ต่อ OPD <strong><%= target.summary.telemed_percent.toFixed(2) %>%</strong> จากเป้าหมาย 50%
               <% if (targetPercentGap > 0) { %>
                 ยังต่ำกว่าเป้า <strong><%= targetPercentGap.toFixed(2) %> จุด</strong>
               <% } %>
@@ -200,7 +236,7 @@
           <div class="action-room-list">
             <% if (topActionRooms.length > 0) { %>
               <% topActionRooms.forEach((row) => { %>
-                <span><%= row.department %> <strong>ขาด <%= Math.abs(row.diff_from_target).toLocaleString('th-TH') %></strong></span>
+                <span><%= row.department %> <strong>ขาด <%= Math.abs(row.diff_from_target).toLocaleString('th-TH') %> ราย</strong></span>
               <% }) %>
             <% } else { %>
               <span><strong>ไม่มีห้องที่ขาดเป้าหมาย</strong></span>
@@ -218,8 +254,8 @@
         <section class="panel target-overall-progress">
           <div class="panel-heading">
             <div>
-              <h2>ความคืบหน้าเป้าหมายรวม</h2>
-              <p class="panel-note">Telemed รวม <%= target.summary.telemed_total.toLocaleString('th-TH') %> / เป้าหมาย <%= target.summary.target_50_total.toLocaleString('th-TH') %> ราย</p>
+              <h2>ความคืบหน้าสู่เป้าหมาย</h2>
+              <p class="panel-note">จำนวน Telemed ที่ทำได้ <%= target.summary.telemed_total.toLocaleString('th-TH') %> / เป้าหมาย <%= target.summary.target_50_total.toLocaleString('th-TH') %> ราย</p>
             </div>
             <strong><%= targetGoalPercent.toFixed(2) %>%</strong>
           </div>
@@ -230,16 +266,17 @@
             <span>เริ่มต้น</span>
             <span>เป้าหมาย 100%</span>
           </div>
+          <p class="target-count-note">คำนวณจากจำนวน Telemed ที่ทำได้ เทียบกับเป้าหมาย 50%</p>
         </section>
 
         <section class="executive-kpis target-kpis">
           <article class="executive-kpi"><p>OPD รวม</p><strong><%= target.summary.opd_total.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>Telemed รวม</p><strong><%= target.summary.telemed_total.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi"><p>จำนวน Telemed ที่ทำได้</p><strong><%= target.summary.telemed_total.toLocaleString('th-TH') %></strong></article>
           <article class="executive-kpi"><p>เป้าหมาย 50%</p><strong><%= target.summary.target_50_total.toLocaleString('th-TH') %></strong></article>
           <article class="executive-kpi">
-            <p>ทำได้จริง</p>
+            <p>สัดส่วน Telemed ต่อ OPD</p>
             <strong><%= target.summary.telemed_percent.toFixed(2) %>%</strong>
-            <span>จากเป้าหมาย 50%</span>
+            <span>เทียบ OPD ทั้งหมด</span>
           </article>
           <article class="executive-kpi primary target-gap-kpi <%= targetGap < 0 ? 'behind' : 'passed' %>">
             <p><%= targetGap < 0 ? 'ขาดเป้ารวม' : 'เกินเป้ารวม' %></p>
@@ -263,7 +300,7 @@
           <div class="panel-heading">
             <div>
               <h2>ต้องติดตามวันนี้</h2>
-              <p class="panel-note">Top 5 ห้องที่ขาดเป้าหมายมากที่สุด</p>
+              <p class="panel-note"><%= followUpLabel %></p>
             </div>
           </div>
           <div class="shortage-list priority-list">
@@ -271,7 +308,7 @@
               <div class="shortage-item priority-item">
                 <span><strong><%= index + 1 %>.</strong> <%= row.department %></span>
                 <strong>ขาด <%= Math.abs(row.diff_from_target).toLocaleString('th-TH') %> ราย</strong>
-                <small>ทำได้ <%= Number(row.telemed_percent || 0).toFixed(2) %>% | Telemed <%= row.telemed_total.toLocaleString('th-TH') %> ราย</small>
+                <small>สัดส่วน Telemed ต่อ OPD <%= Number(row.telemed_percent || 0).toFixed(2) %>% | จำนวน Telemed ที่ทำได้ <%= row.telemed_total.toLocaleString('th-TH') %> ราย</small>
               </div>
             <% }) %>
             <% if (!target.rows.some((row) => row.diff_from_target < 0)) { %>
@@ -283,7 +320,7 @@
         <section class="dashboard-grid executive-charts target-charts">
           <article class="panel wide">
             <div class="panel-heading">
-              <h2>Telemed เทียบเป้าหมายรายห้อง</h2>
+              <h2>จำนวน Telemed ที่ทำได้เทียบเป้าหมายรายห้อง</h2>
               <div class="chart-limit-toggle" aria-label="เลือกจำนวนห้องในกราฟ">
                 <button type="button" class="chart-limit-button active" data-target-chart-limit="10">Top 10</button>
                 <button type="button" class="chart-limit-button" data-target-chart-limit="20">Top 20</button>
@@ -316,6 +353,11 @@
               <button type="button" class="table-view-button" data-target-table-view="detail">รายละเอียด</button>
             </div>
           </div>
+          <div class="target-status-legend" aria-label="คำอธิบายสถานะ">
+            <span><i class="legend-dot passed"></i> ผ่าน = จำนวน Telemed ที่ทำได้ถึงเป้าหมาย 50%</span>
+            <span><i class="legend-dot near"></i> ใกล้ถึง = ทำได้ 45-49.99%</span>
+            <span><i class="legend-dot failed"></i> ไม่ผ่าน = ทำได้น้อยกว่า 45%</span>
+          </div>
           <div class="table-wrap department-target-table-wrap">
             <table class="department-target-table summary-mode">
               <thead>
@@ -323,27 +365,38 @@
                   <th>ลำดับ</th>
                   <th class="target-detail-column">รหัสห้อง</th>
                   <th>ห้องส่งตรวจ</th>
-                  <th class="target-detail-column">กลุ่มบริการ</th>
+                  <th>กลุ่มบริการ</th>
+                  <th class="target-detail-column">OPD source</th>
+                  <th class="target-detail-column">Telemed source</th>
                   <th>OPD ทั้งหมด</th>
-                  <th>Telemed ทั้งหมด</th>
+                  <th>จำนวน Telemed ที่ทำได้</th>
                   <th class="target-detail-column">B2B</th>
                   <th class="target-detail-column">B2C</th>
                   <th class="target-detail-column">เป้าหมาย 50%</th>
-                  <th>ทำได้ %</th>
+                  <th>สัดส่วน Telemed ต่อ OPD</th>
                   <th>ต้องเพิ่ม/เกินเป้า</th>
                   <th>สถานะ</th>
                 </tr>
               </thead>
               <tbody>
                 <% if (target.rows.length === 0) { %>
-                  <tr><td colspan="12" class="empty">ไม่พบข้อมูลในช่วงวันที่ที่เลือก</td></tr>
+                  <tr><td colspan="14" class="empty">ไม่พบข้อมูลในช่วงวันที่ที่เลือก</td></tr>
                 <% } %>
                 <% target.rows.forEach((row, index) => { %>
                   <tr class="<%= row.target_status === 'ยังไม่ถึงเป้าหมาย' ? 'target-row-failed' : '' %>">
                     <td><%= index + 1 %></td>
                     <td class="target-detail-column"><%= row.depcode %></td>
-                    <td><%= row.department %></td>
-                    <td class="target-detail-column"><%= row.service_group %></td>
+                    <td>
+                      <div class="target-department-name">
+                        <span><%= row.department %></span>
+                        <% if (row.calculation_note) { %>
+                          <small class="target-row-note" title="<%= row.calculation_note %>"><i class="bi bi-info-circle"></i> ดูสูตรนับ</small>
+                        <% } %>
+                      </div>
+                    </td>
+                    <td><%= row.service_group %></td>
+                    <td class="target-detail-column"><%= row.opd_source_deps.join(', ') %></td>
+                    <td class="target-detail-column"><%= row.telemed_count_deps.join(', ') %></td>
                     <td><%= row.opd_total.toLocaleString('th-TH') %></td>
                     <td><%= row.telemed_total.toLocaleString('th-TH') %></td>
                     <td class="target-detail-column"><%= row.b2b_total.toLocaleString('th-TH') %></td>
@@ -357,10 +410,10 @@
                         </div>
                       </div>
                     </td>
-                    <td><%= row.diff_from_target < 0 ? `ต้องเพิ่ม ${Math.abs(row.diff_from_target).toLocaleString('th-TH')}` : `เกิน ${row.diff_from_target.toLocaleString('th-TH')}` %></td>
+                    <td><%= targetDiffLabel(row.diff_from_target) %></td>
                     <td>
                       <span class="target-status <%= row.telemed_total >= row.target_50 ? 'passed' : (row.telemed_percent >= 45 ? 'near' : 'failed') %>">
-                        <%= row.target_status %>
+                        <%= targetStatusLabel(row) %>
                       </span>
                     </td>
                   </tr>
@@ -372,6 +425,8 @@
                     <th>รวม</th>
                     <th class="target-detail-column"></th>
                     <th>ทั้งหมด</th>
+                    <th></th>
+                    <th class="target-detail-column"></th>
                     <th class="target-detail-column"></th>
                     <th><%= target.summary.opd_total.toLocaleString('th-TH') %></th>
                     <th><%= target.summary.telemed_total.toLocaleString('th-TH') %></th>
@@ -386,7 +441,7 @@
                         </div>
                       </div>
                     </th>
-                    <th><%= target.summary.diff_from_target < 0 ? `ต้องเพิ่ม ${Math.abs(target.summary.diff_from_target).toLocaleString('th-TH')}` : `เกิน ${target.summary.diff_from_target.toLocaleString('th-TH')}` %></th>
+                    <th><%= targetDiffLabel(target.summary.diff_from_target) %></th>
                     <th></th>
                   </tr>
                 </tfoot>

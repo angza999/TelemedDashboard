@@ -29,9 +29,12 @@ function effectiveFilters(query) {
 }
 
 function targetFilters(query, filters = effectiveFilters(query)) {
+  const allowedServiceGroups = ['Telemed', 'กายภาพ', 'อุบัติเหตุฉุกเฉิน', 'แผนไทย'];
+
   return {
     ...filters,
     depcode: query.depcode || 'all',
+    serviceGroup: allowedServiceGroups.includes(query.serviceGroup) ? query.serviceGroup : 'all',
     status: ['passed', 'failed'].includes(query.status) ? query.status : 'all',
     sortBy: ['target_gap', 'percent_low', 'telemed_desc', 'opd_desc'].includes(query.sortBy)
       ? query.sortBy

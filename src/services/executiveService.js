@@ -1,35 +1,23 @@
+const { DEPARTMENT_TARGETS } = require('../config/departmentTargets');
 const { getPool } = require('../db');
 
 const TARGET_RATE = 0.5;
-const TARGET_DEPARTMENTS = [
-  { depcode: '086', department: 'B2B Telemed', service_group: 'Telemed' },
-  { depcode: '082', department: 'ER Telemed', service_group: 'Telemed' },
-  { depcode: '066', department: 'NCD Telemed', service_group: 'Telemed' },
-  { depcode: '085', department: 'NCDCSG Telemed', service_group: 'Telemed' },
-  { depcode: '080', department: 'OPD Telemed', service_group: 'Telemed' },
-  { depcode: '079', department: 'PHDTelemed', service_group: 'Telemed' },
-  { depcode: '077', department: 'คลินิกความดัน-Telemed', service_group: 'Telemed' },
-  { depcode: '084', department: 'จิตเวช Telemed', service_group: 'Telemed' },
-  { depcode: '083', department: 'ทันตกรรม Telemed', service_group: 'Telemed' },
-  { depcode: '081', department: 'ห้องจ่ายยา Telemed', service_group: 'Telemed' },
-  { depcode: '037', department: 'กายภาพบำบัด', service_group: 'กายภาพ' },
-  { depcode: '078', department: 'กายภาพบำบัด(รองเท้ารองช้ำ)', service_group: 'กายภาพ' },
-  { depcode: '004', department: 'อุบัติเหตุ - ฉุกเฉิน', service_group: 'อุบัติเหตุฉุกเฉิน' },
-  { depcode: '007', department: 'งานแพทย์แผนไทย', service_group: 'แผนไทย' }
-];
+const TARGET_DEPARTMENTS = DEPARTMENT_TARGETS
+  .filter((department) => department.is_active !== false)
+  .map((department) => ({
+    depcode: department.display_depcode,
+    department: department.display_name,
+    service_group: department.service_group,
+    display_depcode: department.display_depcode,
+    display_name: department.display_name,
+    opd_source_deps: department.opd_source_deps,
+    telemed_count_deps: department.telemed_count_deps,
+    telemed_mode: department.telemed_mode,
+    note: department.note || ''
+  }));
 
-function targetDepartmentSql() {
-  return TARGET_DEPARTMENTS
-    .map(() => 'SELECT ? AS depcode')
-    .join('\n      UNION ALL\n      ');
-}
-
-function targetDepartmentParams() {
-  return TARGET_DEPARTMENTS.map((department) => department.depcode);
-}
-
-function targetDepartmentByCode(depcode) {
-  return TARGET_DEPARTMENTS.find((department) => department.depcode === depcode) || null;
+function activeDepartmentTargets() {
+  return DEPARTMENT_TARGETS.filter((department) => department.is_active !== false);
 }
 
 function b2bCondition(aliasOvstist = 'oi', aliasScreen = 's') {
@@ -39,6 +27,16 @@ function b2bCondition(aliasOvstist = 'oi', aliasScreen = 's') {
       OR LOWER(COALESCE(${aliasScreen}.cc, '')) LIKE '%b2b%'
     )
   `;
+}
+
+function uniqueDepcodes(depcodes) {
+  return [...new Set(depcodes.filter(Boolean).map((depcode) => String(depcode)))];
+}
+
+function sourceNote(target) {
+  const note = target.note || '';
+  const sourceText = `OPD source: ${(target.opd_source_deps || []).join(', ')} | Telemed source: ${(target.telemed_count_deps || []).join(', ')} | Mode: ${target.telemed_mode}`;
+  return note ? `${note} (${sourceText})` : sourceText;
 }
 
 function normalizeDepartment(row) {
@@ -51,9 +49,14 @@ function normalizeDepartment(row) {
   const diffFromTarget = telemedTotal - target50;
 
   return {
-    depcode: row.depcode || 'ไม่ระบุ',
-    department: row.department || 'ไม่ระบุห้อง',
-    service_group: row.service_group || 'ไม่ระบุกลุ่ม',
+    display_depcode: row.display_depcode,
+    display_name: row.display_name,
+    depcode: row.display_depcode,
+    department: row.display_name,
+    service_group: row.service_group,
+    opd_source_deps: row.opd_source_deps || [],
+    telemed_count_deps: row.telemed_count_deps || [],
+    telemed_mode: row.telemed_mode || 'B2C_ONLY',
     opd_total: opdTotal,
     telemed_total: telemedTotal,
     b2b_total: b2bTotal,
@@ -61,13 +64,17 @@ function normalizeDepartment(row) {
     target_50: target50,
     telemed_percent: telemedPercent,
     diff_from_target: diffFromTarget,
-    target_status: telemedTotal >= target50 ? 'ผ่านเป้าหมาย' : 'ยังไม่ถึงเป้าหมาย'
+    target_status: telemedTotal >= target50 ? 'ผ่านเป้าหมาย' : 'ยังไม่ถึงเป้าหมาย',
+    note: row.note || '',
+    calculation_note: row.calculation_note || sourceNote(row),
+    is_special_case: false
   };
 }
 
 function filterRows(rows, filters = {}) {
   return rows.filter((row) => {
-    if (filters.depcode && filters.depcode !== 'all' && row.depcode !== filters.depcode) return false;
+    if (filters.depcode && filters.depcode !== 'all' && row.display_depcode !== filters.depcode) return false;
+    if (filters.serviceGroup && filters.serviceGroup !== 'all' && row.service_group !== filters.serviceGroup) return false;
     if (filters.status === 'passed' && row.target_status !== 'ผ่านเป้าหมาย') return false;
     if (filters.status === 'failed' && row.target_status !== 'ยังไม่ถึงเป้าหมาย') return false;
     return true;
@@ -128,17 +135,12 @@ function summarizeRows(rows) {
 
 function buildDepartmentTargetModel(rawRows, filters = {}) {
   const allRows = rawRows.map(normalizeDepartment);
-  const departments = TARGET_DEPARTMENTS.map((department) => ({
-    depcode: department.depcode,
-    department: department.department,
-    service_group: department.service_group
-  }));
   const rows = sortRows(filterRows(allRows, filters), filters.sortBy);
 
   return {
     summary: summarizeRows(rows),
     rows,
-    departments,
+    departments: TARGET_DEPARTMENTS,
     allRows,
     lastUpdated: new Date().toISOString(),
     hasB2b: rows.some((row) => row.b2b_total > 0)
@@ -149,70 +151,85 @@ function emptyDepartmentTargetModel() {
   return buildDepartmentTargetModel([], {});
 }
 
-async function fetchDepartmentTargetData(filters) {
-  const pool = getPool();
+function telemedModeClause(target) {
+  const telemedMode = target.telemed_mode || 'B2C_ONLY';
   const b2b = b2bCondition('oi', 's');
-  const depcodes = TARGET_DEPARTMENTS.map((department) => department.depcode);
-  const depcodePlaceholders = depcodes.map(() => '?').join(', ');
-  const [rawRows] = await pool.execute(`
+  if (telemedMode === 'B2B_ONLY') return `AND ${b2b}`;
+  if (telemedMode === 'B2C_ONLY') return `AND NOT ${b2b}`;
+  return '';
+}
+
+function modeTotals(telemedTotal, telemedMode) {
+  if (telemedMode === 'B2B_ONLY') {
+    return { b2b_total: telemedTotal, b2c_total: 0 };
+  }
+  if (telemedMode === 'B2C_ONLY') {
+    return { b2b_total: 0, b2c_total: telemedTotal };
+  }
+  return { b2b_total: 0, b2c_total: 0 };
+}
+
+async function fetchTargetCounts(pool, filters, target) {
+  const opdDeps = uniqueDepcodes(target.opd_source_deps || []);
+  const telemedDeps = uniqueDepcodes(target.telemed_count_deps || []);
+  const opdPlaceholders = opdDeps.map(() => '?').join(', ');
+  const telemedPlaceholders = telemedDeps.map(() => '?').join(', ');
+  const telemedMode = target.telemed_mode || 'B2C_ONLY';
+  const modeClause = telemedModeClause(target);
+  const [rows] = await pool.execute(`
     SELECT
-      td.depcode,
-      COALESCE(opd.opd_total, 0) AS opd_total,
-      COALESCE(t.telemed_total, 0) AS telemed_total,
-      COALESCE(t.b2b_total, 0) AS b2b_total,
-      COALESCE(t.b2c_total, 0) AS b2c_total
-    FROM (
-      ${targetDepartmentSql()}
-    ) td
-    LEFT JOIN (
-      SELECT
-        v.main_dep AS depcode,
-        COUNT(DISTINCT v.vn) AS opd_total
-      FROM ovst v
-      WHERE v.vstdate BETWEEN ? AND ?
-        AND v.main_dep IN (${depcodePlaceholders})
-      GROUP BY v.main_dep
-    ) opd ON opd.depcode = td.depcode
-    LEFT JOIN (
-      SELECT
-        o.main_dep AS depcode,
-        COUNT(DISTINCT o.vn) AS telemed_total,
-        COUNT(DISTINCT CASE
-          WHEN ${b2b}
-          THEN o.vn
-        END) AS b2b_total,
-        COUNT(DISTINCT CASE
-          WHEN NOT ${b2b}
-          THEN o.vn
-        END) AS b2c_total
-      FROM ovst o
-      LEFT JOIN ovstist oi ON oi.ovstist = o.ovstist
-      LEFT JOIN opdscreen s ON s.vn = o.vn
-      WHERE o.vstdate BETWEEN ? AND ?
-        AND oi.export_code = '5'
-        AND o.main_dep IN (${depcodePlaceholders})
-      GROUP BY o.main_dep
-    ) t ON t.depcode = td.depcode
-    WHERE COALESCE(opd.opd_total, 0) > 0
-      OR COALESCE(t.telemed_total, 0) > 0
+      (
+        SELECT COUNT(DISTINCT v.vn)
+        FROM ovst v
+        WHERE v.vstdate BETWEEN ? AND ?
+          AND v.main_dep IN (${opdPlaceholders})
+      ) AS opd_total,
+      (
+        SELECT COUNT(DISTINCT o.vn)
+        FROM ovst o
+        LEFT JOIN ovstist oi ON oi.ovstist = o.ovstist
+        LEFT JOIN opdscreen s ON s.vn = o.vn
+        WHERE o.vstdate BETWEEN ? AND ?
+          AND o.main_dep IN (${telemedPlaceholders})
+          AND oi.export_code = '5'
+          ${modeClause}
+      ) AS telemed_total
   `, [
-    ...targetDepartmentParams(),
     filters.startDate,
     filters.endDate,
-    ...depcodes,
+    ...opdDeps,
     filters.startDate,
     filters.endDate,
-    ...depcodes
+    ...telemedDeps
   ]);
 
-  const rows = rawRows.map((row) => {
-    const targetDepartment = targetDepartmentByCode(row.depcode);
-    return {
-      ...row,
-      department: targetDepartment ? targetDepartment.department : row.depcode,
-      service_group: targetDepartment ? targetDepartment.service_group : 'ไม่ระบุกลุ่ม'
-    };
-  });
+  const result = rows[0] || {};
+  const telemedTotal = Number(result.telemed_total || 0);
+  const channelTotals = modeTotals(telemedTotal, telemedMode);
+
+  return {
+    display_depcode: target.display_depcode,
+    display_name: target.display_name,
+    service_group: target.service_group,
+    opd_source_deps: target.opd_source_deps || [],
+    telemed_count_deps: target.telemed_count_deps || [],
+    telemed_mode: telemedMode,
+    opd_total: Number(result.opd_total || 0),
+    telemed_total: telemedTotal,
+    b2b_total: channelTotals.b2b_total,
+    b2c_total: channelTotals.b2c_total,
+    note: target.note || '',
+    calculation_note: sourceNote(target)
+  };
+}
+
+async function fetchDepartmentTargetData(filters) {
+  const pool = getPool();
+  const targets = activeDepartmentTargets();
+  const rows = [];
+  for (const target of targets) {
+    rows.push(await fetchTargetCounts(pool, filters, target));
+  }
 
   return buildDepartmentTargetModel(rows, filters);
 }

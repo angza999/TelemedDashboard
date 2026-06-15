@@ -141,21 +141,59 @@
     return true;
   }
 
+  function diffText(value) {
+    const diff = Number(value || 0);
+    if (diff < 0) return `ต้องเพิ่ม ${numberFormat.format(Math.abs(diff))} ราย`;
+    if (diff > 0) return `เกินเป้า ${numberFormat.format(diff)} ราย`;
+    return 'ถึงเป้า';
+  }
+
+  function sourceList(values) {
+    return Array.isArray(values) && values.length > 0 ? values.join(', ') : '-';
+  }
+
   function tooltipAfterBody(items) {
     const index = items[0] ? items[0].dataIndex : 0;
     const row = items[0] && items[0].chart.$targetRows ? items[0].chart.$targetRows[index] : null;
     if (!row) return [];
-    const diffText = row.diff_from_target < 0
-      ? `ขาด ${numberFormat.format(Math.abs(row.diff_from_target))} ราย`
-      : `เกิน ${numberFormat.format(row.diff_from_target)} ราย`;
     return [
+      `ห้องส่งตรวจ: ${row.department || 'ไม่ระบุห้อง'}`,
       `กลุ่มบริการ: ${row.service_group || 'ไม่ระบุกลุ่ม'}`,
-      `OPD: ${numberFormat.format(row.opd_total)} ราย`,
+      `OPD source: ${sourceList(row.opd_source_deps)}`,
+      `Telemed source: ${sourceList(row.telemed_count_deps)}`,
+      `Mode: ${row.telemed_mode || '-'}`,
+      `OPD ทั้งหมด: ${numberFormat.format(row.opd_total)} ราย`,
       `จำนวน Telemed ที่ทำได้: ${numberFormat.format(row.telemed_total)} ราย`,
-      `เป้าหมาย: ${numberFormat.format(row.target_50)} ราย`,
-      diffText
+      `เป้าหมาย 50%: ${numberFormat.format(row.target_50)} ราย`,
+      `สัดส่วน Telemed ต่อ OPD: ${Number(row.telemed_percent || 0).toFixed(2)}%`,
+      diffText(row.diff_from_target)
     ];
   }
+
+  const barEndLabelPlugin = {
+    id: 'barEndLabelPlugin',
+    afterDatasetsDraw(chart, args, options) {
+      if (!options || !options.enabled) return;
+      const { ctx, chartArea } = chart;
+      ctx.save();
+      ctx.font = `700 11px ${chartFontFamily}`;
+      ctx.fillStyle = '#475569';
+      ctx.textBaseline = 'middle';
+      chart.data.datasets.forEach((dataset, datasetIndex) => {
+        const meta = chart.getDatasetMeta(datasetIndex);
+        meta.data.forEach((bar, index) => {
+          const rawValue = Number(dataset.data[index] || 0);
+          if (!rawValue) return;
+          const position = bar.tooltipPosition();
+          const nearRightEdge = position.x + 56 > chartArea.right;
+          ctx.textAlign = nearRightEdge ? 'right' : 'left';
+          const x = nearRightEdge ? chartArea.right - 4 : position.x + 6;
+          ctx.fillText(numberFormat.format(rawValue), x, position.y);
+        });
+      });
+      ctx.restore();
+    }
+  };
 
   if (trendEl) {
     charts.push(new Chart(trendEl, {
@@ -260,6 +298,7 @@
     if (departmentTargetEl && targetCanvasReady) {
       departmentTargetChart = new Chart(departmentTargetEl, {
       type: 'bar',
+      plugins: [barEndLabelPlugin],
       data: {
         labels: targetDataRows.map((row) => displayName(row.department)),
         datasets: [
@@ -293,6 +332,7 @@
         animation: false,
         plugins: {
           legend: { position: 'bottom', labels: { font: chartFont(13, '600') } },
+          barEndLabelPlugin: { enabled: targetDataRows.length <= 20 },
           tooltip: {
             callbacks: {
               title: (items) => {
@@ -316,6 +356,7 @@
     if (departmentPercentEl && percentCanvasReady) {
       departmentPercentChart = new Chart(departmentPercentEl, {
       type: 'bar',
+      plugins: [barEndLabelPlugin],
       data: {
         labels: gapDataRows.map((row) => displayName(row.department)),
         datasets: [
@@ -339,6 +380,7 @@
         animation: false,
         plugins: {
           legend: { position: 'bottom', labels: { font: chartFont(13, '600') } },
+          barEndLabelPlugin: { enabled: gapDataRows.length <= 20 },
           tooltip: {
             callbacks: {
               title: (items) => {
@@ -369,6 +411,16 @@
     button.addEventListener('click', () => {
       document.querySelectorAll('[data-target-chart-limit]').forEach((item) => item.classList.toggle('active', item === button));
       scheduleDepartmentCharts(button.dataset.targetChartLimit || '10', 40);
+    });
+  });
+
+  const serviceGroupInput = document.querySelector('[data-service-group-input]');
+  document.querySelectorAll('[data-service-group]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (serviceGroupInput && serviceGroupInput.form) {
+        serviceGroupInput.value = button.dataset.serviceGroup || 'all';
+        serviceGroupInput.form.submit();
+      }
     });
   });
 

@@ -65,35 +65,46 @@ Executive overview trend line labeled `Total Telemed` must use this actual `tota
 ## Department Target Logic
 Used in Executive Dashboard tab `เป้าหมายรายห้อง`.
 
-- OPD total = distinct `ovst.vn` by department
-- Telemed total = distinct `ovst.vn` with `ovstist.export_code = '5'`
+- Rows are generated from the configured mapping in `src/config/departmentTargets.js`, not from whatever department rows happen to appear in SQL.
+- OPD total = distinct `ovst.vn` where `ovst.main_dep IN opd_source_deps`
+- Telemed total = distinct `ovst.vn` where `ovst.main_dep IN telemed_count_deps`, `ovstist.export_code = '5'`, and mode-specific B2B/B2C condition passes
 - Target 50% = `CEIL(opd_total * 0.5)`
 - Percent = `telemed_total / opd_total * 100`
 - Difference = `telemed_total - target_50`
 - Passed if `telemed_total >= target_50`
 
-### Department Target Master List
-The `เป้าหมายรายห้อง` tab is limited to the hospital Telemed room reference list configured in `src/services/executiveService.js`.
+### Department Target Mapping
+The `เป้าหมายรายห้อง` tab is limited to the hospital Telemed room reference list configured in `src/config/departmentTargets.js`.
 
 Columns:
-- `depcode`: HOSxP `ovst.main_dep` department code
-- `department`: display name used in the dashboard
+- `display_depcode`: report row code shown in the dashboard
+- `display_name`: report row name shown in the dashboard
 - `service_group`: reporting group used for audit context
+- `opd_source_deps`: HOSxP `ovst.main_dep` values used to count OPD total
+- `telemed_count_deps`: HOSxP `ovst.main_dep` values used to count Telemed achieved
+- `telemed_mode`: `B2C_ONLY` or `B2B_ONLY`
+- `note`: optional explanation shown in tooltip/export
 
-Implementation note: SQL should send only `depcode` values to MySQL. Thai `department` and `service_group` labels are mapped in Node.js after the query returns, because some HOSxP/MySQL connections can garble Thai text sent as query parameters.
+Implementation note: SQL sends only depcode lists to MySQL and maps Thai display names/service groups in Node.js after the query returns, because some HOSxP/MySQL connections can garble Thai text sent as query parameters.
+
+Mode rules:
+- `B2C_ONLY`: Telemed achieved = B2C Telemed only. `b2b_total = 0`, `b2c_total = telemed_total`.
+- `B2B_ONLY`: Telemed achieved = B2B Telemed only. `b2b_total = telemed_total`, `b2c_total = 0`.
+
+Excel export must use the same `fetchDepartmentTargetData()` service model as the dashboard so values match the web table.
 
 Configured rows:
-- `086` B2B Telemed / Telemed
-- `082` ER Telemed / Telemed
-- `066` NCD Telemed / Telemed
-- `085` NCDCSG Telemed / Telemed
-- `080` OPD Telemed / Telemed
-- `079` PHDTelemed / Telemed
-- `077` คลินิกความดัน-Telemed / Telemed
-- `084` จิตเวช Telemed / Telemed
-- `083` ทันตกรรม Telemed / Telemed
-- `081` ห้องจ่ายยา Telemed / Telemed
-- `037` กายภาพบำบัด / กายภาพ
-- `078` กายภาพบำบัด(รองเท้ารองช้ำ) / กายภาพ
-- `004` อุบัติเหตุ - ฉุกเฉิน / อุบัติเหตุฉุกเฉิน
-- `007` งานแพทย์แผนไทย / แผนไทย
+- `080` OPD Telemed: OPD `111`, Telemed `111,080`, `B2C_ONLY`
+- `082` ER Telemed: OPD `004`, Telemed `004,082`, `B2C_ONLY`
+- `066` NCD Telemed: OPD `014`, Telemed `014,066`, `B2C_ONLY`
+- `085` NCDCSG Telemed: OPD `055`, Telemed `055,085`, `B2C_ONLY`
+- `077` คลินิกความดัน-Telemed: OPD `015`, Telemed `015,077,075`, `B2C_ONLY`
+- `084` จิตเวช Telemed: OPD `052`, Telemed `052,084`, `B2C_ONLY`
+- `083` ทันตกรรม Telemed: OPD `005`, Telemed `005,083`, `B2C_ONLY`
+- `081` ห้องจ่ายยา Telemed: OPD `012,070`, Telemed `012,070,081`, `B2C_ONLY`
+- `037` กายภาพบำบัด: OPD `037`, Telemed `037`, `B2C_ONLY`
+- `078` กายภาพบำบัด(รองเท้ารองช้ำ): OPD `078`, Telemed `078`, `B2C_ONLY`
+- `004` อุบัติเหตุ - ฉุกเฉิน: OPD `004`, Telemed `004,082`, `B2C_ONLY`
+- `007` งานแพทย์แผนไทย: OPD `007`, Telemed `007`, `B2C_ONLY`
+- `079` PHDTelemed: OPD `079`, Telemed `079`, `B2C_ONLY`
+- `086` B2B Telemed: OPD `086`, Telemed `086`, `B2B_ONLY`

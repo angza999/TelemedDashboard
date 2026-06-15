@@ -14,6 +14,19 @@ function ymd(value) {
   return String(value || '').replaceAll('-', '');
 }
 
+function targetDiffLabel(value) {
+  const diff = Number(value || 0);
+  if (diff < 0) return `ต้องเพิ่ม ${Math.abs(diff).toLocaleString('th-TH')} ราย`;
+  if (diff > 0) return `เกินเป้า ${diff.toLocaleString('th-TH')} ราย`;
+  return 'ถึงเป้า';
+}
+
+function targetStatusLabel(row) {
+  if (Number(row.telemed_total || 0) >= Number(row.target_50 || 0)) return 'ผ่าน';
+  if (Number(row.telemed_percent || 0) >= 45) return 'ใกล้ถึง';
+  return 'ไม่ผ่าน';
+}
+
 function telemedFilename(filters, extension) {
   return `telemed_report_${ymd(filters.startDate)}_${ymd(filters.endDate)}.${extension}`;
 }
@@ -92,7 +105,7 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
   workbook.created = new Date();
 
   const sheet = workbook.addWorksheet('Department Target');
-  sheet.mergeCells('A1:L1');
+  sheet.mergeCells('A1:P1');
   sheet.getCell('A1').value = 'รายงานติดตามเป้าหมาย Telemed รายห้อง';
   sheet.getCell('A1').font = { bold: true, size: 16 };
   sheet.getCell('A2').value = `ช่วงวันที่: ${filters.startDate} ถึง ${filters.endDate}`;
@@ -104,14 +117,18 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
     { key: 'depcode', width: 14 },
     { key: 'department', width: 28 },
     { key: 'service_group', width: 18 },
+    { key: 'opd_source_deps', width: 18 },
+    { key: 'telemed_count_deps', width: 22 },
+    { key: 'telemed_mode', width: 14 },
     { key: 'opd_total', width: 14 },
-    { key: 'telemed_total', width: 16 },
+    { key: 'telemed_total', width: 24 },
     { key: 'b2b_total', width: 12 },
     { key: 'b2c_total', width: 12 },
     { key: 'target_50', width: 14 },
-    { key: 'telemed_percent', width: 12 },
-    { key: 'diff_from_target', width: 16 },
-    { key: 'target_status', width: 18 }
+    { key: 'telemed_percent', width: 22 },
+    { key: 'diff_from_target', width: 20 },
+    { key: 'target_status', width: 14 },
+    { key: 'note', width: 42 }
   ];
 
   sheet.addRow([]);
@@ -120,14 +137,18 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
     'รหัสห้อง',
     'ห้องส่งตรวจ',
     'กลุ่มบริการ',
+    'OPD source',
+    'Telemed source',
+    'Mode',
     'OPD ทั้งหมด',
-    'Telemed ทั้งหมด',
+    'จำนวน Telemed ที่ทำได้',
     'B2B',
     'B2C',
     'เป้าหมาย 50%',
-    'ทำได้ %',
-    'ขาด/เกินเป้าหมาย',
-    'สถานะ'
+    'สัดส่วน Telemed ต่อ OPD',
+    'ต้องเพิ่ม/เกินเป้า',
+    'สถานะ',
+    'หมายเหตุ'
   ]);
   header.font = { bold: true };
   header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F2FF' } };
@@ -138,14 +159,18 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
       row.depcode,
       row.department,
       row.service_group,
+      (row.opd_source_deps || []).join(', '),
+      (row.telemed_count_deps || []).join(', '),
+      row.telemed_mode,
       row.opd_total,
       row.telemed_total,
       row.b2b_total,
       row.b2c_total,
       row.target_50,
       row.telemed_percent,
-      row.diff_from_target,
-      row.target_status
+      targetDiffLabel(row.diff_from_target),
+      targetStatusLabel(row),
+      row.note || row.calculation_note || ''
     ]);
   });
 
@@ -155,13 +180,17 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
     '',
     '',
     '',
+    '',
+    '',
+    '',
     summary.opd_total,
     summary.telemed_total,
     summary.b2b_total,
     summary.b2c_total,
     summary.target_50_total,
     summary.telemed_percent,
-    summary.diff_from_target,
+    targetDiffLabel(summary.diff_from_target),
+    '',
     ''
   ]);
   footer.font = { bold: true };

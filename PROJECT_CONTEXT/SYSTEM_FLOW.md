@@ -33,8 +33,9 @@
 1. User requests `/executive?tab=department-target`.
 2. Route loads normal executive overview data.
 3. Route also calls `fetchDepartmentTargetData()`.
-4. If target SQL mapping fails, overview still renders and target tab shows a mapping message.
-5. Target tab shows Action Required, executive summary, overall target progress, KPI, Top 5 shortage rooms, compact charts, and a department table with `ผู้บริหาร` / `รายละเอียด` modes.
+4. `fetchDepartmentTargetData()` loads rows from `src/config/departmentTargets.js`, counts OPD from `opd_source_deps`, counts Telemed achieved from `telemed_count_deps`, and applies `B2C_ONLY` / `B2B_ONLY`.
+5. If target SQL mapping fails, overview still renders and target tab shows a mapping message.
+6. Target tab shows Action Required, executive summary, overall target progress, KPI, Top 5 shortage rooms, compact charts, and a department table with `ผู้บริหาร` / `รายละเอียด` modes.
 
 ## Admin User Flow
 1. Admin opens `/admin/users`.

@@ -19,9 +19,9 @@ Fields used:
 - `vn`: visit number, used as distinct visit id
 - `vstdate`: visit date
 - `ovstist`: visit status / service type key
-- `main_dep`: main department code for department target report; matched against the configured Telemed room master list in `src/services/executiveService.js`
+- `main_dep`: main department code for department target report; matched against `opd_source_deps` and `telemed_count_deps` in `src/config/departmentTargets.js`
 
-Note: If a HOSxP site uses `cur_dep` instead of `main_dep`, adjust `src/services/executiveService.js`.
+Note: If a HOSxP site uses `cur_dep` instead of `main_dep`, adjust the query field in `src/services/executiveService.js` while keeping the mapping in `src/config/departmentTargets.js`.
 
 ### `ovstist`
 Visit status / service type table.
@@ -58,7 +58,7 @@ Fields used:
 - `depcode`: department code
 - `department`: department name
 
-Note: The Executive `เป้าหมายรายห้อง` tab now uses the configured Telemed room master list for display names and service groups instead of joining every HOSxP department from `kskdepartment`.
+Note: The Executive `เป้าหมายรายห้อง` tab now uses `src/config/departmentTargets.js` for display names, service groups, OPD source departments, and Telemed source departments instead of joining every HOSxP department from `kskdepartment`.
 
 ## App Runtime Data Files
 

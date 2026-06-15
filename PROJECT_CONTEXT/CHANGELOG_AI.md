@@ -42,6 +42,9 @@
 - Updated the `เป้าหมายรายห้อง` tab to use the configured Telemed room master list from the hospital reference sheet, including `depcode`, room name, and `service_group`, instead of showing every HOSxP department.
 - Fixed Thai room names in the `เป้าหมายรายห้อง` tab by sending only `depcode` through MySQL and mapping Thai display names/service groups in Node.js after the query to avoid database connection charset issues.
 - Improved Executive department target chart sharpness by adding restart-based asset cache busting, waiting for fonts/layout before drawing Chart.js canvases, avoiding hidden-tab rendering, and forcing resize/update after tab or chart-limit changes.
+- Refined Executive department target wording and filters: renamed visible `Telemed ทั้งหมด` labels to `จำนวน Telemed ที่ทำได้`, clarified `สัดส่วน Telemed ต่อ OPD` versus `ความคืบหน้าสู่เป้าหมาย`, added service-group quick filters, improved chart tooltips/end labels, shortened table statuses, and aligned Excel export wording.
+- Added a hospital-specific calculation rule for `OPD Telemed` (`depcode 080`) in the Executive department target tab: OPD total comes from `main_dep = 111`, while Telemed achieved counts only B2C Telemed from `main_dep IN (111, 080)`, with the same values flowing to table, summary, charts, and Excel export.
+- Reworked the Executive department target tab to use a central OPD-source/Telemed-source mapping for every row. Rows now come from `src/config/departmentTargets.js`, count OPD from `opd_source_deps`, count Telemed achieved from `telemed_count_deps` using `B2C_ONLY` or `B2B_ONLY`, keep zero-data rooms visible, and export source/mode/note columns to Excel.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

@@ -20,6 +20,9 @@
 - In the Executive department target tab, order content for quick action: Action Required, executive summary, overall target progress, KPI cards, Top 5 shortage rooms, compact charts, then the full table.
 - Keep department target charts focused on Top 10 by default. Top 20/all are optional views for deeper inspection.
 - Prefer target-gap charts over percent-only charts when most departments are far below target; executives need to see how many visits must be added.
+- In the Executive department target tab, use `จำนวน Telemed ที่ทำได้` for visible Telemed count labels. Reserve `สัดส่วน Telemed ต่อ OPD` for `telemed_total / opd_total * 100`, and `ความคืบหน้าสู่เป้าหมาย` for `telemed_total / target_50_total * 100`.
+- Department target chart tooltips should show room, service group, OPD total, Telemed achieved, 50% target, Telemed-to-OPD percent, and the gap wording (`ต้องเพิ่ม`, `เกินเป้า`, or `ถึงเป้า`).
+- Service-group quick filters should update the whole department target tab, including KPI cards, summaries, charts, table, and Excel export.
 
 ## Colors
 Current style uses:
@@ -37,6 +40,7 @@ Current style uses:
 - Use progress bars for executive target percentages when quick scanning matters.
 - For executive target tables, default to a `ผู้บริหาร` summary view and provide a `รายละเอียด` view for audit columns such as depcode, B2B, B2C, and target count.
 - In executive target tables, emphasize the gap/status cells more than painting every failed row strongly.
+- Executive department target table statuses should stay short: `ผ่าน`, `ใกล้ถึง`, and `ไม่ผ่าน`, with a small legend explaining the thresholds.
 
 ## Buttons
 - Primary button for main action.
