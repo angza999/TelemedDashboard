@@ -48,6 +48,7 @@
 - Hid the duplicate `ER Telemed` (`082`) target row and kept its `004,082` Telemed source counted under `อุบัติเหตุ - ฉุกเฉิน` only, so executive reporting does not show the same emergency source pair twice.
 - Hid the duplicate `กายภาพบำบัด(รองเท้ารองช้ำ)` (`078`) target row and rolled its OPD/Telemed sources into `กายภาพบำบัด` (`037`), so the Executive target tab shows one physical therapy row without losing the `078` totals.
 - Added room `067` into the `จิตเวช Telemed` calculation and room `051` into the `อุบัติเหตุ - ฉุกเฉิน` calculation for both OPD target source and Telemed achieved source in the Executive department target mapping.
+- Updated `PHDTelemed` (`079`) to calculate OPD from rooms `029,076,055,047,065,050,024,006,046,025,020` and count Telemed achieved from those rooms plus `079`.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

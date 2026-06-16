@@ -117,11 +117,11 @@ const DEPARTMENT_TARGETS = [
     display_depcode: '079',
     display_name: 'PHDTelemed',
     service_group: 'Telemed',
-    opd_source_deps: ['079'],
-    telemed_count_deps: ['079'],
+    opd_source_deps: ['029', '076', '055', '047', '065', '050', '024', '006', '046', '025', '020'],
+    telemed_count_deps: ['029', '076', '055', '047', '065', '050', '024', '006', '046', '025', '020', '079'],
     telemed_mode: 'B2C_ONLY',
     is_active: true,
-    note: 'ยังไม่มี depcode ห้องต้นทางที่ชัดเจน จึงใช้ 079 ชั่วคราว'
+    note: 'ใช้ห้อง 029,076,055,047,065,050,024,006,046,025,020 เป็นฐาน OPD และนับ 079 เป็นห้อง Telemed ของ PHD'
   },
   {
     display_depcode: '086',

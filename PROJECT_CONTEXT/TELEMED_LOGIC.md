@@ -104,7 +104,7 @@ Configured rows:
 - `037` กายภาพบำบัด: OPD `037,078`, Telemed `037,078`, `B2C_ONLY`
 - `004` อุบัติเหตุ - ฉุกเฉิน: OPD `004,051`, Telemed `004,051,082`, `B2C_ONLY`
 - `007` งานแพทย์แผนไทย: OPD `007`, Telemed `007`, `B2C_ONLY`
-- `079` PHDTelemed: OPD `079`, Telemed `079`, `B2C_ONLY`
+- `079` PHDTelemed: OPD `029,076,055,047,065,050,024,006,046,025,020`, Telemed `029,076,055,047,065,050,024,006,046,025,020,079`, `B2C_ONLY`
 - `086` B2B Telemed: OPD `086`, Telemed `086`, `B2B_ONLY`
 
 Inactive rows kept in mapping for reference:
