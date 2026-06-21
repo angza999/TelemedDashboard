@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Telemed Dashboard</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css?v=<%= assetVersion %>">
+</head>
+<body>
+  <div class="app-shell">
+    <%- include('../partials/sidebar', { active: 'today-patients-mapping' }) %>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Admin</p>
+          <h1>ตั้งค่าผู้รับบริการวันนี้</h1>
+          <p class="page-description">เลือกห้องบริการและ Ward ที่ต้องนำไปนับในการ์ดผู้รับบริการวันนี้</p>
+        </div>
+        <% if (currentUser) { %>
+          <form action="/logout" method="post" class="user-box">
+            <span><i class="bi bi-person-circle"></i> <%= currentUser.name %></span>
+            <button type="submit" class="icon-button" title="ออกจากระบบ" aria-label="ออกจากระบบ">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </form>
+        <% } %>
+      </header>
+
+      <section class="panel mapping-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Mapping ห้องบริการ</h2>
+            <p class="panel-note">ข้อมูลห้องและ Ward อ่านจาก HOSxP ส่วนการตั้งค่านี้บันทึกใน WebApp เท่านั้น</p>
+          </div>
+          <span><i class="bi bi-shield-lock"></i> Admin only</span>
+        </div>
+
+        <div id="mappingStatus" class="dashboard-status loading">กำลังโหลดรายการห้อง...</div>
+
+        <div class="mapping-tabs" role="tablist" aria-label="กลุ่มการ์ดผู้รับบริการวันนี้">
+          <button type="button" class="mapping-tab-button active" data-card-key="OPD">OPD</button>
+          <button type="button" class="mapping-tab-button" data-card-key="NCD">NCD</button>
+          <button type="button" class="mapping-tab-button" data-card-key="IPD">IPD</button>
+          <button type="button" class="mapping-tab-button" data-card-key="ER">ER</button>
+        </div>
+
+        <div class="mapping-toolbar">
+          <label>
+            ค้นหา
+            <input id="mappingSearch" type="search" placeholder="ค้นหาด้วยรหัสหรือชื่อห้อง">
+          </label>
+          <div class="mapping-toolbar-actions">
+            <button type="button" id="saveMappingButton" class="primary-button">
+              <i class="bi bi-save"></i>
+              บันทึกการตั้งค่า
+            </button>
+            <button type="button" id="resetMappingButton" class="secondary-button">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              รีเซ็ตค่าเริ่มต้น
+            </button>
+          </div>
+        </div>
+
+        <div class="alert warning mapping-warning">
+          ห้อง DEP เดียวกันเลือกได้เพียงหนึ่งกลุ่มระหว่าง OPD, NCD และ ER เพื่อป้องกันยอดซ้ำ ส่วน IPD ใช้รหัส Ward แยกต่างหาก
+        </div>
+
+        <div class="table-wrap mapping-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>เลือก</th>
+                <th>รหัส</th>
+                <th>ชื่อห้อง / Ward</th>
+                <th>สถานะ</th>
+                <th>หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody id="mappingTableBody">
+              <tr><td colspan="5" class="empty">กำลังโหลดข้อมูล</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/today-patients-mapping.js?v=<%= assetVersion %>"></script>
+</body>
+</html>

@@ -75,6 +75,31 @@
 - `src/routes/adminUsers.js`
   - User management
 
+- `src/routes/todayPatients.js`
+  - `/today-patients`
+  - `/api/today-patients/summary`
+  - `/admin/today-patients-mapping`
+  - `/api/admin/today-patients/departments`
+  - `/api/admin/today-patients/wards`
+  - `/api/admin/today-patients/mapping`
+
+- `src/services/todayPatientsService.js`
+  - Reads HOSxP data with SELECT-only queries and writes mapping only to WebApp runtime file `data/dashboard-service-mapping.json`
+  - Reads HOSxP `kskdepartment`, `ward`, `ovst`, and `ipt` with parameter binding
+  - Counts OPD/NCD/ER by `ovst.main_dep` and active IPD by `ipt.ward`
+
+- `views/today-patients/dashboard.ejs`
+  - Real-time dashboard with 4 cards
+
+- `views/admin/today-patients-mapping.ejs`
+  - Admin mapping UI for OPD/NCD/IPD/ER
+
+- `public/js/today-patients.js`
+  - Initial load and user-triggered manual refresh only
+
+- `public/js/today-patients-mapping.js`
+  - Admin mapping tabs, search, checkbox validation, save, and reset
+
 ## Shared UI
 - `views/partials/sidebar.ejs`
   - Role-aware menu

@@ -1329,6 +1329,259 @@ tfoot td {
   background: #16a34a;
 }
 
+.page-description {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.today-status-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px 24px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+
+.today-status-content {
+  min-width: 0;
+}
+
+.today-date-label {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.today-status-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.today-status-meta,
+.today-refresh-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.today-status-panel .dashboard-status {
+  min-height: 18px;
+  margin: 8px 0 0;
+}
+
+.today-refresh-button {
+  min-width: 150px;
+  min-height: 48px;
+  padding-inline: 18px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.connection-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.connection-pill i {
+  font-size: 9px;
+}
+
+.connection-pill.pending {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.connection-pill.online {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.connection-pill.offline {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.today-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.today-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 148px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.today-card-icon {
+  display: inline-grid;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 28px;
+}
+
+.today-card.opd .today-card-icon {
+  color: #075985;
+  background: #e0f2fe;
+}
+
+.today-card.ncd .today-card-icon {
+  color: var(--primary);
+  background: #ccfbf1;
+}
+
+.today-card.ipd .today-card-icon {
+  color: #7c3aed;
+  background: #ede9fe;
+}
+
+.today-card.er .today-card-icon {
+  color: #be123c;
+  background: #ffe4e6;
+}
+
+.today-card-content {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.today-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.today-card-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  min-width: 0;
+}
+
+.today-card strong {
+  display: inline-flex;
+  min-width: 0;
+  color: var(--text);
+  font-size: clamp(44px, 3.4vw, 56px);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.today-card-metric span {
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.today-card small {
+  display: block;
+  margin-top: -2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.today-card.loading strong {
+  width: 110px;
+  height: 50px;
+  color: transparent;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e5edf5 0%, #f8fafc 45%, #e5edf5 100%);
+  background-size: 220% 100%;
+  animation: skeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+.mapping-panel {
+  margin-bottom: 18px;
+}
+
+.mapping-tabs {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #e8eef6;
+}
+
+.mapping-tab-button {
+  min-width: 88px;
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #475569;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mapping-tab-button.active {
+  color: #ffffff;
+  background: var(--primary);
+}
+
+.mapping-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 420px) auto;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.mapping-toolbar-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.mapping-warning {
+  margin-bottom: 14px;
+}
+
+.mapping-table-wrap table {
+  min-width: 860px;
+}
+
+.mapping-table-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.muted-row {
+  background: #f8fafc;
+  color: #64748b;
+}
+
 @media (max-width: 1180px) {
   .filter-grid,
   .kpi-grid,
@@ -1338,6 +1591,10 @@ tfoot td {
   .target-kpis,
   .executive-kpis,
   .summary-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .today-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1387,8 +1644,29 @@ tfoot td {
   .executive-kpis,
   .executive-charts,
   .target-charts,
-  .summary-kpi-grid {
+  .summary-kpi-grid,
+  .today-card-grid,
+  .mapping-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .today-status-panel {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .today-refresh-button {
+    width: 100%;
+  }
+
+  .mapping-tabs,
+  .mapping-toolbar-actions {
+    width: 100%;
+  }
+
+  .mapping-tab-button,
+  .mapping-toolbar-actions > * {
+    flex: 1;
   }
 
   .executive-tabs {

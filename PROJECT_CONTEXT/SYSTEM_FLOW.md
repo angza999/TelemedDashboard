@@ -37,6 +37,23 @@
 5. If target SQL mapping fails, overview still renders and target tab shows a mapping message.
 6. Target tab shows Action Required, executive summary, overall target progress, KPI, Top 5 shortage rooms, compact charts, and a department table with `ผู้บริหาร` / `รายละเอียด` modes.
 
+## Today Patients Flow
+1. Admin or executive opens `/today-patients`.
+2. Page loads immediately, then `public/js/today-patients.js` calls `/api/today-patients/summary`.
+3. `fetchTodayPatientsSummary()` reads active mapping from `data/dashboard-service-mapping.json`.
+4. OPD/NCD/ER are counted from HOSxP `ovst` by `vstdate = CURDATE()` and `main_dep IN (...)`.
+5. IPD is counted from HOSxP `ipt` by selected ward and no discharge date.
+6. The browser updates four cards on initial load and only refreshes again when the user clicks `รีเฟรชข้อมูล`.
+7. If the API fails, the page keeps the last successful numbers and shows a connection warning.
+
+## Today Patients Admin Mapping Flow
+1. Admin opens `/admin/today-patients-mapping`.
+2. UI calls Admin APIs to read HOSxP departments, HOSxP wards, and WebApp mapping.
+3. Admin selects which DEP codes feed OPD/NCD/ER and which WARD codes feed IPD.
+4. Backend validates that the same DEP code is not active in OPD/NCD/ER at the same time.
+5. Save writes only `data/dashboard-service-mapping.json`; it never writes to HOSxP and never creates HOSxP tables.
+6. The next refresh of `/today-patients` uses the new mapping.
+
 ## Admin User Flow
 1. Admin opens `/admin/users`.
 2. Route reads users from `data/users.json`.

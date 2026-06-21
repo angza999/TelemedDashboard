@@ -50,6 +50,15 @@
 - Added room `067` into the `จิตเวช Telemed` calculation and room `051` into the `อุบัติเหตุ - ฉุกเฉิน` calculation for both OPD target source and Telemed achieved source in the Executive department target mapping.
 - Updated `PHDTelemed` (`079`) to calculate OPD from rooms `029,076,055,047,065,050,024,006,046,025,020` and count Telemed achieved from those rooms plus `079`.
 
+### Today Patients Dashboard
+- Added `/today-patients` for admin/executive users with four near-real-time cards: OPD, NCD, IPD, and ER.
+- Added `/api/today-patients/summary`, which reads WebApp mapping first and then queries HOSxP read-only tables with parameter binding.
+- Added Admin > `ตั้งค่าผู้รับบริการวันนี้` for selecting OPD/NCD/ER departments and IPD wards without editing code.
+- Added JSON-backed runtime mapping storage at `data/dashboard-service-mapping.json`; the app does not create tables or write configuration into HOSxP.
+- Removed the optional mapping SQL template to keep the deployment contract clear: HOSxP is read-only and the dashboard only displays summarized data.
+- Changed `/today-patients` refresh behavior from automatic 30-second polling to user-triggered manual refresh only.
+- Refined `/today-patients` UI for executive scanning: compact status panel, clearer manual refresh affordance, larger card numbers, baseline-aligned `คน` units, balanced card spacing, and a reliable IPD building icon.
+
 ### User Management
 - Added persistent user management via `data/users.json`.
 - Admin can add/edit users, reset password, toggle active/inactive.

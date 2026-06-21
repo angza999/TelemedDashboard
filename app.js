@@ -13,6 +13,7 @@ const settingsRoutes = require('./src/routes/settings');
 const queryToolRoutes = require('./src/routes/queryTool');
 const executiveRoutes = require('./src/routes/executive');
 const adminUsersRoutes = require('./src/routes/adminUsers');
+const todayPatientsRoutes = require('./src/routes/todayPatients');
 const { ensureAuth, ensureRole } = require('./src/middleware/auth');
 
 const app = express();
@@ -76,9 +77,11 @@ app.get('/', (req, res) => {
 app.use('/', authRoutes);
 app.use('/telemed', ensureAuth, telemedRoutes);
 app.use('/executive', ensureAuth, ensureRole(['admin', 'executive']), executiveRoutes);
+app.use('/', ensureAuth, ensureRole(['admin', 'executive']), todayPatientsRoutes.publicRouter);
 app.use('/settings', ensureAuth, ensureRole(['admin']), settingsRoutes);
 app.use('/admin/query-tool', ensureAuth, ensureRole(['admin']), queryToolRoutes);
 app.use('/admin/users', ensureAuth, ensureRole(['admin']), adminUsersRoutes);
+app.use('/', ensureAuth, ensureRole(['admin']), todayPatientsRoutes.adminRouter);
 app.use('/admin', ensureAuth, ensureRole(['admin']), (req, res) => {
   res.status(404).render('errors/404', { title: 'ไม่พบหน้า' });
 });

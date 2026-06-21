@@ -70,3 +70,16 @@ Persistent app users. Do not commit.
 
 ### `data/query-tool.log.jsonl`
 Query Tool usage log. Do not commit.
+
+### `data/dashboard-service-mapping.json`
+Runtime WebApp storage for the "ผู้รับบริการวันนี้" dashboard mapping. Do not commit.
+
+This is an application runtime file only:
+- `card_key`: `OPD`, `NCD`, `ER`, or `IPD`
+- `source_type`: `DEP` for OPD/NCD/ER, `WARD` for IPD
+- `source_code`: HOSxP `kskdepartment.depcode` or `ward.ward`; always stored as a string so leading zeroes remain intact
+- `display_name`: room or ward name for Admin UI
+- `active`: `1` means included
+- `sort_order`: display/save order
+
+Important rule: this project must not create tables, alter tables, or write any configuration back into HOSxP. Mapping writes use this JSON-backed WebApp store only, and HOSxP remains read-only.

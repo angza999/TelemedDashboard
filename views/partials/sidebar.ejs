@@ -17,6 +17,10 @@
         <i class="bi bi-bar-chart-line"></i>
         <span>Executive Dashboard</span>
       </a>
+      <a class="nav-link <%= active === 'today-patients' ? 'active' : '' %>" href="/today-patients">
+        <i class="bi bi-activity"></i>
+        <span>ผู้รับบริการวันนี้</span>
+      </a>
     <% } %>
 
     <% if (currentUser && currentUser.role === 'admin') { %>
@@ -32,6 +36,10 @@
       <a class="nav-link <%= active === 'users' ? 'active' : '' %>" href="/admin/users">
         <i class="bi bi-people"></i>
         <span>จัดการผู้ใช้งาน</span>
+      </a>
+      <a class="nav-link <%= active === 'today-patients-mapping' ? 'active' : '' %>" href="/admin/today-patients-mapping">
+        <i class="bi bi-ui-checks-grid"></i>
+        <span>ตั้งค่าผู้รับบริการวันนี้</span>
       </a>
     <% } %>
   </nav>
