@@ -23,7 +23,7 @@
 - In the Executive department target tab, use `จำนวน Telemed ที่ทำได้` for visible Telemed count labels. Reserve `สัดส่วน Telemed ต่อ OPD` for `telemed_total / opd_total * 100`, and `ความคืบหน้าสู่เป้าหมาย` for `telemed_total / target_50_total * 100`.
 - Department target chart tooltips should show room, service group, OPD total, Telemed achieved, 50% target, Telemed-to-OPD percent, and the gap wording (`ต้องเพิ่ม`, `เกินเป้า`, or `ถึงเป้า`).
 - Service-group quick filters should update the whole department target tab, including KPI cards, summaries, charts, table, and Excel export.
-- The `/today-patients` page should read as a compact executive dashboard: status/date/last-updated on one line where space allows, manual refresh button on the right, and four equal-height cards with large baseline-aligned numbers plus `คน` units.
+- The `/today-patients` page should read as a compact executive dashboard: status/date/last-updated on the left where space allows, manual refresh button and helper text grouped on the right, and four equal-height cards with large baseline-aligned numbers plus `คน` units.
 
 ## Colors
 Current style uses:

@@ -58,6 +58,7 @@
 - Removed the optional mapping SQL template to keep the deployment contract clear: HOSxP is read-only and the dashboard only displays summarized data.
 - Changed `/today-patients` refresh behavior from automatic 30-second polling to user-triggered manual refresh only.
 - Refined `/today-patients` UI for executive scanning: compact status panel, clearer manual refresh affordance, larger card numbers, baseline-aligned `คน` units, balanced card spacing, and a reliable IPD building icon.
+- Moved the `/today-patients` manual-refresh helper text into the right-side refresh action area so the date/status line stays compact.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

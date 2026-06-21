@@ -1364,11 +1364,28 @@ tfoot td {
   font-size: 14px;
 }
 
-.today-status-meta,
+.today-status-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.today-status-actions {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  min-width: 0;
+}
+
 .today-refresh-note {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  max-width: 260px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: right;
 }
 
 .today-status-panel .dashboard-status {
@@ -1655,8 +1672,18 @@ tfoot td {
     grid-template-columns: 1fr;
   }
 
+  .today-status-actions {
+    justify-items: stretch;
+  }
+
   .today-refresh-button {
     width: 100%;
+  }
+
+  .today-refresh-note {
+    max-width: none;
+    justify-content: center;
+    text-align: center;
   }
 
   .mapping-tabs,
