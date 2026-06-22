@@ -63,8 +63,10 @@
 ### User Management
 - Added persistent user management via `data/users.json`.
 - Admin can add/edit users, reset password, toggle active/inactive.
+- User edit form now allows changing usernames for non-main-admin accounts while keeping duplicate username validation and locking the main `admin` username.
 - Passwords are hashed with bcryptjs.
 - Last active admin cannot be disabled or demoted.
+- Added admin-only soft delete for users through `DELETE /api/admin/users/:id`, including confirmation modal, red delete action, UI count update, and protections for main admin, self-delete, and last admin.
 
 ### Deployment Fixes
 - Added Linux deploy scripts and systemd service.

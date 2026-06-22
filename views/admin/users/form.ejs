@@ -41,11 +41,15 @@
           <div class="alert"><%= error %></div>
         <% } %>
 
+        <% const usernameLocked = mode === 'edit' && String(user.username || '').toLowerCase() === 'admin'; %>
         <form method="post" action="<%= mode === 'new' ? '/admin/users' : '/admin/users/' + user.id %>" class="settings-form">
           <div class="settings-grid">
             <label>
               Username
-              <input type="text" name="username" value="<%= user.username %>" autocomplete="off" required <%= mode === 'edit' ? 'readonly' : '' %>>
+              <input type="text" name="username" value="<%= user.username %>" autocomplete="off" required <%= usernameLocked ? 'readonly aria-describedby="usernameHelp"' : '' %>>
+              <small class="field-hint" id="usernameHelp">
+                <%= usernameLocked ? 'ไม่สามารถเปลี่ยน username ของผู้ดูแลระบบหลักได้' : 'แก้ไขได้ แต่ต้องไม่ซ้ำกับผู้ใช้อื่น' %>
+              </small>
             </label>
             <label>
               ชื่อแสดงผล

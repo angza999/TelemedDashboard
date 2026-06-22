@@ -68,6 +68,13 @@ Saved database connection config. Do not commit.
 ### `data/users.json`
 Persistent app users. Do not commit.
 
+Soft-deleted users stay in the file for auditability with:
+- `deletedAt`: ISO datetime when the admin deleted the user
+- `deletedBy`: admin username or id that performed the delete
+- `isActive`: set to `false` when deleted
+
+Deleted users are hidden from Admin > Users and cannot log in. User deletion affects only this WebApp data file and never touches HOSxP.
+
 ### `data/query-tool.log.jsonl`
 Query Tool usage log. Do not commit.
 

@@ -29,10 +29,11 @@
       </header>
 
       <section class="panel table-panel">
+        <% const adminCount = users.filter((user) => user.role === 'admin').length; %>
         <div class="panel-heading users-heading">
           <div>
             <h2>ผู้ใช้งานในระบบ</h2>
-            <p class="panel-note">ทั้งหมด <%= users.length.toLocaleString('th-TH') %> บัญชี</p>
+            <p class="panel-note">ทั้งหมด <span id="usersCount"><%= users.length.toLocaleString('th-TH') %></span> บัญชี</p>
           </div>
           <div class="panel-actions">
             <span><i class="bi bi-shield-lock"></i> Admin only</span>
@@ -46,6 +47,7 @@
         <% if (flash) { %>
           <div class="alert <%= flash.type === 'success' ? 'success' : '' %>"><%= flash.message %></div>
         <% } %>
+        <div id="usersNotice" class="alert hidden" role="status" aria-live="polite"></div>
 
         <div class="table-wrap user-table-wrap">
           <table>
@@ -62,7 +64,18 @@
             </thead>
             <tbody>
               <% users.forEach((user) => { %>
-                <tr>
+                <%
+                  const isMainAdmin = String(user.username || '').toLowerCase() === 'admin';
+                  const isCurrentUser = currentUser && Number(currentUser.id) === Number(user.id);
+                  const isLastAdmin = user.role === 'admin' && adminCount <= 1;
+                  const deleteDisabled = isMainAdmin || isCurrentUser || isLastAdmin;
+                  const deleteTitle = isMainAdmin
+                    ? 'ไม่สามารถลบผู้ดูแลระบบหลักได้'
+                    : (isCurrentUser
+                      ? 'ไม่สามารถลบบัญชีที่กำลังใช้งานอยู่ได้'
+                      : (isLastAdmin ? 'ไม่สามารถลบ admin คนสุดท้ายของระบบได้' : 'ลบผู้ใช้งาน'));
+                %>
+                <tr data-user-row="<%= user.id %>">
                   <td><%= user.username %></td>
                   <td><%= user.name %></td>
                   <td><span class="role-badge"><%= user.role %></span></td>
@@ -89,6 +102,17 @@
                           <%= user.isActive === false ? 'เปิดใช้งาน' : 'ปิดใช้งาน' %>
                         </button>
                       </form>
+                      <button
+                        type="button"
+                        class="secondary-button compact danger delete-user-button"
+                        data-user-id="<%= user.id %>"
+                        data-username="<%= user.username %>"
+                        title="<%= deleteTitle %>"
+                        <%= deleteDisabled ? 'disabled' : '' %>
+                      >
+                        <i class="bi bi-trash"></i>
+                        ลบ
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -99,5 +123,33 @@
       </section>
     </main>
   </div>
+
+  <div id="deleteUserModal" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-dialog danger-modal" role="dialog" aria-modal="true" aria-labelledby="deleteUserTitle">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">Admin</p>
+          <h2 id="deleteUserTitle">ยืนยันการลบผู้ใช้งาน</h2>
+        </div>
+        <button type="button" class="icon-button" id="deleteUserCloseButton" aria-label="ปิดหน้าต่างยืนยัน">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <p class="modal-message">
+        คุณต้องการลบผู้ใช้ “<strong id="deleteUserName">-</strong>” ใช่หรือไม่?<br>
+        การลบนี้ไม่สามารถย้อนกลับได้
+      </p>
+      <div id="deleteUserError" class="alert hidden"></div>
+      <div class="modal-actions">
+        <button type="button" class="secondary-button" id="deleteUserCancelButton">ยกเลิก</button>
+        <button type="button" class="primary-button danger-button" id="deleteUserConfirmButton">
+          <i class="bi bi-trash"></i>
+          ยืนยันลบผู้ใช้งาน
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin-users.js?v=<%= assetVersion %>"></script>
 </body>
 </html>

@@ -71,7 +71,7 @@ function readUsers() {
 
   const parsed = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
   const users = Array.isArray(parsed) ? parsed : [];
-  if (!users.some((user) => user.role === 'admin')) {
+  if (!visibleUsers(users).some((user) => user.role === 'admin')) {
     const seededAdmin = envSeedUsers()[0];
     users.unshift({ ...seededAdmin, id: nextId(users) });
     writeUsers(users);
@@ -94,8 +94,16 @@ function publicUser(user) {
   return safeUser;
 }
 
+function isDeleted(user) {
+  return Boolean(user && user.deletedAt);
+}
+
+function visibleUsers(users) {
+  return users.filter((user) => !isDeleted(user));
+}
+
 function listUsers() {
-  return readUsers()
+  return visibleUsers(readUsers())
     .slice()
     .sort((a, b) => Number(a.id) - Number(b.id))
     .map(publicUser);
@@ -103,11 +111,11 @@ function listUsers() {
 
 function findUserByUsername(username) {
   const normalized = normalizeUsername(username);
-  return readUsers().find((user) => normalizeUsername(user.username) === normalized) || null;
+  return visibleUsers(readUsers()).find((user) => normalizeUsername(user.username) === normalized) || null;
 }
 
 function findUserById(id) {
-  return readUsers().find((user) => Number(user.id) === Number(id)) || null;
+  return visibleUsers(readUsers()).find((user) => Number(user.id) === Number(id)) || null;
 }
 
 function usernameExists(username, exceptId = null) {
@@ -122,12 +130,16 @@ function validateRole(role) {
 }
 
 function countActiveAdmins(users) {
-  return users.filter((user) => user.role === 'admin' && user.isActive !== false).length;
+  return visibleUsers(users).filter((user) => user.role === 'admin' && user.isActive !== false).length;
+}
+
+function countAdmins(users) {
+  return visibleUsers(users).filter((user) => user.role === 'admin').length;
 }
 
 function isLastActiveAdminChange(currentUser, nextValues) {
   const users = readUsers();
-  const current = users.find((user) => Number(user.id) === Number(currentUser.id));
+  const current = users.find((user) => Number(user.id) === Number(currentUser.id) && !isDeleted(user));
   if (!current || current.role !== 'admin' || current.isActive === false) return false;
 
   const nextRole = nextValues.role || current.role;
@@ -166,7 +178,7 @@ function createUser(input) {
 
 function updateUser(id, input) {
   const users = readUsers();
-  const index = users.findIndex((user) => Number(user.id) === Number(id));
+  const index = users.findIndex((user) => Number(user.id) === Number(id) && !isDeleted(user));
   if (index === -1) throw new Error('ไม่พบผู้ใช้งาน');
 
   const current = users[index];
@@ -178,6 +190,9 @@ function updateUser(id, input) {
   if (!username) throw new Error('กรุณาระบุ username');
   if (!name) throw new Error('กรุณาระบุชื่อแสดงผล');
   if (!validateRole(role)) throw new Error('role ไม่ถูกต้อง');
+  if (normalizeUsername(current.username) === 'admin' && normalizeUsername(username) !== 'admin') {
+    throw new Error('ไม่สามารถเปลี่ยน username ของผู้ดูแลระบบหลักได้');
+  }
   if (usernameExists(username, current.id)) throw new Error('username นี้ถูกใช้งานแล้ว');
   if (isLastActiveAdminChange(current, { role, isActive })) {
     throw new Error('ไม่สามารถปิดใช้งานหรือลดสิทธิ์ admin คนสุดท้ายได้');
@@ -197,7 +212,7 @@ function updateUser(id, input) {
 
 function resetPassword(id, password) {
   const users = readUsers();
-  const index = users.findIndex((user) => Number(user.id) === Number(id));
+  const index = users.findIndex((user) => Number(user.id) === Number(id) && !isDeleted(user));
   if (index === -1) throw new Error('ไม่พบผู้ใช้งาน');
   if (String(password || '').length < 6) throw new Error('password ต้องมีอย่างน้อย 6 ตัวอักษร');
 
@@ -212,7 +227,7 @@ function resetPassword(id, password) {
 
 function toggleActive(id) {
   const users = readUsers();
-  const index = users.findIndex((user) => Number(user.id) === Number(id));
+  const index = users.findIndex((user) => Number(user.id) === Number(id) && !isDeleted(user));
   if (index === -1) throw new Error('ไม่พบผู้ใช้งาน');
   const current = users[index];
   const nextActive = current.isActive === false;
@@ -229,6 +244,36 @@ function toggleActive(id) {
   return publicUser(users[index]);
 }
 
+function deleteUser(id, actor = {}) {
+  const users = readUsers();
+  const index = users.findIndex((user) => Number(user.id) === Number(id) && !isDeleted(user));
+  if (index === -1) throw new Error('ไม่พบผู้ใช้งาน');
+
+  const target = users[index];
+  if (normalizeUsername(target.username) === 'admin') {
+    throw new Error('ไม่สามารถลบผู้ดูแลระบบหลักได้');
+  }
+
+  if (Number(actor.id) === Number(target.id)) {
+    throw new Error('ไม่สามารถลบบัญชีที่กำลังใช้งานอยู่ได้');
+  }
+
+  if (target.role === 'admin' && countAdmins(users) <= 1) {
+    throw new Error('ไม่สามารถลบ admin คนสุดท้ายของระบบได้');
+  }
+
+  const timestamp = nowIso();
+  users[index] = {
+    ...target,
+    isActive: false,
+    deletedAt: timestamp,
+    deletedBy: actor.username || actor.id || null,
+    updatedAt: timestamp
+  };
+  writeUsers(users);
+  return publicUser(users[index]);
+}
+
 module.exports = {
   roles,
   findUserByUsername,
@@ -237,5 +282,6 @@ module.exports = {
   createUser,
   updateUser,
   resetPassword,
-  toggleActive
+  toggleActive,
+  deleteUser
 };

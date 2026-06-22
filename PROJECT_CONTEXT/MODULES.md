@@ -27,6 +27,7 @@
   - bcrypt password hash
   - role validation
   - last active admin protection
+  - soft delete support via `deletedAt`
 
 ## Telemed Dashboard
 - `src/routes/telemed.js`
@@ -74,6 +75,11 @@
 
 - `src/routes/adminUsers.js`
   - User management
+  - Supports editing username, display name, role, and active status for non-main-admin accounts
+
+- `src/routes/adminUsersApi.js`
+  - `DELETE /api/admin/users/:id`
+  - Admin-only soft delete endpoint with protections for main admin, self-delete, and last admin
 
 - `src/routes/todayPatients.js`
   - `/today-patients`

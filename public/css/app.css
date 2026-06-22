@@ -625,6 +625,10 @@ tfoot td {
   color: #92400e;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .db-alert {
   display: flex;
   align-items: center;
@@ -656,6 +660,14 @@ tfoot td {
   margin: 6px 0 0;
   color: var(--muted);
   font-size: 14px;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .settings-form {
@@ -693,11 +705,38 @@ tfoot td {
 }
 
 .user-table-wrap table {
-  min-width: 1120px;
+  min-width: 1260px;
 }
 
 .row-actions form {
   margin: 0;
+}
+
+.user-table-wrap .row-actions {
+  gap: 8px;
+}
+
+.danger-button {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.secondary-button.danger:hover,
+.danger-button:hover {
+  border-color: #fca5a5;
+  background: #ffe4e6;
+}
+
+.secondary-button:disabled,
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.delete-user-button:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
 }
 
 .status-badge {
@@ -726,6 +765,53 @@ tfoot td {
   gap: 10px;
   min-height: 48px;
   padding-top: 26px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.modal-dialog {
+  width: min(520px, 100%);
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.danger-modal {
+  border-color: #fecaca;
+}
+
+.modal-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.modal-message {
+  margin: 0 0 16px;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.modal-message strong {
+  color: #be123c;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .checkbox-field input {

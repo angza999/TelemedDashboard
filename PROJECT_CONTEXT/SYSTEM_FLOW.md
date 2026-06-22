@@ -57,6 +57,8 @@
 ## Admin User Flow
 1. Admin opens `/admin/users`.
 2. Route reads users from `data/users.json`.
-3. Admin can create/edit/reset/toggle.
+3. Admin can create/edit/reset/toggle/delete. Username editing is allowed for non-main-admin accounts; the main `admin` username is locked.
 4. Passwords are hashed.
-5. Last active admin cannot be disabled or demoted.
+5. Delete uses `DELETE /api/admin/users/:id` and performs a WebApp-only soft delete by setting `deletedAt`, `deletedBy`, and `isActive = false`.
+6. Main `admin`, the current session user, and the last admin cannot be deleted.
+7. Last active admin cannot be disabled or demoted.

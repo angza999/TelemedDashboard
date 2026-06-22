@@ -13,6 +13,7 @@ const settingsRoutes = require('./src/routes/settings');
 const queryToolRoutes = require('./src/routes/queryTool');
 const executiveRoutes = require('./src/routes/executive');
 const adminUsersRoutes = require('./src/routes/adminUsers');
+const adminUsersApiRoutes = require('./src/routes/adminUsersApi');
 const todayPatientsRoutes = require('./src/routes/todayPatients');
 const { ensureAuth, ensureRole } = require('./src/middleware/auth');
 
@@ -69,6 +70,16 @@ app.use((req, res, next) => {
   next();
 });
 
+function ensureApiAdmin(req, res, next) {
+  if (!req.session.user || req.session.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'ไม่มีสิทธิ์จัดการผู้ใช้งาน'
+    });
+  }
+  return next();
+}
+
 app.get('/', (req, res) => {
   if (req.session.user) return res.redirect('/telemed');
   return res.redirect('/login');
@@ -80,6 +91,7 @@ app.use('/executive', ensureAuth, ensureRole(['admin', 'executive']), executiveR
 app.use('/', ensureAuth, ensureRole(['admin', 'executive']), todayPatientsRoutes.publicRouter);
 app.use('/settings', ensureAuth, ensureRole(['admin']), settingsRoutes);
 app.use('/admin/query-tool', ensureAuth, ensureRole(['admin']), queryToolRoutes);
+app.use('/api/admin/users', ensureAuth, ensureApiAdmin, adminUsersApiRoutes);
 app.use('/admin/users', ensureAuth, ensureRole(['admin']), adminUsersRoutes);
 app.use('/', ensureAuth, ensureRole(['admin']), todayPatientsRoutes.adminRouter);
 app.use('/admin', ensureAuth, ensureRole(['admin']), (req, res) => {
