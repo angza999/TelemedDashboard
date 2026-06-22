@@ -779,6 +779,8 @@ tfoot td {
 
 .modal-dialog {
   width: min(520px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
   padding: 22px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1617,6 +1619,115 @@ tfoot td {
   animation: skeleton 1.2s ease-in-out infinite;
 }
 
+.today-card.clickable {
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.today-card.clickable:hover,
+.today-card.clickable:focus-visible {
+  border-color: #5eead4;
+  box-shadow: 0 18px 38px rgba(15, 118, 110, 0.16);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.today-card-action {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.ncd-subclinic-dialog {
+  width: min(860px, calc(100vw - 32px));
+}
+
+.ncd-subclinic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.ncd-subclinic-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 126px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ncd-subclinic-card.not-configured {
+  background: #f8fafc;
+}
+
+.ncd-subclinic-icon {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: #ccfbf1;
+  color: var(--primary);
+  font-size: 22px;
+}
+
+.ncd-subclinic-card.not-configured .ncd-subclinic-icon {
+  background: #e5edf5;
+  color: #64748b;
+}
+
+.ncd-subclinic-card p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.ncd-subclinic-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ncd-subclinic-metric strong {
+  color: var(--text);
+  font-size: 34px;
+  line-height: 1;
+}
+
+.ncd-subclinic-metric span,
+.ncd-subclinic-card small,
+.ncd-subclinic-footer span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.ncd-subclinic-card small {
+  display: block;
+  margin-top: 8px;
+}
+
+.ncd-subclinic-note {
+  margin: 0 0 14px;
+}
+
+.ncd-subclinic-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.ncd-subclinic-footer > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
 @keyframes skeleton {
   to {
     background-position: -220% 0;
@@ -1770,6 +1881,15 @@ tfoot td {
     max-width: none;
     justify-content: center;
     text-align: center;
+  }
+
+  .ncd-subclinic-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ncd-subclinic-footer {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .mapping-tabs,

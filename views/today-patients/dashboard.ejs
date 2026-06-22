@@ -61,7 +61,7 @@
             </div>
           </div>
         </article>
-        <article class="today-card ncd">
+        <article class="today-card ncd clickable" id="ncdSubclinicCard" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="ncdSubclinicModal">
           <span class="today-card-icon"><i class="bi bi-heart-pulse"></i></span>
           <div class="today-card-content">
             <p>งาน NCD</p>
@@ -69,6 +69,7 @@
               <strong data-today-value="ncd_total">-</strong>
               <span>คน</span>
             </div>
+            <small class="today-card-action">คลิกดูคลินิกย่อย</small>
           </div>
         </article>
         <article class="today-card ipd">
@@ -94,6 +95,44 @@
         </article>
       </section>
     </main>
+  </div>
+
+  <div id="ncdSubclinicModal" class="modal-backdrop ncd-subclinic-modal hidden" aria-hidden="true">
+    <div class="modal-dialog ncd-subclinic-dialog" role="dialog" aria-modal="true" aria-labelledby="ncdSubclinicTitle">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">ผู้รับบริการวันนี้</p>
+          <h2 id="ncdSubclinicTitle">คลินิกย่อย NCD วันนี้</h2>
+          <p class="panel-note">แสดงยอดผู้รับบริการตามห้องที่ตั้งค่าไว้ในแต่ละคลินิก</p>
+        </div>
+        <button type="button" class="icon-button" id="ncdSubclinicCloseButton" aria-label="ปิดหน้าต่างคลินิกย่อย NCD">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div id="ncdSubclinicStatus" class="dashboard-status loading">กำลังโหลดข้อมูลคลินิกย่อย...</div>
+      <div id="ncdSubclinicGrid" class="ncd-subclinic-grid" aria-live="polite"></div>
+
+      <div id="ncdSubclinicNote" class="alert warning ncd-subclinic-note hidden">
+        หมายเหตุ: ยอดรวมคลินิกย่อยอาจไม่เท่ากับยอด NCD หลัก หากการตั้งค่าห้องยังไม่ครบ
+      </div>
+
+      <div class="ncd-subclinic-footer">
+        <div>
+          <strong id="ncdSubclinicTotal">รวมคลินิกย่อย NCD วันนี้: - คน</strong>
+          <span id="ncdSubclinicUpdated">อัปเดตล่าสุด -</span>
+        </div>
+        <div class="modal-actions">
+          <% if (currentUser && currentUser.role === 'admin') { %>
+            <a class="secondary-button" href="/admin/ncd-subclinics">
+              <i class="bi bi-gear"></i>
+              ตั้งค่าคลินิกย่อย
+            </a>
+          <% } %>
+          <button type="button" class="primary-button" id="ncdSubclinicCancelButton">ปิด</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="/js/today-patients.js?v=<%= assetVersion %>"></script>

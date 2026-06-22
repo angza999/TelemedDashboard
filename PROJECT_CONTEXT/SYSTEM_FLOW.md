@@ -44,7 +44,9 @@
 4. OPD/NCD/ER are counted from HOSxP `ovst` by `vstdate = CURDATE()` and `main_dep IN (...)`.
 5. IPD is counted from HOSxP `ipt` by selected ward and no discharge date.
 6. The browser updates four cards on initial load and only refreshes again when the user clicks `รีเฟรชข้อมูล`.
-7. If the API fails, the page keeps the last successful numbers and shows a connection warning.
+7. Clicking the NCD card opens a modal and calls `/api/today-patients/ncd-subclinics`.
+8. NCD subclinic counts read `data/dashboard-ncd-subclinic-mapping.json`, then count HOSxP `ovst.main_dep` by selected DEP codes using SELECT only.
+9. If the API fails, the page keeps the last successful numbers and shows a connection warning.
 
 ## Today Patients Admin Mapping Flow
 1. Admin opens `/admin/today-patients-mapping`.
@@ -53,6 +55,14 @@
 4. Backend validates that the same DEP code is not active in OPD/NCD/ER at the same time.
 5. Save writes only `data/dashboard-service-mapping.json`; it never writes to HOSxP and never creates HOSxP tables.
 6. The next refresh of `/today-patients` uses the new mapping.
+
+## NCD Subclinic Admin Mapping Flow
+1. Admin opens `/admin/ncd-subclinics`.
+2. UI calls Admin APIs to read HOSxP departments and WebApp NCD subclinic mapping.
+3. Admin selects DEP codes for `HT`, `DM`, `COPD`, and `CKD`.
+4. Frontend and backend validate that the same DEP code is not active in more than one NCD subclinic at the same time.
+5. Save writes only `data/dashboard-ncd-subclinic-mapping.json`; it never writes to HOSxP and never creates HOSxP tables.
+6. The next NCD modal refresh on `/today-patients` uses the new subclinic mapping.
 
 ## Admin User Flow
 1. Admin opens `/admin/users`.

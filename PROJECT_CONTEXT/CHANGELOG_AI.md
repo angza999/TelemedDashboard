@@ -59,6 +59,8 @@
 - Changed `/today-patients` refresh behavior from automatic 30-second polling to user-triggered manual refresh only.
 - Refined `/today-patients` UI for executive scanning: compact status panel, clearer manual refresh affordance, larger card numbers, baseline-aligned `คน` units, balanced card spacing, and a reliable IPD building icon.
 - Moved the `/today-patients` manual-refresh helper text into the right-side refresh action area so the date/status line stays compact.
+- Added NCD subclinic drill-down on the `/today-patients` NCD card with a modal for `HT`, `DM`, `COPD`, and `CKD`.
+- Added Admin > `ตั้งค่าคลินิกย่อย NCD` using WebApp JSON storage `data/dashboard-ncd-subclinic-mapping.json`; HOSxP remains read-only and is queried with SELECT-only `ovst.main_dep` counts.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

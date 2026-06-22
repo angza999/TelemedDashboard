@@ -5,7 +5,10 @@ const {
   resetDefaultMappings,
   fetchDepartments,
   fetchWards,
-  fetchTodayPatientsSummary
+  fetchTodayPatientsSummary,
+  getNcdSubclinicMappingGroups,
+  saveNcdSubclinicMappingGroups,
+  fetchNcdSubclinicSummary
 } = require('../services/todayPatientsService');
 
 const publicRouter = express.Router();
@@ -32,9 +35,30 @@ publicRouter.get('/api/today-patients/summary', async (req, res, next) => {
   }
 });
 
+publicRouter.get('/api/today-patients/ncd-subclinics', async (req, res, next) => {
+  try {
+    const data = await fetchNcdSubclinicSummary();
+    res.json({ success: true, data });
+  } catch (err) {
+    if (isDatabaseSetupError(err)) {
+      return res.status(503).json({
+        success: false,
+        message: 'ไม่สามารถดึงข้อมูลคลินิกย่อย NCD ได้'
+      });
+    }
+    next(err);
+  }
+});
+
 adminRouter.get('/admin/today-patients-mapping', (req, res) => {
   res.render('admin/today-patients-mapping', {
     title: 'ตั้งค่าผู้รับบริการวันนี้'
+  });
+});
+
+adminRouter.get('/admin/ncd-subclinics', (req, res) => {
+  res.render('admin/ncd-subclinics', {
+    title: 'ตั้งค่าคลินิกย่อย NCD'
   });
 });
 
@@ -65,6 +89,37 @@ adminRouter.get('/api/admin/today-patients/mapping', async (req, res, next) => {
     res.json({ success: true, data: await getMappingGroups() });
   } catch (err) {
     next(err);
+  }
+});
+
+adminRouter.get('/api/admin/ncd-subclinics/departments', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await fetchDepartments() });
+  } catch (err) {
+    if (isDatabaseSetupError(err)) {
+      return res.status(503).json({ success: false, message: databaseSetupMessage(err) });
+    }
+    next(err);
+  }
+});
+
+adminRouter.get('/api/admin/ncd-subclinics/mapping', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: getNcdSubclinicMappingGroups() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/api/admin/ncd-subclinics/mapping', async (req, res) => {
+  try {
+    const data = saveNcdSubclinicMappingGroups(req.body || {});
+    res.json({ success: true, data, message: 'บันทึกการตั้งค่าคลินิกย่อย NCD สำเร็จ' });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: err.message || 'บันทึกการตั้งค่าคลินิกย่อย NCD ไม่สำเร็จ'
+    });
   }
 });
 

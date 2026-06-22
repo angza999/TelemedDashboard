@@ -4,8 +4,10 @@ const { getPool } = require('../db');
 
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 const MAPPING_PATH = path.join(DATA_DIR, 'dashboard-service-mapping.json');
+const NCD_SUBCLINIC_MAPPING_PATH = path.join(DATA_DIR, 'dashboard-ncd-subclinic-mapping.json');
 const CARD_KEYS = ['OPD', 'NCD', 'IPD', 'ER'];
 const DEP_CARD_KEYS = ['OPD', 'NCD', 'ER'];
+const NCD_SUBCLINIC_KEYS = ['HT', 'DM', 'COPD', 'CKD'];
 
 const CARD_META = {
   OPD: { label: 'ผู้ป่วยนอก OPD', sourceType: 'DEP' },
@@ -25,6 +27,13 @@ const DEFAULT_DEP_MAPPINGS = [
   ['ER', 'DEP', '082', 'ER', 2],
   ['ER', 'DEP', '051', 'ER', 3]
 ];
+
+const NCD_SUBCLINIC_META = {
+  HT: { name: 'คลินิกความดัน', sourceType: 'DEP', sortOrder: 1 },
+  DM: { name: 'คลินิกเบาหวาน', sourceType: 'DEP', sortOrder: 2 },
+  COPD: { name: 'คลินิก COPD', sourceType: 'DEP', sortOrder: 3 },
+  CKD: { name: 'คลินิกโรคไต', sourceType: 'DEP', sortOrder: 4 }
+};
 
 function bangkokParts(date = new Date()) {
   return new Intl.DateTimeFormat('en-GB', {
@@ -69,6 +78,23 @@ function mappingRow(cardKey, sourceType, sourceCode, displayName, sortOrder, id)
   return {
     id,
     card_key: cardKey,
+    source_type: sourceType,
+    source_code: normalizeCode(sourceCode),
+    display_name: String(displayName || sourceCode || '').trim(),
+    active: 1,
+    sort_order: Number(sortOrder || 0),
+    created_at: timestamp,
+    updated_at: timestamp
+  };
+}
+
+function ncdSubclinicRow(subclinicKey, sourceType, sourceCode, displayName, sortOrder, id) {
+  const timestamp = nowIso();
+  const meta = NCD_SUBCLINIC_META[subclinicKey];
+  return {
+    id,
+    subclinic_key: subclinicKey,
+    subclinic_name: meta ? meta.name : subclinicKey,
     source_type: sourceType,
     source_code: normalizeCode(sourceCode),
     display_name: String(displayName || sourceCode || '').trim(),
@@ -124,14 +150,51 @@ function writeStore(rows) {
   return payload.mappings;
 }
 
+function writeNcdSubclinicStore(rows) {
+  ensureDataDir();
+  const payload = {
+    version: 1,
+    updated_at: nowIso(),
+    subclinics: NCD_SUBCLINIC_KEYS.map((key) => ({
+      key,
+      name: NCD_SUBCLINIC_META[key].name,
+      source_type: NCD_SUBCLINIC_META[key].sourceType,
+      sort_order: NCD_SUBCLINIC_META[key].sortOrder
+    })),
+    mappings: rows.map((row, index) => ({
+      ...row,
+      id: index + 1,
+      active: row.active === 0 ? 0 : 1,
+      source_type: 'DEP',
+      source_code: normalizeCode(row.source_code)
+    }))
+  };
+  const tempPath = `${NCD_SUBCLINIC_MAPPING_PATH}.tmp`;
+  fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
+  fs.renameSync(tempPath, NCD_SUBCLINIC_MAPPING_PATH);
+  return payload.mappings;
+}
+
 async function ensureStore() {
   if (fs.existsSync(MAPPING_PATH)) return;
   writeStore(await defaultMappings());
 }
 
+function ensureNcdSubclinicStore() {
+  if (fs.existsSync(NCD_SUBCLINIC_MAPPING_PATH)) return;
+  writeNcdSubclinicStore([]);
+}
+
 async function readStore() {
   await ensureStore();
   const raw = fs.readFileSync(MAPPING_PATH, 'utf8');
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed.mappings) ? parsed.mappings : [];
+}
+
+function readNcdSubclinicStore() {
+  ensureNcdSubclinicStore();
+  const raw = fs.readFileSync(NCD_SUBCLINIC_MAPPING_PATH, 'utf8');
   const parsed = JSON.parse(raw);
   return Array.isArray(parsed.mappings) ? parsed.mappings : [];
 }
@@ -150,8 +213,26 @@ function groupMappings(rows) {
   }, {});
 }
 
+function groupNcdSubclinicMappings(rows) {
+  return NCD_SUBCLINIC_KEYS.reduce((acc, key) => {
+    acc[key] = rows
+      .filter((row) => row.subclinic_key === key && row.active !== 0)
+      .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+      .map((row) => ({
+        source_type: 'DEP',
+        source_code: normalizeCode(row.source_code),
+        display_name: row.display_name || row.source_code
+      }));
+    return acc;
+  }, {});
+}
+
 async function getMappingGroups() {
   return groupMappings(await readStore());
+}
+
+function getNcdSubclinicMappingGroups() {
+  return groupNcdSubclinicMappings(readNcdSubclinicStore());
 }
 
 function validateMappingPayload(payload) {
@@ -197,10 +278,66 @@ function validateMappingPayload(payload) {
   return rows;
 }
 
+function validateNcdSubclinicMappingPayload(payload) {
+  const rows = [];
+  const depUsage = new Map();
+
+  Object.keys(payload || {}).forEach((key) => {
+    if (!NCD_SUBCLINIC_KEYS.includes(key)) {
+      throw new Error(`ไม่รองรับคลินิกย่อย NCD key ${key}`);
+    }
+  });
+
+  NCD_SUBCLINIC_KEYS.forEach((subclinicKey) => {
+    const items = Array.isArray(payload[subclinicKey]) ? payload[subclinicKey] : [];
+    const seenInSubclinic = new Set();
+
+    items.forEach((item, index) => {
+      const sourceType = String(item.source_type || '').trim().toUpperCase();
+      const sourceCode = normalizeCode(item.source_code);
+
+      if (sourceType !== 'DEP') {
+        throw new Error(`${NCD_SUBCLINIC_META[subclinicKey].name} ต้องใช้ source_type DEP เท่านั้น`);
+      }
+      if (typeof item.source_code !== 'string') {
+        throw new Error(`${NCD_SUBCLINIC_META[subclinicKey].name} source_code ต้องเป็น string`);
+      }
+      if (!sourceCode) {
+        throw new Error(`${NCD_SUBCLINIC_META[subclinicKey].name} มีรหัสห้องว่าง`);
+      }
+      if (seenInSubclinic.has(sourceCode)) return;
+      seenInSubclinic.add(sourceCode);
+
+      const existing = depUsage.get(sourceCode);
+      if (existing && existing !== subclinicKey) {
+        throw new Error(`รหัสห้อง ${sourceCode} ถูกเลือกซ้ำใน ${NCD_SUBCLINIC_META[existing].name} และ ${NCD_SUBCLINIC_META[subclinicKey].name}`);
+      }
+      depUsage.set(sourceCode, subclinicKey);
+
+      rows.push(ncdSubclinicRow(
+        subclinicKey,
+        'DEP',
+        sourceCode,
+        item.display_name || sourceCode,
+        index + 1,
+        rows.length + 1
+      ));
+    });
+  });
+
+  return rows;
+}
+
 async function saveMappingGroups(payload) {
   const rows = validateMappingPayload(payload || {});
   writeStore(rows);
   return groupMappings(rows);
+}
+
+function saveNcdSubclinicMappingGroups(payload) {
+  const rows = validateNcdSubclinicMappingPayload(payload || {});
+  writeNcdSubclinicStore(rows);
+  return groupNcdSubclinicMappings(rows);
 }
 
 async function resetDefaultMappings() {
@@ -291,13 +428,63 @@ async function fetchTodayPatientsSummary() {
   };
 }
 
+function buildEmptyNcdSubclinic(key) {
+  return {
+    key,
+    name: NCD_SUBCLINIC_META[key].name,
+    total: 0,
+    mapped_rooms: 0,
+    rooms: []
+  };
+}
+
+async function fetchNcdSubclinicSummary() {
+  const mapping = getNcdSubclinicMappingGroups();
+  const mainMapping = await getMappingGroups();
+  const pool = getPool();
+
+  const subclinics = await Promise.all(NCD_SUBCLINIC_KEYS.map(async (key) => {
+    const rows = mapping[key] || [];
+    const depcodes = codesFor(rows, 'DEP');
+    if (!depcodes.length) return buildEmptyNcdSubclinic(key);
+
+    const total = await countOvstByMainDep(pool, depcodes);
+    return {
+      key,
+      name: NCD_SUBCLINIC_META[key].name,
+      total,
+      mapped_rooms: depcodes.length,
+      rooms: rows.map((row) => ({
+        depcode: normalizeCode(row.source_code),
+        department: row.display_name || row.source_code
+      }))
+    };
+  }));
+
+  const total = subclinics.reduce((sum, item) => sum + Number(item.total || 0), 0);
+  const mainNcdTotal = await countOvstByMainDep(pool, codesFor(mainMapping.NCD, 'DEP'));
+
+  return {
+    total,
+    main_ncd_total: mainNcdTotal,
+    totals_match_main: total === mainNcdTotal,
+    subclinics,
+    last_updated: bangkokIsoString()
+  };
+}
+
 module.exports = {
   CARD_KEYS,
   CARD_META,
+  NCD_SUBCLINIC_KEYS,
+  NCD_SUBCLINIC_META,
   getMappingGroups,
   saveMappingGroups,
   resetDefaultMappings,
+  getNcdSubclinicMappingGroups,
+  saveNcdSubclinicMappingGroups,
   fetchDepartments,
   fetchWards,
-  fetchTodayPatientsSummary
+  fetchTodayPatientsSummary,
+  fetchNcdSubclinicSummary
 };

@@ -46,6 +46,7 @@ Manual checks:
 - Test Query Tool result with sensitive columns such as `hn` or `cid`; warning should appear and Excel metadata should include the warning.
 - Test Executive overview trend: `Total Telemed` chart should use actual Telemed `total`, not DM/HT-only totals.
 - Test PDF export on Linux server for readable Thai text; install Noto Sans Thai if needed.
+- Test `/today-patients` NCD card opens the subclinic modal and `/admin/ncd-subclinics` saves mapping without writing to HOSxP.
 
 ## Server Update
 

@@ -84,27 +84,39 @@
 - `src/routes/todayPatients.js`
   - `/today-patients`
   - `/api/today-patients/summary`
+  - `/api/today-patients/ncd-subclinics`
   - `/admin/today-patients-mapping`
+  - `/admin/ncd-subclinics`
   - `/api/admin/today-patients/departments`
   - `/api/admin/today-patients/wards`
   - `/api/admin/today-patients/mapping`
+  - `/api/admin/ncd-subclinics/departments`
+  - `/api/admin/ncd-subclinics/mapping`
 
 - `src/services/todayPatientsService.js`
   - Reads HOSxP data with SELECT-only queries and writes mapping only to WebApp runtime file `data/dashboard-service-mapping.json`
+  - Stores NCD subclinic mapping in WebApp runtime file `data/dashboard-ncd-subclinic-mapping.json`
   - Reads HOSxP `kskdepartment`, `ward`, `ovst`, and `ipt` with parameter binding
   - Counts OPD/NCD/ER by `ovst.main_dep` and active IPD by `ipt.ward`
+  - Counts NCD subclinics `HT`, `DM`, `COPD`, and `CKD` by selected `ovst.main_dep` rooms without ICD10 or clinicmember logic
 
 - `views/today-patients/dashboard.ejs`
-  - Real-time dashboard with 4 cards
+  - Real-time dashboard with 4 cards and NCD subclinic detail modal
 
 - `views/admin/today-patients-mapping.ejs`
   - Admin mapping UI for OPD/NCD/IPD/ER
 
+- `views/admin/ncd-subclinics.ejs`
+  - Admin mapping UI for NCD subclinics
+
 - `public/js/today-patients.js`
-  - Initial load and user-triggered manual refresh only
+  - Initial load, user-triggered manual refresh only, and NCD subclinic modal loading
 
 - `public/js/today-patients-mapping.js`
   - Admin mapping tabs, search, checkbox validation, save, and reset
+
+- `public/js/ncd-subclinics-admin.js`
+  - Admin NCD subclinic tabs, search, duplicate depcode protection, and save
 
 ## Shared UI
 - `views/partials/sidebar.ejs`

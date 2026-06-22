@@ -90,3 +90,17 @@ This is an application runtime file only:
 - `sort_order`: display/save order
 
 Important rule: this project must not create tables, alter tables, or write any configuration back into HOSxP. Mapping writes use this JSON-backed WebApp store only, and HOSxP remains read-only.
+
+### `data/dashboard-ncd-subclinic-mapping.json`
+Runtime WebApp storage for NCD subclinic mapping in `/today-patients`. Do not commit.
+
+This is an application runtime file only:
+- `subclinic_key`: `HT`, `DM`, `COPD`, or `CKD`
+- `subclinic_name`: display name such as `คลินิกความดัน`
+- `source_type`: `DEP` only
+- `source_code`: HOSxP `kskdepartment.depcode`; always stored as a string so leading zeroes remain intact
+- `display_name`: room name for Admin UI
+- `active`: `1` means included
+- `sort_order`: display/save order
+
+NCD subclinic counts read HOSxP `ovst` with `vstdate = CURDATE()` and `main_dep IN (...)` using `COUNT(DISTINCT vn)`. They do not use ICD10, diagnosis, clinicmember, or disease codes. This mapping writes only to the WebApp JSON store and never to HOSxP.
