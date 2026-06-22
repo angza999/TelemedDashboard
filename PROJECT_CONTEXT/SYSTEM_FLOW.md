@@ -46,7 +46,8 @@
 6. The browser updates four cards on initial load and only refreshes again when the user clicks `รีเฟรชข้อมูล`.
 7. Clicking the NCD card opens a modal and calls `/api/today-patients/ncd-subclinics`.
 8. NCD subclinic counts read `data/dashboard-ncd-subclinic-mapping.json`, then count HOSxP `ovst.main_dep` by selected DEP codes using SELECT only.
-9. If the API fails, the page keeps the last successful numbers and shows a connection warning.
+9. The modal compares `main_ncd_total` from the main NCD mapping with the summed subclinic total; `ungrouped = max(main_ncd_total - subclinic_total, 0)` and negative gaps are shown as a mapping check.
+10. If the API fails, the page keeps the last successful numbers and shows a connection warning.
 
 ## Today Patients Admin Mapping Flow
 1. Admin opens `/admin/today-patients-mapping`.

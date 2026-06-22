@@ -111,6 +111,7 @@
 
 - `public/js/today-patients.js`
   - Initial load, user-triggered manual refresh only, and NCD subclinic modal loading
+  - NCD subclinic modal compares `main_ncd_total` with the four subclinic totals, renders the ungrouped gap, displays configured/no-patient/not-configured states, and highlights the highest subclinic for the day
 
 - `public/js/today-patients-mapping.js`
   - Admin mapping tabs, search, checkbox validation, save, and reset

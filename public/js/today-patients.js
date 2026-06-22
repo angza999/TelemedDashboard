@@ -10,6 +10,7 @@
   const ncdCloseButton = document.getElementById('ncdSubclinicCloseButton');
   const ncdCancelButton = document.getElementById('ncdSubclinicCancelButton');
   const ncdStatus = document.getElementById('ncdSubclinicStatus');
+  const ncdSummary = document.getElementById('ncdSubclinicSummary');
   const ncdGrid = document.getElementById('ncdSubclinicGrid');
   const ncdTotal = document.getElementById('ncdSubclinicTotal');
   const ncdUpdated = document.getElementById('ncdSubclinicUpdated');
@@ -78,6 +79,89 @@
     ncdStatus.textContent = message;
   }
 
+  function getNcdMainTotal(data) {
+    const fromApi = Number(data.main_ncd_total);
+    if (Number.isFinite(fromApi)) return fromApi;
+    const ncdValue = document.querySelector('[data-today-value="ncd_total"]');
+    return Number((ncdValue?.textContent || '0').replace(/,/g, '')) || 0;
+  }
+
+  function getNcdSubclinicVisual(key) {
+    const visuals = {
+      HT: { theme: 'ht', icon: 'bi-heart-pulse' },
+      DM: { theme: 'dm', icon: 'bi-droplet-half' },
+      COPD: { theme: 'copd', icon: 'bi-activity' },
+      CKD: { theme: 'ckd', icon: 'bi-hospital' }
+    };
+    return visuals[key] || { theme: 'default', icon: 'bi-heart-pulse' };
+  }
+
+  function renderNcdSummary(data, mainTotal, subclinicTotal, difference, ungroupedTotal) {
+    if (!ncdSummary) return;
+    const gapLabel = difference < 0 ? 'ตรวจสอบ Mapping' : 'ยังไม่จัดกลุ่ม';
+    const gapValue = difference < 0 ? Math.abs(difference) : ungroupedTotal;
+    const gapClass = difference !== 0 ? 'attention' : 'balanced';
+    ncdSummary.innerHTML = `
+      <div class="ncd-summary-card main">
+        <span>NCD หลัก</span>
+        <strong>${formatNumber(mainTotal)}</strong>
+        <small>คน</small>
+      </div>
+      <div class="ncd-summary-card total">
+        <span>รวมคลินิกย่อย</span>
+        <strong>${formatNumber(subclinicTotal)}</strong>
+        <small>คน</small>
+      </div>
+      <div class="ncd-summary-card ${gapClass}">
+        <span>${gapLabel}</span>
+        <strong>${formatNumber(gapValue)}</strong>
+        <small>${difference < 0 ? 'คนเกินยอดหลัก' : 'คน'}</small>
+      </div>
+    `;
+  }
+
+  function renderNcdNote(data, difference) {
+    if (!ncdNote) return;
+    const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
+    const hasUnmappedSubclinic = subclinics.some((item) => Number(item.mapped_rooms || 0) === 0);
+
+    if (difference > 0) {
+      ncdNote.className = 'alert warning ncd-subclinic-note';
+      ncdNote.textContent = `พบส่วนต่าง ${formatNumber(difference)} คน: อาจเกิดจากห้อง NCD บางห้องยังไม่ได้ผูกกับคลินิกย่อย กรุณาตรวจสอบการตั้งค่าคลินิกย่อย NCD`;
+      return;
+    }
+
+    if (difference < 0) {
+      ncdNote.className = 'alert warning ncd-subclinic-note';
+      ncdNote.textContent = `รวมคลินิกย่อยมากกว่ายอด NCD หลัก ${formatNumber(Math.abs(difference))} คน กรุณาตรวจสอบ Mapping คลินิกย่อย NCD`;
+      return;
+    }
+
+    if (hasUnmappedSubclinic) {
+      ncdNote.className = 'alert warning ncd-subclinic-note';
+      ncdNote.textContent = 'มีคลินิกย่อยบางรายการที่ยังไม่ได้ตั้งค่าห้อง กรุณาตรวจสอบการตั้งค่าคลินิกย่อย NCD';
+      return;
+    }
+
+    ncdNote.classList.add('hidden');
+  }
+
+  function getSubclinicStatusLines(total, mappedRooms) {
+    if (total === 0 && mappedRooms === 0) {
+      return ['ยังไม่ได้ตั้งค่าห้อง'];
+    }
+    if (total === 0 && mappedRooms > 0) {
+      return [
+        `ตั้งค่าแล้ว ${formatNumber(mappedRooms)} ห้อง`,
+        'วันนี้ยังไม่มีผู้รับบริการ'
+      ];
+    }
+    if (mappedRooms > 0) {
+      return [`นับจาก ${formatNumber(mappedRooms)} ห้อง`];
+    }
+    return ['ตรวจสอบ Mapping'];
+  }
+
   function renderData(data) {
     valueEls.forEach((el) => {
       const key = el.dataset.todayValue;
@@ -92,32 +176,49 @@
   function renderNcdSubclinics(data) {
     const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
     if (!ncdGrid) return;
+    const subclinicTotal = Number(data.total || 0);
+    const mainTotal = getNcdMainTotal(data);
+    const difference = mainTotal - subclinicTotal;
+    const ungroupedTotal = Math.max(difference, 0);
+    const totals = subclinics.map((item) => Number(item.total || 0));
+    const maxTotal = Math.max(0, ...totals);
+
+    renderNcdSummary(data, mainTotal, subclinicTotal, difference, ungroupedTotal);
 
     ncdGrid.innerHTML = subclinics.map((item) => {
       const mappedRooms = Number(item.mapped_rooms || 0);
-      const roomText = mappedRooms > 0
-        ? `นับจาก ${formatNumber(mappedRooms)} ห้อง`
-        : 'ยังไม่ได้ตั้งค่าห้อง';
+      const total = Number(item.total || 0);
+      const visual = getNcdSubclinicVisual(item.key);
+      const statusLines = getSubclinicStatusLines(total, mappedRooms);
       const roomClass = mappedRooms > 0 ? 'configured' : 'not-configured';
+      const emptyClass = total === 0 ? 'empty-total' : 'has-total';
+      const topBadge = maxTotal > 0 && total === maxTotal
+        ? '<span class="ncd-subclinic-badge">สูงสุดวันนี้</span>'
+        : '';
 
       return `
-        <article class="ncd-subclinic-card ${roomClass}">
-          <span class="ncd-subclinic-icon"><i class="bi bi-heart-pulse"></i></span>
+        <article class="ncd-subclinic-card ${roomClass} ${emptyClass} theme-${visual.theme}">
+          <span class="ncd-subclinic-icon"><i class="bi ${visual.icon}"></i></span>
           <div>
-            <p>${escapeHtml(item.name || '-')}</p>
+            <div class="ncd-subclinic-card-heading">
+              <p>${escapeHtml(item.name || '-')}</p>
+              ${topBadge}
+            </div>
             <div class="ncd-subclinic-metric">
-              <strong>${formatNumber(item.total)}</strong>
+              <strong>${formatNumber(total)}</strong>
               <span>คน</span>
             </div>
-            <small>${escapeHtml(roomText)}</small>
+            <div class="ncd-subclinic-status-text">
+              ${statusLines.map((line) => `<small>${escapeHtml(line)}</small>`).join('')}
+            </div>
           </div>
         </article>
       `;
     }).join('');
 
-    if (ncdTotal) ncdTotal.textContent = `รวมคลินิกย่อย NCD วันนี้: ${formatNumber(data.total)} คน`;
+    if (ncdTotal) ncdTotal.textContent = `รวมคลินิกย่อย NCD วันนี้: ${formatNumber(subclinicTotal)} คน`;
     if (ncdUpdated) ncdUpdated.textContent = formatTime(data.last_updated);
-    if (ncdNote) ncdNote.classList.toggle('hidden', data.totals_match_main !== false);
+    renderNcdNote(data, difference);
   }
 
   async function loadNcdSubclinics() {
@@ -138,6 +239,7 @@
     } catch (err) {
       setNcdStatus('error', err.message || 'ไม่สามารถดึงข้อมูลคลินิกย่อย NCD ได้');
       if (ncdGrid) ncdGrid.innerHTML = '<div class="empty">ไม่สามารถแสดงข้อมูลคลินิกย่อย NCD ได้</div>';
+      if (ncdSummary) ncdSummary.innerHTML = '';
       if (ncdTotal) ncdTotal.textContent = 'รวมคลินิกย่อย NCD วันนี้: - คน';
       if (ncdUpdated) ncdUpdated.textContent = 'อัปเดตล่าสุด -';
       if (ncdNote) ncdNote.classList.add('hidden');

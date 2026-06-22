@@ -61,6 +61,7 @@
 - Moved the `/today-patients` manual-refresh helper text into the right-side refresh action area so the date/status line stays compact.
 - Added NCD subclinic drill-down on the `/today-patients` NCD card with a modal for `HT`, `DM`, `COPD`, and `CKD`.
 - Added Admin > `ตั้งค่าคลินิกย่อย NCD` using WebApp JSON storage `data/dashboard-ncd-subclinic-mapping.json`; HOSxP remains read-only and is queried with SELECT-only `ovst.main_dep` counts.
+- Refined the `/today-patients` NCD subclinic modal as an executive mini-dashboard: it now compares main NCD vs subclinic totals, shows an ungrouped/mapping gap, explains mismatches with data-quality notes, separates configured/no-patient/not-configured states, highlights the highest subclinic of the day, and uses distinct soft visual themes per subclinic.
 
 ### User Management
 - Added persistent user management via `data/users.json`.

@@ -24,6 +24,7 @@
 - Department target chart tooltips should show room, service group, OPD total, Telemed achieved, 50% target, Telemed-to-OPD percent, and the gap wording (`ต้องเพิ่ม`, `เกินเป้า`, or `ถึงเป้า`).
 - Service-group quick filters should update the whole department target tab, including KPI cards, summaries, charts, table, and Excel export.
 - The `/today-patients` page should read as a compact executive dashboard: status/date/last-updated on the left where space allows, manual refresh button and helper text grouped on the right, and four equal-height cards with large baseline-aligned numbers plus `คน` units.
+- The `/today-patients` NCD subclinic modal should read as a small dashboard: show main NCD, total subclinics, and ungrouped/mapping gap before the subclinic cards; use clear status copy for not configured, configured with no patients today, and active patient counts; use soft distinct visual themes for HT, DM, COPD, and CKD; and keep the admin settings action visible only for admin users.
 
 ## Colors
 Current style uses:

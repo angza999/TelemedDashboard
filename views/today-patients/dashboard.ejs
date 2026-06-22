@@ -110,6 +110,7 @@
         </button>
       </div>
 
+      <div id="ncdSubclinicSummary" class="ncd-subclinic-summary" aria-live="polite"></div>
       <div id="ncdSubclinicStatus" class="dashboard-status loading">กำลังโหลดข้อมูลคลินิกย่อย...</div>
       <div id="ncdSubclinicGrid" class="ncd-subclinic-grid" aria-live="polite"></div>
 
@@ -124,7 +125,7 @@
         </div>
         <div class="modal-actions">
           <% if (currentUser && currentUser.role === 'admin') { %>
-            <a class="secondary-button" href="/admin/ncd-subclinics">
+            <a class="secondary-button ncd-subclinic-settings" href="/admin/ncd-subclinics">
               <i class="bi bi-gear"></i>
               ตั้งค่าคลินิกย่อย
             </a>
