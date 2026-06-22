@@ -9,6 +9,7 @@
 
 ## Layout Rules
 - Sidebar is role-aware.
+- Admin sidebar items should stay grouped as collapsible `ระบบ` and `Dashboard` sections. Keep labels short, indent children, and open the group that contains the active route.
 - Main content uses panels, KPI cards, charts, and responsive tables.
 - Keep operational pages dense but readable.
 - Keep executive pages simpler and more summary-focused.

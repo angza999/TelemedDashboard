@@ -24,27 +24,54 @@
     <% } %>
 
     <% if (currentUser && currentUser.role === 'admin') { %>
+      <%
+        const adminSystemActive = ['settings', 'query-tool', 'users'].includes(active);
+        const adminDashboardActive = ['today-patients-mapping', 'ncd-subclinics'].includes(active);
+      %>
       <div class="nav-section">Admin</div>
-      <a class="nav-link <%= active === 'settings' ? 'active' : '' %>" href="/settings">
-        <i class="bi bi-database-gear"></i>
-        <span>ตั้งค่าฐานข้อมูล</span>
-      </a>
-      <a class="nav-link <%= active === 'query-tool' ? 'active' : '' %>" href="/admin/query-tool">
-        <i class="bi bi-terminal"></i>
-        <span>Query Tool</span>
-      </a>
-      <a class="nav-link <%= active === 'users' ? 'active' : '' %>" href="/admin/users">
-        <i class="bi bi-people"></i>
-        <span>จัดการผู้ใช้งาน</span>
-      </a>
-      <a class="nav-link <%= active === 'today-patients-mapping' ? 'active' : '' %>" href="/admin/today-patients-mapping">
-        <i class="bi bi-ui-checks-grid"></i>
-        <span>ตั้งค่าผู้รับบริการวันนี้</span>
-      </a>
-      <a class="nav-link <%= active === 'ncd-subclinics' ? 'active' : '' %>" href="/admin/ncd-subclinics">
-        <i class="bi bi-diagram-3"></i>
-        <span>ตั้งค่าคลินิกย่อย NCD</span>
-      </a>
+      <details class="nav-group" <%= adminSystemActive ? 'open' : '' %>>
+        <summary class="nav-group-summary">
+          <span>
+            <i class="bi bi-shield-check"></i>
+            ระบบ
+          </span>
+          <i class="bi bi-chevron-right nav-group-chevron"></i>
+        </summary>
+        <div class="nav-submenu">
+          <a class="nav-link nav-sub-link <%= active === 'settings' ? 'active' : '' %>" href="/settings">
+            <i class="bi bi-database-gear"></i>
+            <span>ฐานข้อมูล</span>
+          </a>
+          <a class="nav-link nav-sub-link <%= active === 'query-tool' ? 'active' : '' %>" href="/admin/query-tool">
+            <i class="bi bi-terminal"></i>
+            <span>Query Tool</span>
+          </a>
+          <a class="nav-link nav-sub-link <%= active === 'users' ? 'active' : '' %>" href="/admin/users">
+            <i class="bi bi-people"></i>
+            <span>ผู้ใช้งาน</span>
+          </a>
+        </div>
+      </details>
+
+      <details class="nav-group" <%= adminDashboardActive ? 'open' : '' %>>
+        <summary class="nav-group-summary">
+          <span>
+            <i class="bi bi-layout-text-window-reverse"></i>
+            Dashboard
+          </span>
+          <i class="bi bi-chevron-right nav-group-chevron"></i>
+        </summary>
+        <div class="nav-submenu">
+          <a class="nav-link nav-sub-link <%= active === 'today-patients-mapping' ? 'active' : '' %>" href="/admin/today-patients-mapping">
+            <i class="bi bi-ui-checks-grid"></i>
+            <span>ตั้งค่าผู้รับบริการ</span>
+          </a>
+          <a class="nav-link nav-sub-link <%= active === 'ncd-subclinics' ? 'active' : '' %>" href="/admin/ncd-subclinics">
+            <i class="bi bi-diagram-3"></i>
+            <span>คลินิกย่อย NCD</span>
+          </a>
+        </div>
+      </details>
     <% } %>
   </nav>
 </aside>

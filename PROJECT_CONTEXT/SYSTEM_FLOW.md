@@ -15,6 +15,12 @@
 8. EJS renders HTML.
 9. Frontend JS renders charts and interactive table behavior.
 
+## Sidebar Flow
+1. `views/partials/sidebar.ejs` receives the `active` page key from each EJS page.
+2. Non-admin users see only their permitted dashboard links; the Admin section is rendered only when `currentUser.role === 'admin'`.
+3. Admin links are grouped into `ระบบ` (`settings`, `query-tool`, `users`) and `Dashboard` (`today-patients-mapping`, `ncd-subclinics`).
+4. The group containing the active child route is opened by default with native `<details>` behavior; backend routes still enforce admin permissions separately.
+
 ## Telemed Dashboard Flow
 1. User requests `/telemed`.
 2. `src/routes/telemed.js` parses filters.

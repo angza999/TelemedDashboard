@@ -122,6 +122,7 @@
 ## Shared UI
 - `views/partials/sidebar.ejs`
   - Role-aware menu
+  - Admin menu is organized into collapsible `ระบบ` and `Dashboard` groups; active child routes open their group by default
 
 - `views/partials/error-page.ejs`
   - Error card partial
