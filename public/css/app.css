@@ -1920,6 +1920,202 @@ tfoot td {
   font-weight: 900;
 }
 
+.ipd-subclinic-dialog {
+  width: min(760px, calc(100vw - 32px));
+}
+
+.ipd-subclinic-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 8px;
+}
+
+.ipd-summary-card {
+  display: grid;
+  gap: 4px;
+  min-height: 92px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ipd-summary-card span,
+.ipd-summary-card small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.ipd-summary-card strong {
+  color: var(--text);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.ipd-summary-card.main {
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+}
+
+.ipd-summary-card.total {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.ipd-summary-card.attention {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.ipd-summary-card.attention strong {
+  color: #c2410c;
+}
+
+.ipd-summary-card.balanced {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.ipd-summary-card.balanced strong {
+  color: #15803d;
+}
+
+.ipd-subclinic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.ipd-subclinic-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-height: 126px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ipd-subclinic-card.theme-general {
+  border-color: #ddd6fe;
+}
+
+.ipd-subclinic-card.theme-homeward {
+  border-color: #99f6e4;
+}
+
+.ipd-subclinic-card.not-configured {
+  background: #f8fafc;
+}
+
+.ipd-subclinic-icon {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-size: 22px;
+}
+
+.ipd-subclinic-card.theme-homeward .ipd-subclinic-icon {
+  background: #ccfbf1;
+  color: var(--primary);
+}
+
+.ipd-subclinic-card.not-configured.empty-total .ipd-subclinic-icon {
+  background: #e5edf5;
+  color: #64748b;
+}
+
+.ipd-subclinic-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ipd-subclinic-card p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.ipd-subclinic-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ipd-subclinic-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ipd-subclinic-metric strong {
+  color: var(--text);
+  font-size: 34px;
+  line-height: 1;
+}
+
+.ipd-subclinic-metric span,
+.ipd-subclinic-card small,
+.ipd-subclinic-footer span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.ipd-subclinic-card small {
+  display: block;
+  margin-top: 8px;
+}
+
+.ipd-subclinic-status-text {
+  display: grid;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.ipd-subclinic-status-text small {
+  margin-top: 0;
+}
+
+.ipd-subclinic-note {
+  margin: 0 0 14px;
+}
+
+.ipd-subclinic-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.ipd-subclinic-footer > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.ipd-subclinic-settings {
+  font-weight: 900;
+}
+
 @keyframes skeleton {
   to {
     background-position: -220% 0;
@@ -2079,11 +2275,24 @@ tfoot td {
     grid-template-columns: 1fr;
   }
 
+  .ipd-subclinic-grid {
+    grid-template-columns: 1fr;
+  }
+
   .ncd-subclinic-summary {
     grid-template-columns: 1fr;
   }
 
+  .ipd-subclinic-summary {
+    grid-template-columns: 1fr;
+  }
+
   .ncd-subclinic-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ipd-subclinic-footer {
     align-items: stretch;
     flex-direction: column;
   }
@@ -2093,7 +2302,16 @@ tfoot td {
     flex-direction: column;
   }
 
+  .ipd-subclinic-footer .modal-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .ncd-subclinic-footer .modal-actions > * {
+    width: 100%;
+  }
+
+  .ipd-subclinic-footer .modal-actions > * {
     width: 100%;
   }
 

@@ -85,23 +85,29 @@
   - `/today-patients`
   - `/api/today-patients/summary`
   - `/api/today-patients/ncd-subclinics`
+  - `/api/today-patients/ipd-subclinics`
   - `/admin/today-patients-mapping`
   - `/admin/ncd-subclinics`
+  - `/admin/ipd-subclinics`
   - `/api/admin/today-patients/departments`
   - `/api/admin/today-patients/wards`
   - `/api/admin/today-patients/mapping`
   - `/api/admin/ncd-subclinics/departments`
   - `/api/admin/ncd-subclinics/mapping`
+  - `/api/admin/ipd-subclinics/wards`
+  - `/api/admin/ipd-subclinics/mapping`
 
 - `src/services/todayPatientsService.js`
   - Reads HOSxP data with SELECT-only queries and writes mapping only to WebApp runtime file `data/dashboard-service-mapping.json`
   - Stores NCD subclinic mapping in WebApp runtime file `data/dashboard-ncd-subclinic-mapping.json`
+  - Stores IPD subclinic mapping in WebApp runtime file `data/dashboard-ipd-subclinic-mapping.json`
   - Reads HOSxP `kskdepartment`, `ward`, `ovst`, and `ipt` with parameter binding
   - Counts OPD/NCD/ER by `ovst.main_dep` and active IPD by `ipt.ward`
   - Counts NCD subclinics `HT`, `DM`, `COPD`, and `CKD` by selected `ovst.main_dep` rooms without ICD10 or clinicmember logic
+  - Counts IPD subclinics `หอผู้ป่วยรวม` and `Homeward` by selected `ipt.ward` values where the admission has no discharge date
 
 - `views/today-patients/dashboard.ejs`
-  - Real-time dashboard with 4 cards and NCD subclinic detail modal
+  - Today-patients dashboard with 4 cards plus NCD and IPD subclinic detail modals
 
 - `views/admin/today-patients-mapping.ejs`
   - Admin mapping UI for OPD/NCD/IPD/ER
@@ -109,9 +115,13 @@
 - `views/admin/ncd-subclinics.ejs`
   - Admin mapping UI for NCD subclinics
 
+- `views/admin/ipd-subclinics.ejs`
+  - Admin mapping UI for IPD subclinics by HOSxP Ward
+
 - `public/js/today-patients.js`
-  - Initial load, user-triggered manual refresh only, and NCD subclinic modal loading
+  - Initial load, user-triggered manual refresh only, and NCD/IPD subclinic modal loading
   - NCD subclinic modal compares `main_ncd_total` with the four subclinic totals, renders the ungrouped gap, displays configured/no-patient/not-configured states, and highlights the highest subclinic for the day
+  - IPD subclinic modal compares `main_ipd_total` with `หอผู้ป่วยรวม` plus `Homeward`, renders the ungrouped gap, displays configured/no-patient/not-configured states, and highlights the highest IPD subclinic for the day
 
 - `public/js/today-patients-mapping.js`
   - Admin mapping tabs, search, checkbox validation, save, and reset
@@ -119,10 +129,13 @@
 - `public/js/ncd-subclinics-admin.js`
   - Admin NCD subclinic tabs, search, duplicate depcode protection, and save
 
+- `public/js/ipd-subclinics-admin.js`
+  - Admin IPD subclinic tabs, search, duplicate Ward protection, and save
+
 ## Shared UI
 - `views/partials/sidebar.ejs`
   - Role-aware menu
-  - Admin menu is organized into collapsible `ระบบ` and `Dashboard` groups; active child routes open their group by default
+  - Admin menu is organized into collapsible `ระบบ` and `Dashboard` groups; active child routes, including IPD/NCD subclinic settings, open their group by default
 
 - `views/partials/error-page.ejs`
   - Error card partial

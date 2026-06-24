@@ -47,6 +47,7 @@ Manual checks:
 - Test Executive overview trend: `Total Telemed` chart should use actual Telemed `total`, not DM/HT-only totals.
 - Test PDF export on Linux server for readable Thai text; install Noto Sans Thai if needed.
 - Test `/today-patients` NCD card opens the subclinic modal and `/admin/ncd-subclinics` saves mapping without writing to HOSxP.
+- Test `/today-patients` IPD card opens the subclinic modal and `/admin/ipd-subclinics` saves Ward mapping without writing to HOSxP.
 
 ## Server Update
 

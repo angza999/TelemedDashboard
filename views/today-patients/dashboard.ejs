@@ -72,7 +72,7 @@
             <small class="today-card-action">คลิกดูคลินิกย่อย</small>
           </div>
         </article>
-        <article class="today-card ipd">
+        <article class="today-card ipd clickable" id="ipdSubclinicCard" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="ipdSubclinicModal">
           <span class="today-card-icon"><i class="bi bi-building"></i></span>
           <div class="today-card-content">
             <p>ผู้ป่วยใน IPD</p>
@@ -81,6 +81,7 @@
               <span>คน</span>
             </div>
             <small>กำลังนอนรักษา</small>
+            <small class="today-card-action">คลิกดูรายละเอียด Ward</small>
           </div>
         </article>
         <article class="today-card er">
@@ -131,6 +132,45 @@
             </a>
           <% } %>
           <button type="button" class="primary-button" id="ncdSubclinicCancelButton">ปิด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ipdSubclinicModal" class="modal-backdrop ipd-subclinic-modal hidden" aria-hidden="true">
+    <div class="modal-dialog ipd-subclinic-dialog" role="dialog" aria-modal="true" aria-labelledby="ipdSubclinicTitle">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">ผู้ป่วยในวันนี้</p>
+          <h2 id="ipdSubclinicTitle">คลินิกย่อย IPD วันนี้</h2>
+          <p class="panel-note">แสดงยอดผู้ป่วยกำลังนอนรักษา แยกตาม Ward ที่ตั้งค่าไว้ใน WebApp</p>
+        </div>
+        <button type="button" class="icon-button" id="ipdSubclinicCloseButton" aria-label="ปิดหน้าต่างคลินิกย่อย IPD">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div id="ipdSubclinicSummary" class="ipd-subclinic-summary" aria-live="polite"></div>
+      <div id="ipdSubclinicStatus" class="dashboard-status loading">กำลังโหลดข้อมูลคลินิกย่อย IPD...</div>
+      <div id="ipdSubclinicGrid" class="ipd-subclinic-grid" aria-live="polite"></div>
+
+      <div id="ipdSubclinicNote" class="alert warning ipd-subclinic-note hidden">
+        หมายเหตุ: ยอดรวมคลินิกย่อย IPD อาจไม่เท่ากับยอด IPD หลัก หากการตั้งค่า Ward ยังไม่ครบ
+      </div>
+
+      <div class="ipd-subclinic-footer">
+        <div>
+          <strong id="ipdSubclinicTotal">รวมคลินิกย่อย IPD วันนี้: - คน</strong>
+          <span id="ipdSubclinicUpdated">อัปเดตล่าสุด -</span>
+        </div>
+        <div class="modal-actions">
+          <% if (currentUser && currentUser.role === 'admin') { %>
+            <a class="secondary-button ipd-subclinic-settings" href="/admin/ipd-subclinics">
+              <i class="bi bi-gear"></i>
+              ตั้งค่าคลินิกย่อย IPD
+            </a>
+          <% } %>
+          <button type="button" class="primary-button" id="ipdSubclinicCancelButton">ปิด</button>
         </div>
       </div>
     </div>

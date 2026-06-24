@@ -28,6 +28,7 @@ Do not change the province-aligned formula without explicit instruction:
 - `/admin/query-tool`: admin
 - `/admin/users`: admin
 - `/admin/ncd-subclinics`: admin
+- `/admin/ipd-subclinics`: admin
 
 ## Code Style
 - Keep changes scoped.

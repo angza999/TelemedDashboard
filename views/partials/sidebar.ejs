@@ -26,7 +26,7 @@
     <% if (currentUser && currentUser.role === 'admin') { %>
       <%
         const adminSystemActive = ['settings', 'query-tool', 'users'].includes(active);
-        const adminDashboardActive = ['today-patients-mapping', 'ncd-subclinics'].includes(active);
+        const adminDashboardActive = ['today-patients-mapping', 'ncd-subclinics', 'ipd-subclinics'].includes(active);
       %>
       <div class="nav-section">Admin</div>
       <details class="nav-group" <%= adminSystemActive ? 'open' : '' %>>
@@ -69,6 +69,10 @@
           <a class="nav-link nav-sub-link <%= active === 'ncd-subclinics' ? 'active' : '' %>" href="/admin/ncd-subclinics">
             <i class="bi bi-diagram-3"></i>
             <span>คลินิกย่อย NCD</span>
+          </a>
+          <a class="nav-link nav-sub-link <%= active === 'ipd-subclinics' ? 'active' : '' %>" href="/admin/ipd-subclinics">
+            <i class="bi bi-building-check"></i>
+            <span>คลินิกย่อย IPD</span>
           </a>
         </div>
       </details>

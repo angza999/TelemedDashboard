@@ -62,6 +62,8 @@
 - Added NCD subclinic drill-down on the `/today-patients` NCD card with a modal for `HT`, `DM`, `COPD`, and `CKD`.
 - Added Admin > `ตั้งค่าคลินิกย่อย NCD` using WebApp JSON storage `data/dashboard-ncd-subclinic-mapping.json`; HOSxP remains read-only and is queried with SELECT-only `ovst.main_dep` counts.
 - Refined the `/today-patients` NCD subclinic modal as an executive mini-dashboard: it now compares main NCD vs subclinic totals, shows an ungrouped/mapping gap, explains mismatches with data-quality notes, separates configured/no-patient/not-configured states, highlights the highest subclinic of the day, and uses distinct soft visual themes per subclinic.
+- Added IPD subclinic drill-down on the `/today-patients` IPD card with a modal for `หอผู้ป่วยรวม` and `Homeward`; it compares main IPD vs subclinic totals and uses active inpatient counts from HOSxP `ipt` with discharge-date checks.
+- Added Admin > `ตั้งค่าคลินิกย่อย IPD` using WebApp JSON storage `data/dashboard-ipd-subclinic-mapping.json`; HOSxP remains read-only and is queried with SELECT-only `ward` and `ipt` reads.
 - Reorganized the admin sidebar into collapsible `ระบบ` and `Dashboard` groups, shortened admin menu labels, and kept active groups open for easier navigation as admin settings grow.
 
 ### User Management

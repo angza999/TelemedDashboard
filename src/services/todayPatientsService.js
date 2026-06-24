@@ -5,9 +5,11 @@ const { getPool } = require('../db');
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 const MAPPING_PATH = path.join(DATA_DIR, 'dashboard-service-mapping.json');
 const NCD_SUBCLINIC_MAPPING_PATH = path.join(DATA_DIR, 'dashboard-ncd-subclinic-mapping.json');
+const IPD_SUBCLINIC_MAPPING_PATH = path.join(DATA_DIR, 'dashboard-ipd-subclinic-mapping.json');
 const CARD_KEYS = ['OPD', 'NCD', 'IPD', 'ER'];
 const DEP_CARD_KEYS = ['OPD', 'NCD', 'ER'];
 const NCD_SUBCLINIC_KEYS = ['HT', 'DM', 'COPD', 'CKD'];
+const IPD_SUBCLINIC_KEYS = ['GENERAL_WARD', 'HOMEWARD'];
 
 const CARD_META = {
   OPD: { label: 'ผู้ป่วยนอก OPD', sourceType: 'DEP' },
@@ -33,6 +35,11 @@ const NCD_SUBCLINIC_META = {
   DM: { name: 'คลินิกเบาหวาน', sourceType: 'DEP', sortOrder: 2 },
   COPD: { name: 'คลินิก COPD', sourceType: 'DEP', sortOrder: 3 },
   CKD: { name: 'คลินิกโรคไต', sourceType: 'DEP', sortOrder: 4 }
+};
+
+const IPD_SUBCLINIC_META = {
+  GENERAL_WARD: { name: 'หอผู้ป่วยรวม', sourceType: 'WARD', sortOrder: 1 },
+  HOMEWARD: { name: 'Homeward', sourceType: 'WARD', sortOrder: 2 }
 };
 
 function bangkokParts(date = new Date()) {
@@ -91,6 +98,23 @@ function mappingRow(cardKey, sourceType, sourceCode, displayName, sortOrder, id)
 function ncdSubclinicRow(subclinicKey, sourceType, sourceCode, displayName, sortOrder, id) {
   const timestamp = nowIso();
   const meta = NCD_SUBCLINIC_META[subclinicKey];
+  return {
+    id,
+    subclinic_key: subclinicKey,
+    subclinic_name: meta ? meta.name : subclinicKey,
+    source_type: sourceType,
+    source_code: normalizeCode(sourceCode),
+    display_name: String(displayName || sourceCode || '').trim(),
+    active: 1,
+    sort_order: Number(sortOrder || 0),
+    created_at: timestamp,
+    updated_at: timestamp
+  };
+}
+
+function ipdSubclinicRow(subclinicKey, sourceType, sourceCode, displayName, sortOrder, id) {
+  const timestamp = nowIso();
+  const meta = IPD_SUBCLINIC_META[subclinicKey];
   return {
     id,
     subclinic_key: subclinicKey,
@@ -175,6 +199,31 @@ function writeNcdSubclinicStore(rows) {
   return payload.mappings;
 }
 
+function writeIpdSubclinicStore(rows) {
+  ensureDataDir();
+  const payload = {
+    version: 1,
+    updated_at: nowIso(),
+    subclinics: IPD_SUBCLINIC_KEYS.map((key) => ({
+      key,
+      name: IPD_SUBCLINIC_META[key].name,
+      source_type: IPD_SUBCLINIC_META[key].sourceType,
+      sort_order: IPD_SUBCLINIC_META[key].sortOrder
+    })),
+    mappings: rows.map((row, index) => ({
+      ...row,
+      id: index + 1,
+      active: row.active === 0 ? 0 : 1,
+      source_type: 'WARD',
+      source_code: normalizeCode(row.source_code)
+    }))
+  };
+  const tempPath = `${IPD_SUBCLINIC_MAPPING_PATH}.tmp`;
+  fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
+  fs.renameSync(tempPath, IPD_SUBCLINIC_MAPPING_PATH);
+  return payload.mappings;
+}
+
 async function ensureStore() {
   if (fs.existsSync(MAPPING_PATH)) return;
   writeStore(await defaultMappings());
@@ -183,6 +232,50 @@ async function ensureStore() {
 function ensureNcdSubclinicStore() {
   if (fs.existsSync(NCD_SUBCLINIC_MAPPING_PATH)) return;
   writeNcdSubclinicStore([]);
+}
+
+async function defaultIpdSubclinicMappings() {
+  try {
+    const pool = getPool();
+    const [rows] = await pool.execute(`
+      SELECT ward, name
+      FROM ward
+      WHERE name = ?
+         OR LOWER(COALESCE(name, '')) LIKE '%homeward%'
+      ORDER BY ward
+    `, [IPD_SUBCLINIC_META.GENERAL_WARD.name]);
+
+    const mapped = [];
+    const seen = new Set();
+    rows.forEach((row) => {
+      const ward = normalizeCode(row.ward);
+      const name = String(row.name || '');
+      if (!ward || seen.has(ward)) return;
+
+      const key = name.trim() === IPD_SUBCLINIC_META.GENERAL_WARD.name
+        ? 'GENERAL_WARD'
+        : (name.toLowerCase().includes('homeward') ? 'HOMEWARD' : null);
+      if (!key) return;
+
+      seen.add(ward);
+      mapped.push(ipdSubclinicRow(
+        key,
+        'WARD',
+        ward,
+        name || IPD_SUBCLINIC_META[key].name,
+        mapped.filter((item) => item.subclinic_key === key).length + 1,
+        mapped.length + 1
+      ));
+    });
+    return mapped;
+  } catch (err) {
+    return [];
+  }
+}
+
+async function ensureIpdSubclinicStore() {
+  if (fs.existsSync(IPD_SUBCLINIC_MAPPING_PATH)) return;
+  writeIpdSubclinicStore(await defaultIpdSubclinicMappings());
 }
 
 async function readStore() {
@@ -195,6 +288,13 @@ async function readStore() {
 function readNcdSubclinicStore() {
   ensureNcdSubclinicStore();
   const raw = fs.readFileSync(NCD_SUBCLINIC_MAPPING_PATH, 'utf8');
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed.mappings) ? parsed.mappings : [];
+}
+
+async function readIpdSubclinicStore() {
+  await ensureIpdSubclinicStore();
+  const raw = fs.readFileSync(IPD_SUBCLINIC_MAPPING_PATH, 'utf8');
   const parsed = JSON.parse(raw);
   return Array.isArray(parsed.mappings) ? parsed.mappings : [];
 }
@@ -227,12 +327,30 @@ function groupNcdSubclinicMappings(rows) {
   }, {});
 }
 
+function groupIpdSubclinicMappings(rows) {
+  return IPD_SUBCLINIC_KEYS.reduce((acc, key) => {
+    acc[key] = rows
+      .filter((row) => row.subclinic_key === key && row.active !== 0)
+      .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+      .map((row) => ({
+        source_type: 'WARD',
+        source_code: normalizeCode(row.source_code),
+        display_name: row.display_name || row.source_code
+      }));
+    return acc;
+  }, {});
+}
+
 async function getMappingGroups() {
   return groupMappings(await readStore());
 }
 
 function getNcdSubclinicMappingGroups() {
   return groupNcdSubclinicMappings(readNcdSubclinicStore());
+}
+
+async function getIpdSubclinicMappingGroups() {
+  return groupIpdSubclinicMappings(await readIpdSubclinicStore());
 }
 
 function validateMappingPayload(payload) {
@@ -328,6 +446,56 @@ function validateNcdSubclinicMappingPayload(payload) {
   return rows;
 }
 
+function validateIpdSubclinicMappingPayload(payload) {
+  const rows = [];
+  const wardUsage = new Map();
+
+  Object.keys(payload || {}).forEach((key) => {
+    if (!IPD_SUBCLINIC_KEYS.includes(key)) {
+      throw new Error(`ไม่รองรับคลินิกย่อย IPD key ${key}`);
+    }
+  });
+
+  IPD_SUBCLINIC_KEYS.forEach((subclinicKey) => {
+    const items = Array.isArray(payload[subclinicKey]) ? payload[subclinicKey] : [];
+    const seenInSubclinic = new Set();
+
+    items.forEach((item, index) => {
+      const sourceType = String(item.source_type || '').trim().toUpperCase();
+      const sourceCode = normalizeCode(item.source_code);
+
+      if (sourceType !== 'WARD') {
+        throw new Error(`${IPD_SUBCLINIC_META[subclinicKey].name} ต้องใช้ source_type WARD เท่านั้น`);
+      }
+      if (typeof item.source_code !== 'string') {
+        throw new Error(`${IPD_SUBCLINIC_META[subclinicKey].name} source_code ต้องเป็น string`);
+      }
+      if (!sourceCode) {
+        throw new Error(`${IPD_SUBCLINIC_META[subclinicKey].name} มีรหัส Ward ว่าง`);
+      }
+      if (seenInSubclinic.has(sourceCode)) return;
+      seenInSubclinic.add(sourceCode);
+
+      const existing = wardUsage.get(sourceCode);
+      if (existing && existing !== subclinicKey) {
+        throw new Error(`รหัส Ward ${sourceCode} ถูกเลือกซ้ำใน ${IPD_SUBCLINIC_META[existing].name} และ ${IPD_SUBCLINIC_META[subclinicKey].name}`);
+      }
+      wardUsage.set(sourceCode, subclinicKey);
+
+      rows.push(ipdSubclinicRow(
+        subclinicKey,
+        'WARD',
+        sourceCode,
+        item.display_name || sourceCode,
+        index + 1,
+        rows.length + 1
+      ));
+    });
+  });
+
+  return rows;
+}
+
 async function saveMappingGroups(payload) {
   const rows = validateMappingPayload(payload || {});
   writeStore(rows);
@@ -338,6 +506,12 @@ function saveNcdSubclinicMappingGroups(payload) {
   const rows = validateNcdSubclinicMappingPayload(payload || {});
   writeNcdSubclinicStore(rows);
   return groupNcdSubclinicMappings(rows);
+}
+
+function saveIpdSubclinicMappingGroups(payload) {
+  const rows = validateIpdSubclinicMappingPayload(payload || {});
+  writeIpdSubclinicStore(rows);
+  return groupIpdSubclinicMappings(rows);
 }
 
 async function resetDefaultMappings() {
@@ -438,6 +612,16 @@ function buildEmptyNcdSubclinic(key) {
   };
 }
 
+function buildEmptyIpdSubclinic(key) {
+  return {
+    key,
+    name: IPD_SUBCLINIC_META[key].name,
+    total: 0,
+    mapped_wards: 0,
+    wards: []
+  };
+}
+
 async function fetchNcdSubclinicSummary() {
   const mapping = getNcdSubclinicMappingGroups();
   const mainMapping = await getMappingGroups();
@@ -473,18 +657,58 @@ async function fetchNcdSubclinicSummary() {
   };
 }
 
+async function fetchIpdSubclinicSummary() {
+  const mapping = await getIpdSubclinicMappingGroups();
+  const mainMapping = await getMappingGroups();
+  const pool = getPool();
+
+  const subclinics = await Promise.all(IPD_SUBCLINIC_KEYS.map(async (key) => {
+    const rows = mapping[key] || [];
+    const wards = codesFor(rows, 'WARD');
+    if (!wards.length) return buildEmptyIpdSubclinic(key);
+
+    const total = await countActiveIpd(pool, wards);
+    return {
+      key,
+      name: IPD_SUBCLINIC_META[key].name,
+      total,
+      mapped_wards: wards.length,
+      wards: rows.map((row) => ({
+        ward: normalizeCode(row.source_code),
+        name: row.display_name || row.source_code
+      }))
+    };
+  }));
+
+  const total = subclinics.reduce((sum, item) => sum + Number(item.total || 0), 0);
+  const mainIpdTotal = await countActiveIpd(pool, codesFor(mainMapping.IPD, 'WARD'));
+
+  return {
+    total,
+    main_ipd_total: mainIpdTotal,
+    totals_match_main: total === mainIpdTotal,
+    subclinics,
+    last_updated: bangkokIsoString()
+  };
+}
+
 module.exports = {
   CARD_KEYS,
   CARD_META,
   NCD_SUBCLINIC_KEYS,
   NCD_SUBCLINIC_META,
+  IPD_SUBCLINIC_KEYS,
+  IPD_SUBCLINIC_META,
   getMappingGroups,
   saveMappingGroups,
   resetDefaultMappings,
   getNcdSubclinicMappingGroups,
   saveNcdSubclinicMappingGroups,
+  getIpdSubclinicMappingGroups,
+  saveIpdSubclinicMappingGroups,
   fetchDepartments,
   fetchWards,
   fetchTodayPatientsSummary,
-  fetchNcdSubclinicSummary
+  fetchNcdSubclinicSummary,
+  fetchIpdSubclinicSummary
 };

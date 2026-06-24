@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Telemed Dashboard</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/app.css?v=<%= assetVersion %>">
+</head>
+<body>
+  <div class="app-shell">
+    <%- include('../partials/sidebar', { active: 'ipd-subclinics' }) %>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Admin</p>
+          <h1>ตั้งค่าคลินิกย่อย IPD</h1>
+          <p class="page-description">เลือก Ward จาก HOSxP เพื่อใช้คำนวณหอผู้ป่วยรวมและ Homeward ในหน้าผู้รับบริการวันนี้</p>
+        </div>
+        <% if (currentUser) { %>
+          <form action="/logout" method="post" class="user-box">
+            <span><i class="bi bi-person-circle"></i> <%= currentUser.name %></span>
+            <button type="submit" class="icon-button" title="ออกจากระบบ" aria-label="ออกจากระบบ">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </form>
+        <% } %>
+      </header>
+
+      <section class="panel mapping-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Mapping คลินิกย่อย IPD</h2>
+            <p class="panel-note">อ่านรายการ Ward จาก HOSxP ด้วย SELECT เท่านั้น ส่วน mapping บันทึกใน WebApp เท่านั้น ไม่เขียนข้อมูลกลับ HOSxP</p>
+          </div>
+          <span><i class="bi bi-shield-lock"></i> Admin only</span>
+        </div>
+
+        <div id="ipdSubclinicStatus" class="dashboard-status loading">กำลังโหลดรายการ Ward...</div>
+
+        <div class="mapping-tabs" role="tablist" aria-label="คลินิกย่อย IPD">
+          <button type="button" class="mapping-tab-button active" data-subclinic-key="GENERAL_WARD">หอผู้ป่วยรวม</button>
+          <button type="button" class="mapping-tab-button" data-subclinic-key="HOMEWARD">Homeward</button>
+        </div>
+
+        <div class="mapping-toolbar">
+          <label>
+            ค้นหา
+            <input id="ipdSubclinicSearch" type="search" placeholder="ค้นหาด้วยรหัสหรือชื่อ Ward">
+          </label>
+          <div class="mapping-toolbar-actions">
+            <button type="button" id="saveIpdSubclinicButton" class="primary-button">
+              <i class="bi bi-save"></i>
+              บันทึกการตั้งค่า
+            </button>
+          </div>
+        </div>
+
+        <div class="alert warning mapping-warning">
+          Ward เดียวกันเลือกได้เพียงหนึ่งคลินิกย่อย IPD เพื่อป้องกันยอดซ้ำ และไม่มีการเขียนข้อมูลกลับไปยัง HOSxP
+        </div>
+
+        <div class="table-wrap mapping-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>เลือก</th>
+                <th>รหัส Ward</th>
+                <th>ชื่อ Ward</th>
+                <th>หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody id="ipdSubclinicTableBody">
+              <tr><td colspan="4" class="empty">กำลังโหลดข้อมูล</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/ipd-subclinics-admin.js?v=<%= assetVersion %>"></script>
+</body>
+</html>

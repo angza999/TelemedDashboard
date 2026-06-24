@@ -18,7 +18,7 @@
 ## Sidebar Flow
 1. `views/partials/sidebar.ejs` receives the `active` page key from each EJS page.
 2. Non-admin users see only their permitted dashboard links; the Admin section is rendered only when `currentUser.role === 'admin'`.
-3. Admin links are grouped into `ระบบ` (`settings`, `query-tool`, `users`) and `Dashboard` (`today-patients-mapping`, `ncd-subclinics`).
+3. Admin links are grouped into `ระบบ` (`settings`, `query-tool`, `users`) and `Dashboard` (`today-patients-mapping`, `ncd-subclinics`, `ipd-subclinics`).
 4. The group containing the active child route is opened by default with native `<details>` behavior; backend routes still enforce admin permissions separately.
 
 ## Telemed Dashboard Flow
@@ -53,7 +53,10 @@
 7. Clicking the NCD card opens a modal and calls `/api/today-patients/ncd-subclinics`.
 8. NCD subclinic counts read `data/dashboard-ncd-subclinic-mapping.json`, then count HOSxP `ovst.main_dep` by selected DEP codes using SELECT only.
 9. The modal compares `main_ncd_total` from the main NCD mapping with the summed subclinic total; `ungrouped = max(main_ncd_total - subclinic_total, 0)` and negative gaps are shown as a mapping check.
-10. If the API fails, the page keeps the last successful numbers and shows a connection warning.
+10. Clicking the IPD card opens a modal and calls `/api/today-patients/ipd-subclinics`.
+11. IPD subclinic counts read `data/dashboard-ipd-subclinic-mapping.json`, then count HOSxP `ipt.ward` by selected Ward codes where the admission has no discharge date, using SELECT only.
+12. The modal compares `main_ipd_total` from the main IPD mapping with the summed IPD subclinic total; `ungrouped = max(main_ipd_total - subclinic_total, 0)` and negative gaps are shown as a mapping check.
+13. If the API fails, the page keeps the last successful numbers and shows a connection warning.
 
 ## Today Patients Admin Mapping Flow
 1. Admin opens `/admin/today-patients-mapping`.
@@ -70,6 +73,14 @@
 4. Frontend and backend validate that the same DEP code is not active in more than one NCD subclinic at the same time.
 5. Save writes only `data/dashboard-ncd-subclinic-mapping.json`; it never writes to HOSxP and never creates HOSxP tables.
 6. The next NCD modal refresh on `/today-patients` uses the new subclinic mapping.
+
+## IPD Subclinic Admin Mapping Flow
+1. Admin opens `/admin/ipd-subclinics`.
+2. UI calls Admin APIs to read HOSxP wards and WebApp IPD subclinic mapping.
+3. Admin selects Ward codes for `หอผู้ป่วยรวม` and `Homeward`.
+4. Frontend and backend validate that the same Ward code is not active in more than one IPD subclinic at the same time.
+5. Save writes only `data/dashboard-ipd-subclinic-mapping.json`; it never writes to HOSxP and never creates HOSxP tables.
+6. The next IPD modal refresh on `/today-patients` uses the new subclinic mapping.
 
 ## Admin User Flow
 1. Admin opens `/admin/users`.

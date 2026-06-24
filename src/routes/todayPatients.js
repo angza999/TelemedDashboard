@@ -8,7 +8,10 @@ const {
   fetchTodayPatientsSummary,
   getNcdSubclinicMappingGroups,
   saveNcdSubclinicMappingGroups,
-  fetchNcdSubclinicSummary
+  fetchNcdSubclinicSummary,
+  getIpdSubclinicMappingGroups,
+  saveIpdSubclinicMappingGroups,
+  fetchIpdSubclinicSummary
 } = require('../services/todayPatientsService');
 
 const publicRouter = express.Router();
@@ -50,6 +53,21 @@ publicRouter.get('/api/today-patients/ncd-subclinics', async (req, res, next) =>
   }
 });
 
+publicRouter.get('/api/today-patients/ipd-subclinics', async (req, res, next) => {
+  try {
+    const data = await fetchIpdSubclinicSummary();
+    res.json({ success: true, data });
+  } catch (err) {
+    if (isDatabaseSetupError(err)) {
+      return res.status(503).json({
+        success: false,
+        message: 'ไม่สามารถดึงข้อมูลคลินิกย่อย IPD ได้'
+      });
+    }
+    next(err);
+  }
+});
+
 adminRouter.get('/admin/today-patients-mapping', (req, res) => {
   res.render('admin/today-patients-mapping', {
     title: 'ตั้งค่าผู้รับบริการวันนี้'
@@ -59,6 +77,12 @@ adminRouter.get('/admin/today-patients-mapping', (req, res) => {
 adminRouter.get('/admin/ncd-subclinics', (req, res) => {
   res.render('admin/ncd-subclinics', {
     title: 'ตั้งค่าคลินิกย่อย NCD'
+  });
+});
+
+adminRouter.get('/admin/ipd-subclinics', (req, res) => {
+  res.render('admin/ipd-subclinics', {
+    title: 'ตั้งค่าคลินิกย่อย IPD'
   });
 });
 
@@ -119,6 +143,37 @@ adminRouter.post('/api/admin/ncd-subclinics/mapping', async (req, res) => {
     res.status(400).json({
       success: false,
       message: err.message || 'บันทึกการตั้งค่าคลินิกย่อย NCD ไม่สำเร็จ'
+    });
+  }
+});
+
+adminRouter.get('/api/admin/ipd-subclinics/wards', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await fetchWards() });
+  } catch (err) {
+    if (isDatabaseSetupError(err)) {
+      return res.status(503).json({ success: false, message: databaseSetupMessage(err) });
+    }
+    next(err);
+  }
+});
+
+adminRouter.get('/api/admin/ipd-subclinics/mapping', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await getIpdSubclinicMappingGroups() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/api/admin/ipd-subclinics/mapping', async (req, res) => {
+  try {
+    const data = saveIpdSubclinicMappingGroups(req.body || {});
+    res.json({ success: true, data, message: 'บันทึกการตั้งค่าคลินิกย่อย IPD สำเร็จ' });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: err.message || 'บันทึกการตั้งค่าคลินิกย่อย IPD ไม่สำเร็จ'
     });
   }
 });

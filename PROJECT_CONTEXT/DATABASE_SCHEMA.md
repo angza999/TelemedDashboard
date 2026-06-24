@@ -104,3 +104,17 @@ This is an application runtime file only:
 - `sort_order`: display/save order
 
 NCD subclinic counts read HOSxP `ovst` with `vstdate = CURDATE()` and `main_dep IN (...)` using `COUNT(DISTINCT vn)`. They do not use ICD10, diagnosis, clinicmember, or disease codes. This mapping writes only to the WebApp JSON store and never to HOSxP.
+
+### `data/dashboard-ipd-subclinic-mapping.json`
+Runtime WebApp storage for IPD subclinic mapping in `/today-patients`. Do not commit.
+
+This is an application runtime file only:
+- `subclinic_key`: `GENERAL_WARD` or `HOMEWARD`
+- `subclinic_name`: display name such as `หอผู้ป่วยรวม` or `Homeward`
+- `source_type`: `WARD` only
+- `source_code`: HOSxP `ward.ward`; always stored as a string so leading zeroes remain intact
+- `display_name`: Ward name for Admin UI
+- `active`: `1` means included
+- `sort_order`: display/save order
+
+IPD subclinic counts read HOSxP `ipt` with selected `ward IN (...)` and active admission conditions `dchdate IS NULL`, empty string, or `0000-00-00`, using `COUNT(DISTINCT an)`. This mapping writes only to the WebApp JSON store and never to HOSxP.
