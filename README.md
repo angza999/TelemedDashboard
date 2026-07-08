@@ -130,6 +130,12 @@ API `GET /api/today-patients/summary` จะนับยอด ER card เฉพ
 
 ข้อห้ามสำคัญ: ระบบนี้ห้ามเขียนตารางหรือแก้ไขข้อมูลใด ๆ ใน HOSxP / HOSxP XE ทุกฟังก์ชันของ Today Patients และ Telemed Dashboard ต้องเป็น read-only ต่อฐานข้อมูลโรงพยาบาล
 
+## NCD Subclinic Modal Audit
+
+API `GET /api/today-patients/ncd-subclinics` ใช้ข้อมูลจาก mapping ของ WebApp เพื่อเปรียบเทียบยอด `NCD หลัก` กับยอด `คลินิกย่อย NCD` และส่งข้อมูลเสริมสำหรับตรวจสอบ ได้แก่ `main_total`, `diff_total`, `mapped_codes` ของแต่ละคลินิกย่อย และ `ungrouped` สำหรับห้องที่อยู่ใน mapping NCD หลักแต่ยังไม่ถูกผูกกับคลินิกย่อย
+
+รายการ `ungrouped` ดึงจาก HOSxP ด้วย `SELECT` แบบ parameter binding เท่านั้น โดยนับ `COUNT(DISTINCT o.vn)` แยกตาม `ovst.main_dep` และ join `kskdepartment` เพื่อแสดงชื่อห้องใน modal ไม่มีการสร้างตารางหรือแก้ไขข้อมูลใด ๆ ใน HOSxP / HOSxP XE
+
 ## โครงสร้างไฟล์
 
 ```text

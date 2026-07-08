@@ -1780,10 +1780,37 @@ tfoot td {
   background: #ffffff;
 }
 
+button.ncd-summary-card {
+  width: 100%;
+  border: 1px solid var(--line);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  appearance: none;
+}
+
+.ncd-summary-card.clickable {
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.ncd-summary-card.clickable:hover {
+  border-color: #fb923c;
+  box-shadow: 0 10px 22px rgba(251, 146, 60, 0.12);
+  transform: translateY(-1px);
+}
+
 .ncd-summary-card span,
 .ncd-summary-card small {
   color: var(--muted);
   font-weight: 800;
+}
+
+.ncd-summary-card em {
+  color: #9a3412;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .ncd-summary-card strong {
@@ -1818,6 +1845,91 @@ tfoot td {
 
 .ncd-summary-card.balanced strong {
   color: #15803d;
+}
+
+.ncd-summary-card.mapping-warning {
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+.ncd-summary-card.mapping-warning strong {
+  color: #b91c1c;
+}
+
+.ncd-ungrouped-detail {
+  grid-column: 1 / -1;
+  padding: 14px;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  background: #fffbeb;
+}
+
+.ncd-ungrouped-detail.hidden {
+  display: none;
+}
+
+.ncd-ungrouped-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ncd-ungrouped-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.ncd-ungrouped-heading strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.ncd-ungrouped-heading span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ncd-ungrouped-detail ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ncd-ungrouped-detail li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ncd-ungrouped-detail li div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ncd-ungrouped-detail li strong {
+  color: #92400e;
+}
+
+.ncd-ungrouped-detail li span {
+  color: var(--text);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.ncd-ungrouped-detail li b {
+  flex: 0 0 auto;
+  color: #c2410c;
 }
 
 .ncd-subclinic-grid {
@@ -1954,6 +2066,12 @@ tfoot td {
 
 .ncd-subclinic-status-text small {
   margin-top: 0;
+}
+
+.ncd-subclinic-codes {
+  color: var(--text) !important;
+  font-weight: 900 !important;
+  overflow-wrap: anywhere;
 }
 
 .ncd-subclinic-note {
@@ -2339,6 +2457,12 @@ tfoot td {
 
   .ncd-subclinic-summary {
     grid-template-columns: 1fr;
+  }
+
+  .ncd-ungrouped-heading,
+  .ncd-ungrouped-detail li {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .ipd-subclinic-summary {

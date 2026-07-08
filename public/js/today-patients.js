@@ -35,12 +35,14 @@
   const erTotal = document.getElementById('erSubclinicTotal');
   const erUpdated = document.getElementById('erSubclinicUpdated');
   const erNote = document.getElementById('erSubclinicNote');
+  const ncdSettingsLink = document.querySelector('.ncd-subclinic-settings');
   const erSettingsLink = document.querySelector('.er-subclinic-settings');
 
   let isRefreshing = false;
   let isLoadingNcd = false;
   let isLoadingIpd = false;
   let isLoadingEr = false;
+  let isNcdUngroupedOpen = false;
   let hasData = false;
 
   function formatNumber(value) {
@@ -115,7 +117,7 @@
   }
 
   function getNcdMainTotal(data) {
-    const fromApi = Number(data.main_ncd_total);
+    const fromApi = Number(data.main_ncd_total ?? data.main_total);
     if (Number.isFinite(fromApi)) return fromApi;
     const ncdValue = document.querySelector('[data-today-value="ncd_total"]');
     return Number((ncdValue?.textContent || '0').replace(/,/g, '')) || 0;
@@ -153,7 +155,7 @@
     return visuals[key] || { theme: 'default', icon: 'bi-building' };
   }
 
-  function renderNcdSummary(data, mainTotal, subclinicTotal, difference, ungroupedTotal) {
+  function legacyRenderNcdSummary(data, mainTotal, subclinicTotal, difference, ungroupedTotal) {
     if (!ncdSummary) return;
     const gapLabel = difference < 0 ? 'ตรวจสอบ Mapping' : 'ยังไม่จัดกลุ่ม';
     const gapValue = difference < 0 ? Math.abs(difference) : ungroupedTotal;
@@ -210,7 +212,7 @@
     `;
   }
 
-  function renderNcdNote(data, difference) {
+  function legacyRenderNcdNote(data, difference) {
     if (!ncdNote) return;
     const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
     const hasUnmappedSubclinic = subclinics.some((item) => Number(item.mapped_rooms || 0) === 0);
@@ -319,7 +321,7 @@
     hasData = true;
   }
 
-  function renderNcdSubclinics(data) {
+  function legacyRenderNcdSubclinics(data) {
     const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
     if (!ncdGrid) return;
     const subclinicTotal = Number(data.total || 0);
@@ -356,6 +358,153 @@
             </div>
             <div class="ncd-subclinic-status-text">
               ${statusLines.map((line) => `<small>${escapeHtml(line)}</small>`).join('')}
+            </div>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    if (ncdTotal) ncdTotal.textContent = `รวมคลินิกย่อย NCD วันนี้: ${formatNumber(subclinicTotal)} คน`;
+    if (ncdUpdated) ncdUpdated.textContent = formatTime(data.last_updated);
+    renderNcdNote(data, difference);
+  }
+
+  function renderNcdSummary(data, mainTotal, subclinicTotal, difference) {
+    if (!ncdSummary) return;
+    const ungroupedRooms = Array.isArray(data.ungrouped) ? data.ungrouped : [];
+    const hasUngrouped = difference > 0;
+    const gapLabel = difference < 0
+      ? 'ตรวจสอบ Mapping'
+      : (difference === 0 ? 'จัดกลุ่มครบแล้ว' : 'ยังไม่จัดกลุ่ม');
+    const gapValue = difference < 0 ? Math.abs(difference) : Math.max(difference, 0);
+    const gapClass = difference < 0 ? 'mapping-warning' : (difference > 0 ? 'attention' : 'balanced');
+    const gapSmall = difference < 0 ? 'คนเกินยอดหลัก' : 'คน';
+    const gapHint = hasUngrouped
+      ? `<em>${isNcdUngroupedOpen ? 'คลิกซ่อนห้อง' : 'คลิกดูห้อง'}</em>`
+      : (difference === 0 ? '<em>ยอดตรงกับ NCD หลัก</em>' : '');
+    const gapContent = `
+      <span>${gapLabel}</span>
+      <strong>${formatNumber(gapValue)}</strong>
+      <small>${gapSmall}</small>
+      ${gapHint}
+    `;
+    const gapCard = hasUngrouped
+      ? `<button type="button" class="ncd-summary-card ${gapClass} clickable" id="ncdUngroupedToggle" aria-expanded="${isNcdUngroupedOpen ? 'true' : 'false'}">${gapContent}</button>`
+      : `<div class="ncd-summary-card ${gapClass}">${gapContent}</div>`;
+    const settingsLink = ncdSettingsLink
+      ? `<a class="secondary-button mini" href="/admin/ncd-subclinics"><i class="bi bi-gear"></i> ไปตั้งค่าคลินิกย่อย NCD</a>`
+      : '';
+    const ungroupedList = ungroupedRooms.length ? ungroupedRooms.map((room) => `
+      <li>
+        <div>
+          <strong>${escapeHtml(room.depcode || '-')}</strong>
+          <span>${escapeHtml(room.department_name || 'ไม่ระบุชื่อห้อง')}</span>
+        </div>
+        <b>${formatNumber(room.patient_total || 0)} คน</b>
+      </li>
+    `).join('') : '<li><div><span>ไม่พบรายการห้อง กรุณาตรวจสอบ mapping NCD หลักและคลินิกย่อย</span></div></li>';
+    const ungroupedDetail = hasUngrouped ? `
+      <div class="ncd-ungrouped-detail ${isNcdUngroupedOpen ? '' : 'hidden'}" id="ncdUngroupedDetail">
+        <div class="ncd-ungrouped-heading">
+          <div>
+            <strong>ห้อง NCD ที่ยังไม่จัดกลุ่ม</strong>
+            <span>เรียงตามจำนวนผู้รับบริการมากไปน้อย</span>
+          </div>
+          ${settingsLink}
+        </div>
+        <ul>${ungroupedList}</ul>
+      </div>
+    ` : '';
+
+    ncdSummary.innerHTML = `
+      <div class="ncd-summary-card main">
+        <span>NCD หลัก</span>
+        <strong>${formatNumber(mainTotal)}</strong>
+        <small>คน</small>
+      </div>
+      <div class="ncd-summary-card total">
+        <span>รวมคลินิกย่อย</span>
+        <strong>${formatNumber(subclinicTotal)}</strong>
+        <small>คน</small>
+      </div>
+      ${gapCard}
+      ${ungroupedDetail}
+    `;
+
+    const toggleButton = document.getElementById('ncdUngroupedToggle');
+    toggleButton?.addEventListener('click', () => {
+      isNcdUngroupedOpen = !isNcdUngroupedOpen;
+      renderNcdSummary(data, mainTotal, subclinicTotal, difference);
+    });
+  }
+
+  function renderNcdNote(data, difference) {
+    if (!ncdNote) return;
+    const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
+    const hasUnmappedSubclinic = subclinics.some((item) => Number(item.mapped_rooms || 0) === 0);
+
+    if (difference > 0) {
+      ncdNote.className = 'alert warning ncd-subclinic-note';
+      ncdNote.textContent = `พบห้อง NCD หลักที่ยังไม่ได้ผูกกับคลินิกย่อย ${formatNumber(difference)} คน คลิกกล่อง "ยังไม่จัดกลุ่ม" เพื่อดูห้องที่เกี่ยวข้อง และปรับ Mapping หากจำเป็น`;
+      return;
+    }
+
+    if (difference < 0) {
+      ncdNote.className = 'alert warning ncd-subclinic-note';
+      ncdNote.textContent = `ยอดรวมคลินิกย่อยมากกว่ายอด NCD หลัก ${formatNumber(Math.abs(difference))} คน กรุณาตรวจสอบว่า Mapping คลินิกย่อย NCD ไม่ได้นับห้องนอกกลุ่ม NCD หลัก`;
+      return;
+    }
+
+    if (hasUnmappedSubclinic) {
+      ncdNote.className = 'alert warning ncd-subclinic-note';
+      ncdNote.textContent = 'มีคลินิกย่อยบางรายการที่ยังไม่ได้ตั้งค่าห้อง กรุณาตรวจสอบการตั้งค่าคลินิกย่อย NCD';
+      return;
+    }
+
+    ncdNote.className = 'alert success ncd-subclinic-note';
+    ncdNote.textContent = 'ยอดคลินิกย่อยตรงกับยอด NCD หลัก';
+  }
+
+  function renderNcdSubclinics(data) {
+    const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
+    if (!ncdGrid) return;
+    const subclinicTotal = Number(data.total || 0);
+    const mainTotal = getNcdMainTotal(data);
+    const apiDiff = Number(data.diff_total);
+    const difference = Number.isFinite(apiDiff) ? apiDiff : mainTotal - subclinicTotal;
+    if (difference <= 0) isNcdUngroupedOpen = false;
+    const totals = subclinics.map((item) => Number(item.total || 0));
+    const maxTotal = Math.max(0, ...totals);
+
+    renderNcdSummary(data, mainTotal, subclinicTotal, difference);
+
+    ncdGrid.innerHTML = subclinics.map((item) => {
+      const mappedRooms = Number(item.mapped_rooms || 0);
+      const total = Number(item.total || 0);
+      const visual = getNcdSubclinicVisual(item.key);
+      const statusLines = getSubclinicStatusLines(total, mappedRooms);
+      const mappedCodesLine = formatMappedCodes(item);
+      const roomClass = mappedRooms > 0 ? 'configured' : 'not-configured';
+      const emptyClass = total === 0 ? 'empty-total' : 'has-total';
+      const topBadge = maxTotal > 0 && total === maxTotal
+        ? '<span class="ncd-subclinic-badge">สูงสุดวันนี้</span>'
+        : '';
+
+      return `
+        <article class="ncd-subclinic-card ${roomClass} ${emptyClass} theme-${visual.theme}">
+          <span class="ncd-subclinic-icon"><i class="bi ${visual.icon}"></i></span>
+          <div>
+            <div class="ncd-subclinic-card-heading">
+              <p>${escapeHtml(item.name || '-')}</p>
+              ${topBadge}
+            </div>
+            <div class="ncd-subclinic-metric">
+              <strong>${formatNumber(total)}</strong>
+              <span>คน</span>
+            </div>
+            <div class="ncd-subclinic-status-text">
+              ${statusLines.map((line) => `<small>${escapeHtml(line)}</small>`).join('')}
+              ${mappedCodesLine ? `<small class="ncd-subclinic-codes">${mappedCodesLine}</small>` : ''}
             </div>
           </div>
         </article>

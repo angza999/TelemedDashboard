@@ -913,6 +913,7 @@ function buildEmptyNcdSubclinic(key) {
     name: NCD_SUBCLINIC_META[key].name,
     total: 0,
     mapped_rooms: 0,
+    mapped_codes: [],
     rooms: []
   };
 }
@@ -956,6 +957,7 @@ async function fetchNcdSubclinicSummary() {
       name: NCD_SUBCLINIC_META[key].name,
       total,
       mapped_rooms: depcodes.length,
+      mapped_codes: depcodes,
       rooms: rows.map((row) => ({
         depcode: normalizeCode(row.source_code),
         department: row.display_name || row.source_code
@@ -964,13 +966,23 @@ async function fetchNcdSubclinicSummary() {
   }));
 
   const total = subclinics.reduce((sum, item) => sum + Number(item.total || 0), 0);
-  const mainNcdTotal = await countOvstByMainDep(pool, codesFor(mainMapping.NCD, 'DEP'));
+  const mainNcdCodes = codesFor(mainMapping.NCD, 'DEP');
+  const mappedSubclinicCodes = new Set(subclinics.flatMap((item) => item.mapped_codes || []));
+  const ungroupedCodes = mainNcdCodes.filter((code) => !mappedSubclinicCodes.has(code));
+  const [mainNcdTotal, ungrouped] = await Promise.all([
+    countOvstByMainDep(pool, mainNcdCodes),
+    countOvstByMainDepGrouped(pool, ungroupedCodes)
+  ]);
+  const diffTotal = mainNcdTotal - total;
 
   return {
     total,
+    main_total: mainNcdTotal,
     main_ncd_total: mainNcdTotal,
-    totals_match_main: total === mainNcdTotal,
+    diff_total: diffTotal,
+    totals_match_main: diffTotal === 0,
     subclinics,
+    ungrouped,
     last_updated: bangkokIsoString()
   };
 }
