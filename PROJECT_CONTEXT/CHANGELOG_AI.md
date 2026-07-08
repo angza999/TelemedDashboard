@@ -83,3 +83,8 @@
 
 ## Commit Reference
 Use `git log -1 --oneline` for the latest commit. This file records feature history and should be updated with every project change.
+
+## 2026-07-08 - ER Subclinic Drill-down
+- Added ER card drill-down with exactly `ฉีดยา/ทำแผล` and `ER Telemed`.
+- Added Admin ER mapping stored in WebApp JSON with default DEP strings `051` and `082`.
+- HOSxP remains read-only; counts use `COUNT(DISTINCT ovst.vn)` by `ovst.main_dep` for `CURDATE()`.

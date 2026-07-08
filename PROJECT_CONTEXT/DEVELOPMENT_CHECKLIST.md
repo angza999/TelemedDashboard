@@ -58,3 +58,10 @@ npm install --omit=dev
 sudo systemctl restart telemed-dashboard
 sudo systemctl status telemed-dashboard --no-pager
 ```
+
+## ER Subclinic Feature
+- [x] ER card opens an accessible two-group modal.
+- [x] Default DEP codes `051` and `082` remain strings.
+- [x] Duplicate DEP assignment is rejected in frontend and backend.
+- [x] Admin routes use existing role protection.
+- [x] HOSxP access is SELECT-only and the main ER formula is unchanged.

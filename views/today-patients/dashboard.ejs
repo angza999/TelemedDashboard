@@ -84,7 +84,7 @@
             <small class="today-card-action">คลิกดูรายละเอียด Ward</small>
           </div>
         </article>
-        <article class="today-card er">
+        <article class="today-card er clickable" id="erSubclinicCard" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="erSubclinicModal">
           <span class="today-card-icon"><i class="bi bi-lightning-charge"></i></span>
           <div class="today-card-content">
             <p>อุบัติเหตุฉุกเฉิน ER</p>
@@ -92,6 +92,7 @@
               <strong data-today-value="er_total">-</strong>
               <span>คน</span>
             </div>
+            <small class="today-card-action">คลิกดูคลินิกย่อย</small>
           </div>
         </article>
       </section>
@@ -171,6 +172,35 @@
             </a>
           <% } %>
           <button type="button" class="primary-button" id="ipdSubclinicCancelButton">ปิด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="erSubclinicModal" class="modal-backdrop er-subclinic-modal hidden" aria-hidden="true">
+    <div class="modal-dialog er-subclinic-dialog" role="dialog" aria-modal="true" aria-labelledby="erSubclinicTitle">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">ผู้รับบริการวันนี้</p>
+          <h2 id="erSubclinicTitle">คลินิกย่อย ER วันนี้</h2>
+          <p class="panel-note">แสดงยอดผู้รับบริการตามห้อง ER ที่ตั้งค่าไว้</p>
+        </div>
+        <button type="button" class="icon-button" id="erSubclinicCloseButton" aria-label="ปิดหน้าต่างคลินิกย่อย ER"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div id="erSubclinicSummary" class="er-subclinic-summary" aria-live="polite"></div>
+      <div id="erSubclinicStatus" class="dashboard-status loading">กำลังโหลดข้อมูลคลินิกย่อย ER...</div>
+      <div id="erSubclinicGrid" class="er-subclinic-grid" aria-live="polite"></div>
+      <div id="erSubclinicNote" class="alert warning er-subclinic-note hidden"></div>
+      <div class="er-subclinic-footer">
+        <div>
+          <strong id="erSubclinicTotal">รวมคลินิกย่อย ER วันนี้: - คน</strong>
+          <span id="erSubclinicUpdated">อัปเดตล่าสุด -</span>
+        </div>
+        <div class="modal-actions">
+          <% if (currentUser && currentUser.role === 'admin') { %>
+            <a class="secondary-button er-subclinic-settings" href="/admin/er-subclinics"><i class="bi bi-gear"></i> ตั้งค่าคลินิกย่อย ER</a>
+          <% } %>
+          <button type="button" class="primary-button" id="erSubclinicCancelButton">ปิด</button>
         </div>
       </div>
     </div>

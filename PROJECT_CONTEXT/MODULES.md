@@ -142,3 +142,9 @@
 
 - `public/css/app.css`
   - All UI styling
+
+## ER Subclinics
+- `todayPatientsService`: WebApp mapping, validation, and SELECT-only daily counts.
+- `/api/today-patients/er-subclinics`: modal summary API.
+- `/admin/er-subclinics`: admin mapping page with admin-only APIs.
+- `data/dashboard-er-subclinic-mapping.json`: runtime mapping store, excluded from Git.

@@ -118,3 +118,10 @@ This is an application runtime file only:
 - `sort_order`: display/save order
 
 IPD subclinic counts read HOSxP `ipt` with selected `ward IN (...)` and active admission conditions `dchdate IS NULL`, empty string, or `0000-00-00`, using `COUNT(DISTINCT an)`. This mapping writes only to the WebApp JSON store and never to HOSxP.
+
+## ER Subclinic Mapping Store
+- Runtime file: `data/dashboard-er-subclinic-mapping.json` (not committed).
+- Keys: `INJECTION_DRESSING` and `ER_TELEMED`; `source_type` is always `DEP`.
+- Default string codes are `051` and `082`; leading zeroes must be preserved.
+- Counts read HOSxP `ovst.main_dep` for `CURDATE()` with `COUNT(DISTINCT ovst.vn)`.
+- Mapping writes only to WebApp JSON storage and never creates or modifies HOSxP data or schema.

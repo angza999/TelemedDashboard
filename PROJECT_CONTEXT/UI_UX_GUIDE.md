@@ -61,3 +61,9 @@ Current style uses:
 - KPI cards should stack.
 - Filter forms should become single column.
 - Wide tables should scroll horizontally, not shrink into unreadable columns.
+
+## ER Subclinic Modal
+- Keep the ER card keyboard accessible and show a visible click affordance.
+- Show ER main, combined subclinics, and ungrouped/mapping gap before the two cards.
+- Distinguish not configured, configured with zero visits, and active visit counts.
+- Show the ER settings action only to admin users.

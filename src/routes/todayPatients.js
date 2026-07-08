@@ -11,7 +11,10 @@ const {
   fetchNcdSubclinicSummary,
   getIpdSubclinicMappingGroups,
   saveIpdSubclinicMappingGroups,
-  fetchIpdSubclinicSummary
+  fetchIpdSubclinicSummary,
+  getErSubclinicMappingGroups,
+  saveErSubclinicMappingGroups,
+  fetchErSubclinicSummary
 } = require('../services/todayPatientsService');
 
 const publicRouter = express.Router();
@@ -68,6 +71,18 @@ publicRouter.get('/api/today-patients/ipd-subclinics', async (req, res, next) =>
   }
 });
 
+publicRouter.get('/api/today-patients/er-subclinics', async (req, res, next) => {
+  try {
+    const data = await fetchErSubclinicSummary();
+    res.json({ success: true, data });
+  } catch (err) {
+    if (isDatabaseSetupError(err)) {
+      return res.status(503).json({ success: false, message: 'ไม่สามารถดึงข้อมูลคลินิกย่อย ER ได้' });
+    }
+    next(err);
+  }
+});
+
 adminRouter.get('/admin/today-patients-mapping', (req, res) => {
   res.render('admin/today-patients-mapping', {
     title: 'ตั้งค่าผู้รับบริการวันนี้'
@@ -83,6 +98,12 @@ adminRouter.get('/admin/ncd-subclinics', (req, res) => {
 adminRouter.get('/admin/ipd-subclinics', (req, res) => {
   res.render('admin/ipd-subclinics', {
     title: 'ตั้งค่าคลินิกย่อย IPD'
+  });
+});
+
+adminRouter.get('/admin/er-subclinics', (req, res) => {
+  res.render('admin/er-subclinics', {
+    title: 'ตั้งค่าคลินิกย่อย ER'
   });
 });
 
@@ -174,6 +195,37 @@ adminRouter.post('/api/admin/ipd-subclinics/mapping', async (req, res) => {
     res.status(400).json({
       success: false,
       message: err.message || 'บันทึกการตั้งค่าคลินิกย่อย IPD ไม่สำเร็จ'
+    });
+  }
+});
+
+adminRouter.get('/api/admin/er-subclinics/departments', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await fetchDepartments() });
+  } catch (err) {
+    if (isDatabaseSetupError(err)) {
+      return res.status(503).json({ success: false, message: databaseSetupMessage(err) });
+    }
+    next(err);
+  }
+});
+
+adminRouter.get('/api/admin/er-subclinics/mapping', (req, res, next) => {
+  try {
+    res.json({ success: true, data: getErSubclinicMappingGroups() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/api/admin/er-subclinics/mapping', (req, res) => {
+  try {
+    const data = saveErSubclinicMappingGroups(req.body || {});
+    res.json({ success: true, data, message: 'บันทึกการตั้งค่าคลินิกย่อย ER สำเร็จ' });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: err.message || 'บันทึกการตั้งค่าคลินิกย่อย ER ไม่สำเร็จ'
     });
   }
 });

@@ -12,6 +12,38 @@
   --shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
 }
 
+/* ER subclinic drill-down mirrors the established NCD/IPD dashboard pattern. */
+.er-subclinic-dialog { width: min(900px, calc(100vw - 32px)); }
+.er-subclinic-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 14px; }
+.er-summary-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; display: grid; gap: 2px; }
+.er-summary-card span, .er-summary-card small { color: var(--muted); }
+.er-summary-card strong { font-size: 28px; color: var(--text); }
+.er-summary-card.main { border-color: #fecaca; background: #fff7f7; }
+.er-summary-card.total { border-color: #fed7aa; background: #fff9f1; }
+.er-summary-card.attention { border-color: #fbbf24; background: #fffbeb; }
+.er-summary-card.balanced { border-color: #86efac; background: #f0fdf4; }
+.er-subclinic-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.er-subclinic-card { min-height: 150px; display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 14px; align-items: start; padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.er-subclinic-card.theme-dressing { border-top: 4px solid #f97316; }
+.er-subclinic-card.theme-telemed { border-top: 4px solid #0f766e; }
+.er-subclinic-card.not-configured { border-style: dashed; background: #f8fafc; }
+.er-subclinic-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 8px; background: #ffedd5; color: #c2410c; font-size: 24px; }
+.er-subclinic-card.theme-telemed .er-subclinic-icon { background: #ccfbf1; color: #0f766e; }
+.er-subclinic-card-heading p { margin: 0; font-weight: 700; font-size: 18px; }
+.er-subclinic-metric { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 4px; }
+.er-subclinic-metric strong { font-size: 34px; line-height: 1; }
+.er-subclinic-metric span, .er-subclinic-status-text small, .er-subclinic-footer span { color: var(--muted); }
+.er-subclinic-status-text { display: grid; gap: 2px; }
+.er-subclinic-note { margin-top: 14px; }
+.er-subclinic-footer { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.er-subclinic-footer > div:first-child { display: grid; gap: 4px; }
+
+@media (max-width: 720px) {
+  .er-subclinic-summary, .er-subclinic-grid { grid-template-columns: 1fr; }
+  .er-subclinic-footer { align-items: stretch; flex-direction: column; }
+  .er-subclinic-footer .modal-actions, .er-subclinic-footer .modal-actions > * { width: 100%; }
+}
+
 * {
   box-sizing: border-box;
 }

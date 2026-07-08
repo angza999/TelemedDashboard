@@ -41,3 +41,10 @@ Do not change the province-aligned formula without explicit instruction:
 - Commit only source/config-template/deploy docs.
 - Do not commit `.env` or `data/`.
 - After pushing, server can update with `git pull origin main`.
+
+## ER Subclinic Rules
+- Support only `ฉีดยา/ทำแผล` and `ER Telemed` in this release.
+- Use `ovst.main_dep`, `ovst.vstdate = CURDATE()`, and `COUNT(DISTINCT ovst.vn)`.
+- Do not use `er_regist`, ICD-10, diagnoses, or `clinicmember`.
+- Keep DEP codes as strings and never store mapping in HOSxP.
+- `/admin/er-subclinics` and its mapping APIs are admin-only.

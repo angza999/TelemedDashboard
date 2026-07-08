@@ -25,10 +25,21 @@
   const ipdTotal = document.getElementById('ipdSubclinicTotal');
   const ipdUpdated = document.getElementById('ipdSubclinicUpdated');
   const ipdNote = document.getElementById('ipdSubclinicNote');
+  const erCard = document.getElementById('erSubclinicCard');
+  const erModal = document.getElementById('erSubclinicModal');
+  const erCloseButton = document.getElementById('erSubclinicCloseButton');
+  const erCancelButton = document.getElementById('erSubclinicCancelButton');
+  const erStatus = document.getElementById('erSubclinicStatus');
+  const erSummary = document.getElementById('erSubclinicSummary');
+  const erGrid = document.getElementById('erSubclinicGrid');
+  const erTotal = document.getElementById('erSubclinicTotal');
+  const erUpdated = document.getElementById('erSubclinicUpdated');
+  const erNote = document.getElementById('erSubclinicNote');
 
   let isRefreshing = false;
   let isLoadingNcd = false;
   let isLoadingIpd = false;
+  let isLoadingEr = false;
   let hasData = false;
 
   function formatNumber(value) {
@@ -96,6 +107,12 @@
     ipdStatus.textContent = message;
   }
 
+  function setErStatus(type, message) {
+    if (!erStatus) return;
+    erStatus.className = `dashboard-status ${type || ''}`.trim();
+    erStatus.textContent = message;
+  }
+
   function getNcdMainTotal(data) {
     const fromApi = Number(data.main_ncd_total);
     if (Number.isFinite(fromApi)) return fromApi;
@@ -108,6 +125,13 @@
     if (Number.isFinite(fromApi)) return fromApi;
     const ipdValue = document.querySelector('[data-today-value="ipd_total"]');
     return Number((ipdValue?.textContent || '0').replace(/,/g, '')) || 0;
+  }
+
+  function getErMainTotal(data) {
+    const fromApi = Number(data.main_er_total);
+    if (Number.isFinite(fromApi)) return fromApi;
+    const value = document.querySelector('[data-today-value="er_total"]');
+    return Number((value?.textContent || '0').replace(/,/g, '')) || 0;
   }
 
   function getNcdSubclinicVisual(key) {
@@ -176,6 +200,17 @@
     `;
   }
 
+  function renderErSummary(mainTotal, subclinicTotal, difference, ungroupedTotal) {
+    if (!erSummary) return;
+    const gapLabel = difference < 0 ? 'ตรวจสอบ Mapping' : 'ยังไม่จัดกลุ่ม';
+    const gapValue = difference < 0 ? Math.abs(difference) : ungroupedTotal;
+    const gapClass = difference !== 0 ? 'attention' : 'balanced';
+    erSummary.innerHTML = `
+      <div class="er-summary-card main"><span>ER หลัก</span><strong>${formatNumber(mainTotal)}</strong><small>คน</small></div>
+      <div class="er-summary-card total"><span>รวมคลินิกย่อย</span><strong>${formatNumber(subclinicTotal)}</strong><small>คน</small></div>
+      <div class="er-summary-card ${gapClass}"><span>${gapLabel}</span><strong>${formatNumber(gapValue)}</strong><small>${difference < 0 ? 'คนเกินยอดหลัก' : 'คน'}</small></div>`;
+  }
+
   function renderNcdNote(data, difference) {
     if (!ncdNote) return;
     const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
@@ -226,6 +261,29 @@
     }
 
     ipdNote.classList.add('hidden');
+  }
+
+  function renderErNote(data, difference) {
+    if (!erNote) return;
+    const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
+    const hasUnmapped = subclinics.some((item) => Number(item.mapped_rooms || 0) === 0);
+    if (difference > 0) {
+      erNote.className = 'alert warning er-subclinic-note';
+      erNote.textContent = `พบส่วนต่าง ${formatNumber(difference)} คน: อาจเกิดจากห้อง ER บางส่วนยังไม่ได้ผูกกับคลินิกย่อย ER กรุณาตรวจสอบการตั้งค่า`;
+      return;
+    }
+    if (difference < 0) {
+      erNote.className = 'alert warning er-subclinic-note';
+      erNote.textContent = `รวมคลินิกย่อยมากกว่ายอด ER หลัก ${formatNumber(Math.abs(difference))} คน กรุณาตรวจสอบ Mapping`;
+      return;
+    }
+    if (hasUnmapped) {
+      erNote.className = 'alert warning er-subclinic-note';
+      erNote.textContent = 'มีคลินิกย่อย ER ที่ยังไม่ได้ตั้งค่าห้อง กรุณาตรวจสอบการตั้งค่า';
+      return;
+    }
+    erNote.className = 'alert success er-subclinic-note';
+    erNote.textContent = 'ยอดคลินิกย่อยตรงกับยอด ER หลัก';
   }
 
   function getSubclinicStatusLines(total, mappedRooms) {
@@ -367,6 +425,32 @@
     renderIpdNote(data, difference);
   }
 
+  function renderErSubclinics(data) {
+    const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
+    if (!erGrid) return;
+    const subclinicTotal = Number(data.total || 0);
+    const mainTotal = getErMainTotal(data);
+    const difference = mainTotal - subclinicTotal;
+    const ungroupedTotal = Math.max(difference, 0);
+    renderErSummary(mainTotal, subclinicTotal, difference, ungroupedTotal);
+    erGrid.innerHTML = subclinics.map((item) => {
+      const mappedRooms = Number(item.mapped_rooms || 0);
+      const total = Number(item.total || 0);
+      const statusLines = getSubclinicStatusLines(total, mappedRooms);
+      const theme = item.key === 'ER_TELEMED' ? 'telemed' : 'dressing';
+      const icon = item.key === 'ER_TELEMED' ? 'bi-camera-video' : 'bi-bandaid';
+      return `<article class="er-subclinic-card ${mappedRooms ? 'configured' : 'not-configured'} ${total ? 'has-total' : 'empty-total'} theme-${theme}">
+        <span class="er-subclinic-icon"><i class="bi ${icon}"></i></span><div>
+          <div class="er-subclinic-card-heading"><p>${escapeHtml(item.name || '-')}</p></div>
+          <div class="er-subclinic-metric"><strong>${formatNumber(total)}</strong><span>คน</span></div>
+          <div class="er-subclinic-status-text">${statusLines.map((line) => `<small>${escapeHtml(line)}</small>`).join('')}</div>
+        </div></article>`;
+    }).join('');
+    if (erTotal) erTotal.textContent = `รวมคลินิกย่อย ER วันนี้: ${formatNumber(subclinicTotal)} คน`;
+    if (erUpdated) erUpdated.textContent = formatTime(data.last_updated);
+    renderErNote(data, difference);
+  }
+
   async function loadNcdSubclinics() {
     if (isLoadingNcd) return;
     isLoadingNcd = true;
@@ -421,6 +505,26 @@
     }
   }
 
+  async function loadErSubclinics() {
+    if (isLoadingEr) return;
+    isLoadingEr = true;
+    setErStatus('loading', 'กำลังโหลดข้อมูลคลินิกย่อย ER...');
+    try {
+      const response = await fetch('/api/today-patients/er-subclinics', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.success === false) throw new Error(payload.message || 'ไม่สามารถดึงข้อมูลคลินิกย่อย ER ได้');
+      renderErSubclinics(payload.data || {});
+      setErStatus('success', 'โหลดข้อมูลคลินิกย่อย ER สำเร็จ');
+    } catch (err) {
+      setErStatus('error', err.message || 'ไม่สามารถดึงข้อมูลคลินิกย่อย ER ได้');
+      if (erGrid) erGrid.innerHTML = '<div class="empty">ไม่สามารถแสดงข้อมูลคลินิกย่อย ER ได้</div>';
+      if (erSummary) erSummary.innerHTML = '';
+      if (erTotal) erTotal.textContent = 'รวมคลินิกย่อย ER วันนี้: - คน';
+      if (erUpdated) erUpdated.textContent = 'อัปเดตล่าสุด -';
+      if (erNote) erNote.classList.add('hidden');
+    } finally { isLoadingEr = false; }
+  }
+
   function openNcdModal() {
     if (!ncdModal) return;
     ncdModal.classList.remove('hidden');
@@ -449,6 +553,21 @@
     ipdModal.classList.add('hidden');
     ipdModal.setAttribute('aria-hidden', 'true');
     ipdCard?.focus();
+  }
+
+  function openErModal() {
+    if (!erModal) return;
+    erModal.classList.remove('hidden');
+    erModal.setAttribute('aria-hidden', 'false');
+    erCloseButton?.focus();
+    loadErSubclinics();
+  }
+
+  function closeErModal() {
+    if (!erModal) return;
+    erModal.classList.add('hidden');
+    erModal.setAttribute('aria-hidden', 'true');
+    erCard?.focus();
   }
 
   async function refreshData() {
@@ -503,12 +622,26 @@
   ipdModal?.addEventListener('click', (event) => {
     if (event.target === ipdModal) closeIpdModal();
   });
+  erCard?.addEventListener('click', openErModal);
+  erCard?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openErModal();
+  });
+  erCloseButton?.addEventListener('click', closeErModal);
+  erCancelButton?.addEventListener('click', closeErModal);
+  erModal?.addEventListener('click', (event) => {
+    if (event.target === erModal) closeErModal();
+  });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && ncdModal && !ncdModal.classList.contains('hidden')) {
       closeNcdModal();
     }
     if (event.key === 'Escape' && ipdModal && !ipdModal.classList.contains('hidden')) {
       closeIpdModal();
+    }
+    if (event.key === 'Escape' && erModal && !erModal.classList.contains('hidden')) {
+      closeErModal();
     }
   });
 

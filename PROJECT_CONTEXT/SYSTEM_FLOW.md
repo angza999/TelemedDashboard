@@ -90,3 +90,10 @@
 5. Delete uses `DELETE /api/admin/users/:id` and performs a WebApp-only soft delete by setting `deletedAt`, `deletedBy`, and `isActive = false`.
 6. Main `admin`, the current session user, and the last admin cannot be deleted.
 7. Last active admin cannot be disabled or demoted.
+
+## ER Subclinic Flow
+1. Clicking the ER card calls `/api/today-patients/er-subclinics`.
+2. Service reads `data/dashboard-er-subclinic-mapping.json` and counts distinct HOSxP `ovst.vn` by mapped `main_dep` codes for today.
+3. Modal compares unchanged main ER total with the two ER subclinic totals and shows mapping gaps.
+4. Admin opens `/admin/er-subclinics`, assigns DEP rooms, and saves through admin-only APIs.
+5. Save writes only the WebApp JSON file; HOSxP is never modified.
