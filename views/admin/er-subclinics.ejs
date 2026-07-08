@@ -15,8 +15,8 @@
       <header class="topbar">
         <div>
           <p class="eyebrow">Admin</p>
-          <h1>ตั้งค่าคลินิกย่อย ER</h1>
-          <p class="page-description">เลือกห้องจาก HOSxP เพื่อใช้คำนวณฉีดยา/ทำแผล และ ER Telemed</p>
+          <h1>ตั้งค่าบริการ ER</h1>
+          <p class="page-description">กำหนดห้องบริการที่เกี่ยวข้องกับ ER สำหรับการ์ดวันนี้และหน้ารายละเอียด โดยบันทึก mapping ใน WebApp เท่านั้น</p>
         </div>
         <% if (currentUser) { %>
           <form action="/logout" method="post" class="user-box">
@@ -29,28 +29,57 @@
       <section class="panel mapping-panel">
         <div class="panel-heading">
           <div>
-            <h2>Mapping คลินิกย่อย ER</h2>
-            <p class="panel-note">อ่านรายการห้องจาก HOSxP ด้วย SELECT เท่านั้น ส่วน mapping บันทึกใน WebApp เท่านั้น</p>
+            <h2>Mapping บริการ ER</h2>
+            <p class="panel-note">อ่านรายชื่อห้องจาก HOSxP ด้วย SELECT เท่านั้น ระบบนี้ไม่เขียนข้อมูลกลับไปยัง HOSxP</p>
           </div>
           <span><i class="bi bi-shield-lock"></i> Admin only</span>
         </div>
+
         <div id="erSubclinicStatus" class="dashboard-status loading">กำลังโหลดรายการห้อง...</div>
-        <div class="mapping-tabs" role="tablist" aria-label="คลินิกย่อย ER">
-          <button type="button" class="mapping-tab-button active" data-subclinic-key="INJECTION_DRESSING">ฉีดยา/ทำแผล</button>
+
+        <div class="mapping-tabs" role="tablist" aria-label="บริการ ER">
+          <button type="button" class="mapping-tab-button active" data-subclinic-key="ER_PATIENT">ผู้ป่วยห้องฉุกเฉิน</button>
+          <button type="button" class="mapping-tab-button" data-subclinic-key="INJECTION_WOUND">ฉีดยา/ทำแผล</button>
           <button type="button" class="mapping-tab-button" data-subclinic-key="ER_TELEMED">ER Telemed</button>
         </div>
+
+        <div class="er-service-options" aria-label="ตัวเลือกบริการ ER">
+          <label class="toggle-row">
+            <input id="erIncludeInCardToggle" type="checkbox">
+            <span>นับรวมในการ์ด ER หลัก</span>
+          </label>
+          <label class="toggle-row">
+            <input id="erShowInDetailToggle" type="checkbox">
+            <span>แสดงในหน้ารายละเอียด ER</span>
+          </label>
+          <label class="toggle-row">
+            <input id="erActiveToggle" type="checkbox">
+            <span>เปิดใช้งาน mapping นี้</span>
+          </label>
+        </div>
+
         <div class="mapping-toolbar">
           <label>ค้นหา<input id="erSubclinicSearch" type="search" placeholder="ค้นหาด้วยรหัสหรือชื่อห้อง"></label>
           <div class="mapping-toolbar-actions">
             <button type="button" id="saveErSubclinicButton" class="primary-button"><i class="bi bi-save"></i> บันทึกการตั้งค่า</button>
           </div>
         </div>
+
         <div class="alert warning mapping-warning">
-          ห้อง DEP เดียวกันเลือกได้เพียงหนึ่งคลินิกย่อย ER เพื่อป้องกันยอดซ้ำ และไม่มีการเขียนข้อมูลกลับไปยัง HOSxP
+          ห้อง DEP เดียวกันเลือกได้เพียงหนึ่งบริการ ER ที่ active อยู่ เพื่อป้องกันยอดซ้ำ หากไม่มีบริการใดถูกตั้งให้นับรวมในการ์ด ER หลัก การ์ด ER จะเป็น 0
         </div>
+
         <div class="table-wrap mapping-table-wrap">
           <table>
-            <thead><tr><th>เลือก</th><th>รหัสห้อง</th><th>ชื่อห้อง</th><th>สถานะ</th><th>หมายเหตุ</th></tr></thead>
+            <thead>
+              <tr>
+                <th>เลือก</th>
+                <th>รหัสห้อง</th>
+                <th>ชื่อห้อง</th>
+                <th>สถานะ</th>
+                <th>หมายเหตุ</th>
+              </tr>
+            </thead>
             <tbody id="erSubclinicTableBody"><tr><td colspan="5" class="empty">กำลังโหลดข้อมูล</td></tr></tbody>
           </table>
         </div>

@@ -42,7 +42,6 @@
   let isLoadingIpd = false;
   let isLoadingEr = false;
   let hasData = false;
-  let isErUngroupedOpen = false;
 
   function formatNumber(value) {
     return Number(value || 0).toLocaleString('th-TH');
@@ -202,43 +201,13 @@
     `;
   }
 
-  function renderErSummary(mainTotal, subclinicTotal, difference, ungroupedTotal, ungroupedRooms) {
+  function renderErSummary(cardTotal, totalRelated, serviceCount) {
     if (!erSummary) return;
-    const rooms = Array.isArray(ungroupedRooms) ? ungroupedRooms : [];
-    const canInspect = difference > 0 && rooms.length > 0;
-    const gapLabel = difference < 0
-      ? 'ตรวจสอบ Mapping'
-      : (difference > 0 ? 'ยังไม่จัดกลุ่ม' : 'จัดกลุ่มครบแล้ว');
-    const gapValue = difference < 0 ? Math.abs(difference) : ungroupedTotal;
-    const gapClass = difference < 0 ? 'mapping-warning' : (difference > 0 ? 'attention' : 'balanced');
-    const detailHtml = rooms.length
-      ? `<div class="er-ungrouped-detail ${isErUngroupedOpen ? '' : 'hidden'}" id="erUngroupedDetail">
-          <div class="er-ungrouped-heading">
-            <strong>ห้อง ER ที่ยังไม่จัดกลุ่ม</strong>
-            ${erSettingsLink ? '<a href="/admin/er-subclinics">ไปตั้งค่าคลินิกย่อย ER</a>' : ''}
-          </div>
-          <ul>
-            ${rooms.map((room) => `<li><span><strong>${escapeHtml(room.depcode || '-')}</strong> ${escapeHtml(room.department_name || 'ไม่ระบุชื่อห้อง')}</span><b>${formatNumber(room.patient_total)} คน</b></li>`).join('')}
-          </ul>
-        </div>`
-      : '';
     erSummary.innerHTML = `
-      <div class="er-summary-card main"><span>ER หลัก</span><strong>${formatNumber(mainTotal)}</strong><small>คน</small></div>
-      <div class="er-summary-card total"><span>รวมคลินิกย่อย</span><strong>${formatNumber(subclinicTotal)}</strong><small>คน</small></div>
-      <button type="button" class="er-summary-card ${gapClass} ${canInspect ? 'clickable' : ''}" id="erUngroupedToggle" ${canInspect ? 'aria-expanded="' + String(isErUngroupedOpen) + '" aria-controls="erUngroupedDetail"' : 'disabled'}>
-        <span>${gapLabel}</span>
-        <strong>${formatNumber(gapValue)}</strong>
-        <small>${difference < 0 ? 'คนเกินยอดหลัก' : (difference > 0 ? 'คน' : 'ยอดตรงกับ ER หลัก')}</small>
-        ${canInspect ? '<em>คลิกดูห้อง</em>' : ''}
-      </button>
-      ${detailHtml}`;
-
-    const toggle = document.getElementById('erUngroupedToggle');
-    toggle?.addEventListener('click', () => {
-      if (!canInspect) return;
-      isErUngroupedOpen = !isErUngroupedOpen;
-      renderErSummary(mainTotal, subclinicTotal, difference, ungroupedTotal, rooms);
-    });
+      <div class="er-summary-card main"><span>ยอดบนการ์ด ER</span><strong>${formatNumber(cardTotal)}</strong><small>คน</small></div>
+      <div class="er-summary-card total"><span>รวมบริการที่เกี่ยวข้อง</span><strong>${formatNumber(totalRelated)}</strong><small>คน</small></div>
+      <div class="er-summary-card balanced"><span>บริการที่แสดง</span><strong>${formatNumber(serviceCount)}</strong><small>รายการ</small></div>
+    `;
   }
 
   function renderNcdNote(data, difference) {
@@ -293,27 +262,9 @@
     ipdNote.classList.add('hidden');
   }
 
-  function renderErNote(data, difference) {
+  function renderErNote() {
     if (!erNote) return;
-    const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
-    const hasUnmapped = subclinics.some((item) => Number(item.mapped_rooms || 0) === 0);
-    if (difference > 0) {
-      erNote.className = 'alert warning er-subclinic-note';
-      erNote.textContent = `พบส่วนต่าง ${formatNumber(difference)} คน: มีผู้รับบริการในห้อง ER หลักที่ยังไม่ได้ผูกกับคลินิกย่อย ER กรุณาคลิก “ยังไม่จัดกลุ่ม” เพื่อตรวจสอบห้อง และปรับการตั้งค่าหากจำเป็น`;
-      return;
-    }
-    if (difference < 0) {
-      erNote.className = 'alert warning er-subclinic-note';
-      erNote.textContent = `ยอดคลินิกย่อยมากกว่ายอด ER หลัก ${formatNumber(Math.abs(difference))} คน กรุณาตรวจสอบ Mapping ห้อง ER`;
-      return;
-    }
-    if (hasUnmapped) {
-      erNote.className = 'alert warning er-subclinic-note';
-      erNote.textContent = 'มีคลินิกย่อย ER ที่ยังไม่ได้ตั้งค่าห้อง กรุณาตรวจสอบการตั้งค่า';
-      return;
-    }
-    erNote.className = 'alert success er-subclinic-note';
-    erNote.textContent = 'ยอดคลินิกย่อยตรงกับยอด ER หลัก';
+    erNote.classList.add('hidden');
   }
 
   function formatMappedCodes(item) {
@@ -465,35 +416,35 @@
   }
 
   function renderErSubclinics(data) {
-    const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
+    const subclinics = Array.isArray(data.services)
+      ? data.services
+      : (Array.isArray(data.subclinics) ? data.subclinics : []);
     if (!erGrid) return;
-    const subclinicTotal = Number(data.total || 0);
-    const mainTotal = getErMainTotal(data);
-    const difference = mainTotal - subclinicTotal;
-    const ungroupedTotal = Math.max(difference, 0);
-    const ungroupedRooms = Array.isArray(data.ungrouped) ? data.ungrouped : [];
-    if (difference <= 0) isErUngroupedOpen = false;
-    renderErSummary(mainTotal, subclinicTotal, difference, ungroupedTotal, ungroupedRooms);
+    const subclinicTotal = Number(data.total_related || data.total || 0);
+    const cardTotal = Number(data.card_total ?? data.main_er_total ?? getErMainTotal(data));
+    renderErSummary(cardTotal, subclinicTotal, subclinics.length);
     erGrid.innerHTML = subclinics.map((item) => {
       const mappedRooms = Number(item.mapped_rooms || 0);
       const total = Number(item.total || 0);
       const statusLines = getSubclinicStatusLines(total, mappedRooms);
       const mappedCodesLine = formatMappedCodes(item);
-      const theme = item.key === 'ER_TELEMED' ? 'telemed' : 'dressing';
-      const icon = item.key === 'ER_TELEMED' ? 'bi-camera-video' : 'bi-bandaid';
+      const theme = item.key === 'ER_PATIENT' ? 'patient' : (item.key === 'ER_TELEMED' ? 'telemed' : 'dressing');
+      const icon = item.key === 'ER_PATIENT' ? 'bi-hospital' : (item.key === 'ER_TELEMED' ? 'bi-camera-video' : 'bi-bandaid');
+      const cardBadge = item.include_in_card_total ? '<small class="er-service-flag">นับรวมในการ์ด ER หลัก</small>' : '';
       return `<article class="er-subclinic-card ${mappedRooms ? 'configured' : 'not-configured'} ${total ? 'has-total' : 'empty-total'} theme-${theme}">
         <span class="er-subclinic-icon"><i class="bi ${icon}"></i></span><div>
           <div class="er-subclinic-card-heading"><p>${escapeHtml(item.name || '-')}</p></div>
           <div class="er-subclinic-metric"><strong>${formatNumber(total)}</strong><span>คน</span></div>
           <div class="er-subclinic-status-text">
+            ${cardBadge}
             ${statusLines.map((line) => `<small>${escapeHtml(line)}</small>`).join('')}
             ${mappedCodesLine ? `<small class="er-subclinic-codes">${mappedCodesLine}</small>` : ''}
           </div>
         </div></article>`;
     }).join('');
-    if (erTotal) erTotal.textContent = `รวมคลินิกย่อย ER วันนี้: ${formatNumber(subclinicTotal)} คน`;
+    if (erTotal) erTotal.textContent = `รวมบริการที่เกี่ยวข้องกับ ER วันนี้: ${formatNumber(subclinicTotal)} คน`;
     if (erUpdated) erUpdated.textContent = formatTime(data.last_updated);
-    renderErNote(data, difference);
+    renderErNote();
   }
 
   async function loadNcdSubclinics() {
@@ -553,18 +504,18 @@
   async function loadErSubclinics() {
     if (isLoadingEr) return;
     isLoadingEr = true;
-    setErStatus('loading', 'กำลังโหลดข้อมูลคลินิกย่อย ER...');
+    setErStatus('loading', 'กำลังโหลดข้อมูลบริการ ER...');
     try {
       const response = await fetch('/api/today-patients/er-subclinics', { headers: { Accept: 'application/json' }, cache: 'no-store' });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok || payload.success === false) throw new Error(payload.message || 'ไม่สามารถดึงข้อมูลคลินิกย่อย ER ได้');
+      if (!response.ok || payload.success === false) throw new Error(payload.message || 'ไม่สามารถดึงข้อมูลบริการ ER ได้');
       renderErSubclinics(payload.data || {});
-      setErStatus('success', 'โหลดข้อมูลคลินิกย่อย ER สำเร็จ');
+      setErStatus('success', 'โหลดข้อมูลบริการ ER สำเร็จ');
     } catch (err) {
-      setErStatus('error', err.message || 'ไม่สามารถดึงข้อมูลคลินิกย่อย ER ได้');
-      if (erGrid) erGrid.innerHTML = '<div class="empty">ไม่สามารถแสดงข้อมูลคลินิกย่อย ER ได้</div>';
+      setErStatus('error', err.message || 'ไม่สามารถดึงข้อมูลบริการ ER ได้');
+      if (erGrid) erGrid.innerHTML = '<div class="empty">ไม่สามารถแสดงข้อมูลบริการ ER ได้</div>';
       if (erSummary) erSummary.innerHTML = '';
-      if (erTotal) erTotal.textContent = 'รวมคลินิกย่อย ER วันนี้: - คน';
+      if (erTotal) erTotal.textContent = 'รวมบริการที่เกี่ยวข้องกับ ER วันนี้: - คน';
       if (erUpdated) erUpdated.textContent = 'อัปเดตล่าสุด -';
       if (erNote) erNote.classList.add('hidden');
     } finally { isLoadingEr = false; }

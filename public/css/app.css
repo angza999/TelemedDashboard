@@ -40,18 +40,24 @@ button.er-summary-card { font: inherit; color: inherit; appearance: none; }
 .er-subclinic-card { min-height: 150px; display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 14px; align-items: start; padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .er-subclinic-card.theme-dressing { border-top: 4px solid #f97316; }
 .er-subclinic-card.theme-telemed { border-top: 4px solid #0f766e; }
+.er-subclinic-card.theme-patient { border-top: 4px solid #dc2626; }
 .er-subclinic-card.not-configured { border-style: dashed; background: #f8fafc; }
 .er-subclinic-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 8px; background: #ffedd5; color: #c2410c; font-size: 24px; }
 .er-subclinic-card.theme-telemed .er-subclinic-icon { background: #ccfbf1; color: #0f766e; }
+.er-subclinic-card.theme-patient .er-subclinic-icon { background: #fee2e2; color: #b91c1c; }
 .er-subclinic-card-heading p { margin: 0; font-weight: 700; font-size: 18px; }
 .er-subclinic-metric { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 4px; }
 .er-subclinic-metric strong { font-size: 34px; line-height: 1; }
 .er-subclinic-metric span, .er-subclinic-status-text small, .er-subclinic-footer span { color: var(--muted); }
 .er-subclinic-status-text { display: grid; gap: 2px; }
 .er-subclinic-codes { color: var(--text) !important; font-weight: 700; overflow-wrap: anywhere; }
+.er-service-flag { display: inline-flex; width: fit-content; padding: 3px 8px; border-radius: 999px; background: #dcfce7; color: #166534 !important; font-weight: 700; }
 .er-subclinic-note { margin-top: 14px; }
 .er-subclinic-footer { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .er-subclinic-footer > div:first-child { display: grid; gap: 4px; }
+.er-service-options { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.toggle-row { display: inline-flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; color: var(--text); font-weight: 700; }
+.toggle-row input { width: 18px; height: 18px; accent-color: var(--primary); }
 
 @media (max-width: 720px) {
   .er-subclinic-summary, .er-subclinic-grid { grid-template-columns: 1fr; }
@@ -354,6 +360,10 @@ h2 {
 
 .dashboard-status.error {
   color: #be123c;
+}
+
+.dashboard-status.warning {
+  color: #c2410c;
 }
 
 .dashboard-status.loading {

@@ -116,6 +116,20 @@ EXECUTIVE_NAME=ผู้บริหาร
 
 - `GET /executive/export.pdf`
 
+## Today Patients และบริการ ER
+
+หน้า `GET /today-patients` เป็น dashboard ภาพรวมผู้รับบริการวันนี้แบบ near real-time จาก HOSxP โดยดึงข้อมูลด้วย `SELECT` เท่านั้น และบันทึกเฉพาะ mapping/config ของ WebApp ลงไฟล์ใน `data/` เท่านั้น
+
+การ์ด `อุบัติเหตุฉุกเฉิน ER` ใช้ mapping กลางของบริการ ER ที่หน้า `GET /admin/er-subclinics` โดยค่าเริ่มต้นมี 3 กลุ่ม:
+
+- `ER_PATIENT`: ผู้ป่วยห้องฉุกเฉิน, depcode `004`, นับรวมในการ์ด ER หลัก และแสดงในรายละเอียด
+- `INJECTION_WOUND`: ฉีดยา/ทำแผล, depcode `051`, แสดงในรายละเอียด แต่ไม่นับรวมในการ์ด ER หลัก
+- `ER_TELEMED`: ER Telemed, depcode `082`, แสดงในรายละเอียด แต่ไม่นับรวมในการ์ด ER หลัก
+
+API `GET /api/today-patients/summary` จะนับยอด ER card เฉพาะบริการ ER ที่ `include_in_card_total = true` และ active อยู่ ส่วน `GET /api/today-patients/er-subclinics` จะแสดงบริการที่ `show_in_detail = true` เพื่อใช้ใน modal รายละเอียดงาน ER วันนี้
+
+ข้อห้ามสำคัญ: ระบบนี้ห้ามเขียนตารางหรือแก้ไขข้อมูลใด ๆ ใน HOSxP / HOSxP XE ทุกฟังก์ชันของ Today Patients และ Telemed Dashboard ต้องเป็น read-only ต่อฐานข้อมูลโรงพยาบาล
+
 ## โครงสร้างไฟล์
 
 ```text

@@ -182,23 +182,23 @@
       <div class="modal-heading">
         <div>
           <p class="eyebrow">ผู้รับบริการวันนี้</p>
-          <h2 id="erSubclinicTitle">คลินิกย่อย ER วันนี้</h2>
-          <p class="panel-note">แสดงยอดผู้รับบริการตามห้อง ER ที่ตั้งค่าไว้</p>
+          <h2 id="erSubclinicTitle">รายละเอียดงานอุบัติเหตุฉุกเฉิน ER วันนี้</h2>
+          <p class="panel-note">แสดงยอดผู้รับบริการที่เกี่ยวข้องกับงาน ER ตามห้องบริการที่ตั้งค่าไว้</p>
         </div>
-        <button type="button" class="icon-button" id="erSubclinicCloseButton" aria-label="ปิดหน้าต่างคลินิกย่อย ER"><i class="bi bi-x-lg"></i></button>
+        <button type="button" class="icon-button" id="erSubclinicCloseButton" aria-label="ปิดหน้าต่างรายละเอียดงาน ER"><i class="bi bi-x-lg"></i></button>
       </div>
       <div id="erSubclinicSummary" class="er-subclinic-summary" aria-live="polite"></div>
-      <div id="erSubclinicStatus" class="dashboard-status loading">กำลังโหลดข้อมูลคลินิกย่อย ER...</div>
+      <div id="erSubclinicStatus" class="dashboard-status loading">กำลังโหลดข้อมูลบริการ ER...</div>
       <div id="erSubclinicGrid" class="er-subclinic-grid" aria-live="polite"></div>
       <div id="erSubclinicNote" class="alert warning er-subclinic-note hidden"></div>
       <div class="er-subclinic-footer">
         <div>
-          <strong id="erSubclinicTotal">รวมคลินิกย่อย ER วันนี้: - คน</strong>
+          <strong id="erSubclinicTotal">รวมบริการที่เกี่ยวข้องกับ ER วันนี้: - คน</strong>
           <span id="erSubclinicUpdated">อัปเดตล่าสุด -</span>
         </div>
         <div class="modal-actions">
           <% if (currentUser && currentUser.role === 'admin') { %>
-            <a class="secondary-button er-subclinic-settings" href="/admin/er-subclinics"><i class="bi bi-gear"></i> ตั้งค่าคลินิกย่อย ER</a>
+            <a class="secondary-button er-subclinic-settings" href="/admin/er-subclinics"><i class="bi bi-gear"></i> ตั้งค่าบริการ ER</a>
           <% } %>
           <button type="button" class="primary-button" id="erSubclinicCancelButton">ปิด</button>
         </div>

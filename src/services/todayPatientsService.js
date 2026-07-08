@@ -11,7 +11,8 @@ const CARD_KEYS = ['OPD', 'NCD', 'IPD', 'ER'];
 const DEP_CARD_KEYS = ['OPD', 'NCD', 'ER'];
 const NCD_SUBCLINIC_KEYS = ['HT', 'DM', 'COPD', 'CKD'];
 const IPD_SUBCLINIC_KEYS = ['GENERAL_WARD', 'HOMEWARD'];
-const ER_SUBCLINIC_KEYS = ['INJECTION_DRESSING', 'ER_TELEMED'];
+const ER_SERVICE_KEYS = ['ER_PATIENT', 'INJECTION_WOUND', 'ER_TELEMED'];
+const ER_SUBCLINIC_KEYS = ER_SERVICE_KEYS;
 
 const CARD_META = {
   OPD: { label: 'ผู้ป่วยนอก OPD', sourceType: 'DEP' },
@@ -44,9 +45,14 @@ const IPD_SUBCLINIC_META = {
   HOMEWARD: { name: 'Homeward', sourceType: 'WARD', sortOrder: 2 }
 };
 
-const ER_SUBCLINIC_META = {
-  INJECTION_DRESSING: { name: 'ฉีดยา/ทำแผล', sourceType: 'DEP', sortOrder: 1, defaultCode: '051' },
-  ER_TELEMED: { name: 'ER Telemed', sourceType: 'DEP', sortOrder: 2, defaultCode: '082' }
+const ER_SERVICE_META = {
+  ER_PATIENT: { name: 'ผู้ป่วยห้องฉุกเฉิน', sourceType: 'DEP', sortOrder: 1, defaultCode: '004', includeInCardTotal: 1, showInDetail: 1 },
+  INJECTION_WOUND: { name: 'ฉีดยา/ทำแผล', sourceType: 'DEP', sortOrder: 2, defaultCode: '051', includeInCardTotal: 0, showInDetail: 1 },
+  ER_TELEMED: { name: 'ER Telemed', sourceType: 'DEP', sortOrder: 3, defaultCode: '082', includeInCardTotal: 0, showInDetail: 1 }
+};
+const ER_SUBCLINIC_META = ER_SERVICE_META;
+const ER_LEGACY_KEY_MAP = {
+  INJECTION_DRESSING: 'INJECTION_WOUND'
 };
 
 function bangkokParts(date = new Date()) {
@@ -136,21 +142,103 @@ function ipdSubclinicRow(subclinicKey, sourceType, sourceCode, displayName, sort
   };
 }
 
-function erSubclinicRow(subclinicKey, sourceType, sourceCode, displayName, sortOrder, id) {
+function canonicalErServiceKey(key) {
+  return ER_LEGACY_KEY_MAP[key] || key;
+}
+
+function flagValue(value, fallback) {
+  if (value === undefined || value === null || value === '') return fallback ? 1 : 0;
+  return value === true || value === 1 || value === '1' || value === 'true' ? 1 : 0;
+}
+
+function erSubclinicRow(subclinicKey, sourceType, sourceCode, displayName, sortOrder, id, options = {}) {
   const timestamp = nowIso();
-  const meta = ER_SUBCLINIC_META[subclinicKey];
+  const groupKey = canonicalErServiceKey(subclinicKey);
+  const meta = ER_SUBCLINIC_META[groupKey];
   return {
     id,
-    subclinic_key: subclinicKey,
-    subclinic_name: meta ? meta.name : subclinicKey,
+    card_key: 'ER',
+    group_key: groupKey,
+    group_name: meta ? meta.name : groupKey,
+    subclinic_key: groupKey,
+    subclinic_name: meta ? meta.name : groupKey,
     source_type: sourceType,
     source_code: normalizeCode(sourceCode),
     display_name: String(displayName || sourceCode || '').trim(),
-    active: 1,
+    include_in_card_total: flagValue(options.include_in_card_total, meta ? meta.includeInCardTotal : 0),
+    show_in_detail: flagValue(options.show_in_detail, meta ? meta.showInDetail : 1),
+    active: flagValue(options.active, 1),
     sort_order: Number(sortOrder || 0),
     created_at: timestamp,
     updated_at: timestamp
   };
+}
+
+function normalizeErServiceRows(rows = [], options = {}) {
+  const fillMissingDefaults = options.fillMissingDefaults !== false;
+  const byGroup = new Map();
+
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const groupKey = canonicalErServiceKey(row.group_key || row.subclinic_key);
+    const meta = ER_SERVICE_META[groupKey];
+    const sourceCode = normalizeCode(row.source_code);
+    if (!meta || !sourceCode) return;
+
+    if (!byGroup.has(groupKey)) byGroup.set(groupKey, []);
+    const groupRows = byGroup.get(groupKey);
+    if (groupRows.some((item) => normalizeCode(item.source_code) === sourceCode)) return;
+
+    groupRows.push(erSubclinicRow(
+      groupKey,
+      'DEP',
+      sourceCode,
+      row.display_name || row.department || meta.name,
+      row.sort_order || groupRows.length + 1,
+      0,
+      {
+        active: row.active,
+        include_in_card_total: row.include_in_card_total,
+        show_in_detail: row.show_in_detail
+      }
+    ));
+  });
+
+  ER_SERVICE_KEYS.forEach((key) => {
+    const meta = ER_SERVICE_META[key];
+    const rowsForGroup = byGroup.get(key) || [];
+    if (!rowsForGroup.length && fillMissingDefaults) {
+      byGroup.set(key, [erSubclinicRow(
+        key,
+        'DEP',
+        meta.defaultCode,
+        meta.name,
+        1,
+        0,
+        {
+          include_in_card_total: meta.includeInCardTotal,
+          show_in_detail: meta.showInDetail,
+          active: 1
+        }
+      )]);
+      return;
+    }
+    if (!rowsForGroup.length) {
+      byGroup.set(key, []);
+      return;
+    }
+
+    byGroup.set(key, rowsForGroup.map((row, index) => ({
+      ...row,
+      include_in_card_total: flagValue(row.include_in_card_total, meta.includeInCardTotal),
+      show_in_detail: flagValue(row.show_in_detail, meta.showInDetail),
+      active: flagValue(row.active, 1),
+      sort_order: Number(row.sort_order || index + 1)
+    })));
+  });
+
+  return ER_SERVICE_KEYS.flatMap((key) => (byGroup.get(key) || [])
+    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)))
+    .map((row, index) => ({ ...row, id: index + 1 }));
 }
 
 async function findDefaultIpdWard() {
@@ -248,21 +336,38 @@ function writeIpdSubclinicStore(rows) {
   return payload.mappings;
 }
 
-function writeErSubclinicStore(rows) {
+function writeErSubclinicStore(rows, options = {}) {
   ensureDataDir();
+  const normalized = normalizeErServiceRows(rows, options);
   const payload = {
-    version: 1,
+    version: 2,
     updated_at: nowIso(),
-    subclinics: ER_SUBCLINIC_KEYS.map((key) => ({
+    services: ER_SERVICE_KEYS.map((key) => ({
       key,
-      name: ER_SUBCLINIC_META[key].name,
-      source_type: ER_SUBCLINIC_META[key].sourceType,
-      sort_order: ER_SUBCLINIC_META[key].sortOrder
+      card_key: 'ER',
+      name: ER_SERVICE_META[key].name,
+      source_type: ER_SERVICE_META[key].sourceType,
+      include_in_card_total: ER_SERVICE_META[key].includeInCardTotal,
+      show_in_detail: ER_SERVICE_META[key].showInDetail,
+      sort_order: ER_SERVICE_META[key].sortOrder
     })),
-    mappings: rows.map((row, index) => ({
+    subclinics: ER_SERVICE_KEYS.map((key) => ({
+      key,
+      name: ER_SERVICE_META[key].name,
+      source_type: ER_SERVICE_META[key].sourceType,
+      sort_order: ER_SERVICE_META[key].sortOrder
+    })),
+    mappings: normalized.map((row, index) => ({
       ...row,
       id: index + 1,
-      active: row.active === 0 ? 0 : 1,
+      card_key: 'ER',
+      group_key: canonicalErServiceKey(row.group_key || row.subclinic_key),
+      group_name: ER_SERVICE_META[canonicalErServiceKey(row.group_key || row.subclinic_key)]?.name || row.group_name || row.subclinic_name,
+      subclinic_key: canonicalErServiceKey(row.group_key || row.subclinic_key),
+      subclinic_name: ER_SERVICE_META[canonicalErServiceKey(row.group_key || row.subclinic_key)]?.name || row.subclinic_name,
+      active: flagValue(row.active, 1),
+      include_in_card_total: flagValue(row.include_in_card_total, 0),
+      show_in_detail: flagValue(row.show_in_detail, 1),
       source_type: 'DEP',
       source_code: normalizeCode(row.source_code)
     }))
@@ -329,11 +434,15 @@ async function ensureIpdSubclinicStore() {
 
 function ensureErSubclinicStore() {
   if (fs.existsSync(ER_SUBCLINIC_MAPPING_PATH)) return;
-  const rows = ER_SUBCLINIC_KEYS.map((key, index) => {
-    const meta = ER_SUBCLINIC_META[key];
-    return erSubclinicRow(key, 'DEP', meta.defaultCode, meta.name, 1, index + 1);
+  const rows = ER_SERVICE_KEYS.map((key, index) => {
+    const meta = ER_SERVICE_META[key];
+    return erSubclinicRow(key, 'DEP', meta.defaultCode, meta.name, 1, index + 1, {
+      include_in_card_total: meta.includeInCardTotal,
+      show_in_detail: meta.showInDetail,
+      active: 1
+    });
   });
-  writeErSubclinicStore(rows);
+  writeErSubclinicStore(rows, { fillMissingDefaults: true });
 }
 
 async function readStore() {
@@ -361,7 +470,7 @@ function readErSubclinicStore() {
   ensureErSubclinicStore();
   const raw = fs.readFileSync(ER_SUBCLINIC_MAPPING_PATH, 'utf8');
   const parsed = JSON.parse(raw);
-  return Array.isArray(parsed.mappings) ? parsed.mappings : [];
+  return normalizeErServiceRows(Array.isArray(parsed.mappings) ? parsed.mappings : [], { fillMissingDefaults: true });
 }
 
 function groupMappings(rows) {
@@ -407,14 +516,17 @@ function groupIpdSubclinicMappings(rows) {
 }
 
 function groupErSubclinicMappings(rows) {
-  return ER_SUBCLINIC_KEYS.reduce((acc, key) => {
+  return ER_SERVICE_KEYS.reduce((acc, key) => {
     acc[key] = rows
-      .filter((row) => row.subclinic_key === key && row.active !== 0)
+      .filter((row) => canonicalErServiceKey(row.group_key || row.subclinic_key) === key && row.active !== 0)
       .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
       .map((row) => ({
         source_type: 'DEP',
         source_code: normalizeCode(row.source_code),
-        display_name: row.display_name || row.source_code
+        display_name: row.display_name || row.source_code,
+        include_in_card_total: flagValue(row.include_in_card_total, ER_SERVICE_META[key].includeInCardTotal),
+        show_in_detail: flagValue(row.show_in_detail, ER_SERVICE_META[key].showInDetail),
+        active: flagValue(row.active, 1)
       }));
     return acc;
   }, {});
@@ -582,48 +694,71 @@ function validateIpdSubclinicMappingPayload(payload) {
 function validateErSubclinicMappingPayload(payload) {
   const rows = [];
   const depUsage = new Map();
+  let hasCardTotalMapping = false;
 
   Object.keys(payload || {}).forEach((key) => {
-    if (!ER_SUBCLINIC_KEYS.includes(key)) {
-      throw new Error(`ไม่รองรับคลินิกย่อย ER key ${key}`);
+    const groupKey = canonicalErServiceKey(key);
+    if (!ER_SERVICE_KEYS.includes(groupKey)) {
+      throw new Error(`ไม่รองรับบริการ ER key ${key}`);
     }
   });
 
-  ER_SUBCLINIC_KEYS.forEach((subclinicKey) => {
-    const items = Array.isArray(payload[subclinicKey]) ? payload[subclinicKey] : [];
+  ER_SERVICE_KEYS.forEach((subclinicKey) => {
+    const items = Array.isArray(payload[subclinicKey])
+      ? payload[subclinicKey]
+      : (Object.keys(ER_LEGACY_KEY_MAP).find((legacyKey) => ER_LEGACY_KEY_MAP[legacyKey] === subclinicKey)
+        ? payload[Object.keys(ER_LEGACY_KEY_MAP).find((legacyKey) => ER_LEGACY_KEY_MAP[legacyKey] === subclinicKey)] || []
+        : []);
     const seenInSubclinic = new Set();
+    const meta = ER_SERVICE_META[subclinicKey];
 
     items.forEach((item, index) => {
       const sourceType = String(item.source_type || '').trim().toUpperCase();
       const sourceCode = normalizeCode(item.source_code);
+      const active = flagValue(item.active, 1);
+      const includeInCardTotal = flagValue(item.include_in_card_total, meta.includeInCardTotal);
+      const showInDetail = flagValue(item.show_in_detail, meta.showInDetail);
       if (sourceType !== 'DEP') {
-        throw new Error(`${ER_SUBCLINIC_META[subclinicKey].name} ต้องใช้ source_type DEP เท่านั้น`);
+        throw new Error(`${meta.name} ต้องใช้ source_type DEP เท่านั้น`);
       }
       if (typeof item.source_code !== 'string') {
-        throw new Error(`${ER_SUBCLINIC_META[subclinicKey].name} source_code ต้องเป็น string`);
+        throw new Error(`${meta.name} source_code ต้องเป็น string`);
       }
       if (!sourceCode) {
-        throw new Error(`${ER_SUBCLINIC_META[subclinicKey].name} มีรหัสห้องว่าง`);
+        throw new Error(`${meta.name} มีรหัสห้องว่าง`);
       }
       if (seenInSubclinic.has(sourceCode)) return;
       seenInSubclinic.add(sourceCode);
 
-      const existing = depUsage.get(sourceCode);
-      if (existing && existing !== subclinicKey) {
-        throw new Error(`รหัสห้อง ${sourceCode} ถูกเลือกซ้ำใน ${ER_SUBCLINIC_META[existing].name} และ ${ER_SUBCLINIC_META[subclinicKey].name}`);
+      if (active) {
+        const existing = depUsage.get(sourceCode);
+        if (existing && existing !== subclinicKey) {
+          throw new Error(`รหัสห้อง ${sourceCode} ถูกเลือกซ้ำใน ${ER_SERVICE_META[existing].name} และ ${meta.name}`);
+        }
+        depUsage.set(sourceCode, subclinicKey);
       }
-      depUsage.set(sourceCode, subclinicKey);
+      if (active && includeInCardTotal) {
+        hasCardTotalMapping = true;
+      }
       rows.push(erSubclinicRow(
         subclinicKey,
         'DEP',
         sourceCode,
         item.display_name || sourceCode,
         index + 1,
-        rows.length + 1
+        rows.length + 1,
+        {
+          active,
+          include_in_card_total: includeInCardTotal,
+          show_in_detail: showInDetail
+        }
       ));
     });
   });
-  return rows;
+  return {
+    rows,
+    warning: hasCardTotalMapping ? '' : 'ไม่มีบริการ ER ที่ถูกตั้งให้นับรวมในการ์ด ER หลัก การ์ด ER หลักจะแสดง 0'
+  };
 }
 
 async function saveMappingGroups(payload) {
@@ -645,9 +780,14 @@ function saveIpdSubclinicMappingGroups(payload) {
 }
 
 function saveErSubclinicMappingGroups(payload) {
-  const rows = validateErSubclinicMappingPayload(payload || {});
-  writeErSubclinicStore(rows);
-  return groupErSubclinicMappings(rows);
+  const result = validateErSubclinicMappingPayload(payload || {});
+  writeErSubclinicStore(result.rows, { fillMissingDefaults: false });
+  const groups = groupErSubclinicMappings(result.rows);
+  Object.defineProperty(groups, '_warning', {
+    value: result.warning,
+    enumerable: false
+  });
+  return groups;
 }
 
 async function resetDefaultMappings() {
@@ -746,11 +886,14 @@ async function countActiveIpd(pool, wards) {
 
 async function fetchTodayPatientsSummary() {
   const mapping = await getMappingGroups();
+  const erServiceMapping = getErSubclinicMappingGroups();
+  const erCardRows = ER_SERVICE_KEYS.flatMap((key) => (erServiceMapping[key] || [])
+    .filter((row) => flagValue(row.include_in_card_total, ER_SERVICE_META[key].includeInCardTotal) === 1));
   const pool = getPool();
   const [opdTotal, ncdTotal, erTotal, ipdTotal] = await Promise.all([
     countOvstByMainDep(pool, codesFor(mapping.OPD, 'DEP')),
     countOvstByMainDep(pool, codesFor(mapping.NCD, 'DEP')),
-    countOvstByMainDep(pool, codesFor(mapping.ER, 'DEP')),
+    countOvstByMainDep(pool, codesFor(erCardRows, 'DEP')),
     countActiveIpd(pool, codesFor(mapping.IPD, 'WARD'))
   ]);
 
@@ -787,10 +930,12 @@ function buildEmptyIpdSubclinic(key) {
 function buildEmptyErSubclinic(key) {
   return {
     key,
-    name: ER_SUBCLINIC_META[key].name,
+    name: ER_SERVICE_META[key].name,
     total: 0,
     mapped_rooms: 0,
     mapped_codes: [],
+    include_in_card_total: Boolean(ER_SERVICE_META[key].includeInCardTotal),
+    show_in_detail: Boolean(ER_SERVICE_META[key].showInDetail),
     rooms: []
   };
 }
@@ -867,21 +1012,22 @@ async function fetchIpdSubclinicSummary() {
 
 async function fetchErSubclinicSummary() {
   const mapping = getErSubclinicMappingGroups();
-  const mainMapping = await getMappingGroups();
   const pool = getPool();
 
-  const subclinics = await Promise.all(ER_SUBCLINIC_KEYS.map(async (key) => {
-    const rows = mapping[key] || [];
+  const services = await Promise.all(ER_SERVICE_KEYS.map(async (key) => {
+    const rows = (mapping[key] || []).filter((row) => flagValue(row.show_in_detail, ER_SERVICE_META[key].showInDetail) === 1);
     const depcodes = codesFor(rows, 'DEP');
     if (!depcodes.length) return buildEmptyErSubclinic(key);
 
     const total = await countOvstByMainDep(pool, depcodes);
     return {
       key,
-      name: ER_SUBCLINIC_META[key].name,
+      name: ER_SERVICE_META[key].name,
       total,
       mapped_rooms: depcodes.length,
       mapped_codes: depcodes,
+      include_in_card_total: rows.some((row) => flagValue(row.include_in_card_total, ER_SERVICE_META[key].includeInCardTotal) === 1),
+      show_in_detail: true,
       rooms: rows.map((row) => ({
         depcode: normalizeCode(row.source_code),
         department: row.display_name || row.source_code
@@ -889,21 +1035,17 @@ async function fetchErSubclinicSummary() {
     };
   }));
 
-  const total = subclinics.reduce((sum, item) => sum + Number(item.total || 0), 0);
-  const mainErCodes = codesFor(mainMapping.ER, 'DEP');
-  const mappedSubclinicCodes = new Set(subclinics.flatMap((item) => item.mapped_codes || []));
-  const ungroupedCodes = mainErCodes.filter((code) => !mappedSubclinicCodes.has(code));
-  const [mainErTotal, ungrouped] = await Promise.all([
-    countOvstByMainDep(pool, mainErCodes),
-    countOvstByMainDepGrouped(pool, ungroupedCodes)
-  ]);
+  const total = services.reduce((sum, item) => sum + Number(item.total || 0), 0);
+  const erCardRows = ER_SERVICE_KEYS.flatMap((key) => (mapping[key] || [])
+    .filter((row) => flagValue(row.include_in_card_total, ER_SERVICE_META[key].includeInCardTotal) === 1));
+  const cardTotal = await countOvstByMainDep(pool, codesFor(erCardRows, 'DEP'));
   return {
     total,
-    main_er_total: mainErTotal,
-    diff_total: mainErTotal - total,
-    totals_match_main: total === mainErTotal,
-    subclinics,
-    ungrouped,
+    total_related: total,
+    card_total: cardTotal,
+    main_er_total: cardTotal,
+    services,
+    subclinics: services,
     last_updated: bangkokIsoString()
   };
 }
