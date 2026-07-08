@@ -136,6 +136,12 @@ API `GET /api/today-patients/ncd-subclinics` ใช้ข้อมูลจา�
 
 รายการ `ungrouped` ดึงจาก HOSxP ด้วย `SELECT` แบบ parameter binding เท่านั้น โดยนับ `COUNT(DISTINCT o.vn)` แยกตาม `ovst.main_dep` และ join `kskdepartment` เพื่อแสดงชื่อห้องใน modal ไม่มีการสร้างตารางหรือแก้ไขข้อมูลใด ๆ ใน HOSxP / HOSxP XE
 
+## IPD Related Ward Modal
+
+Modal `คลินิกย่อย IPD วันนี้` ในหน้า `/today-patients` ใช้แนวคิด `หอผู้ป่วยรวม` เป็นยอดหลักบนการ์ด IPD และ `รวมบริการ IPD ที่เกี่ยวข้อง` เป็นผลรวม Ward ที่แสดงใน modal เช่น `หอผู้ป่วยรวม` และ `Homeward` โดย Homeward ถือเป็น Ward ที่เกี่ยวข้องกับ IPD ไม่ใช่ mapping ผิด
+
+API `GET /api/today-patients/ipd-subclinics` ส่ง `main_total`, `total`, `visible_ward_count`, `mapped_codes` และ `subclinics` เพื่อให้ frontend แสดงจำนวน Ward และรหัส Ward ที่ใช้คำนวณ ข้อมูลจาก HOSxP ยังคงอ่านจาก `ipt` ด้วย `SELECT COUNT(DISTINCT i.an)` เฉพาะผู้ป่วยที่ยังไม่จำหน่ายเท่านั้น ไม่มีการเขียนข้อมูลลง HOSxP
+
 ## โครงสร้างไฟล์
 
 ```text

@@ -25,6 +25,7 @@
   const ipdTotal = document.getElementById('ipdSubclinicTotal');
   const ipdUpdated = document.getElementById('ipdSubclinicUpdated');
   const ipdNote = document.getElementById('ipdSubclinicNote');
+  const ipdSettingsLink = document.querySelector('.ipd-subclinic-settings');
   const erCard = document.getElementById('erSubclinicCard');
   const erModal = document.getElementById('erSubclinicModal');
   const erCloseButton = document.getElementById('erSubclinicCloseButton');
@@ -44,6 +45,10 @@
   let isLoadingEr = false;
   let isNcdUngroupedOpen = false;
   let hasData = false;
+
+  if (ipdSettingsLink) {
+    ipdSettingsLink.innerHTML = '<i class="bi bi-gear"></i> ตั้งค่า Ward IPD';
+  }
 
   function formatNumber(value) {
     return Number(value || 0).toLocaleString('th-TH');
@@ -124,7 +129,7 @@
   }
 
   function getIpdMainTotal(data) {
-    const fromApi = Number(data.main_ipd_total);
+    const fromApi = Number(data.main_ipd_total ?? data.main_total);
     if (Number.isFinite(fromApi)) return fromApi;
     const ipdValue = document.querySelector('[data-today-value="ipd_total"]');
     return Number((ipdValue?.textContent || '0').replace(/,/g, '')) || 0;
@@ -564,6 +569,109 @@
     renderIpdNote(data, difference);
   }
 
+  function getIpdSubclinicStatusLines(total, mappedWards) {
+    if (total === 0 && mappedWards === 0) {
+      return ['ยังไม่ได้ตั้งค่า Ward'];
+    }
+    if (total === 0 && mappedWards > 0) {
+      return [
+        `ตั้งค่าแล้ว ${formatNumber(mappedWards)} Ward`,
+        'ยังไม่มีผู้ป่วยกำลังนอนรักษา'
+      ];
+    }
+    if (mappedWards > 0) {
+      return [`นับจาก ${formatNumber(mappedWards)} Ward`];
+    }
+    return ['ยังไม่ได้ตั้งค่า Ward'];
+  }
+
+  function formatMappedWards(item) {
+    const codes = Array.isArray(item.mapped_codes)
+      ? item.mapped_codes
+      : (Array.isArray(item.wards) ? item.wards.map((ward) => ward.ward) : []);
+    const cleanCodes = codes.map((code) => String(code || '').trim()).filter(Boolean);
+    if (!cleanCodes.length) return '';
+    return `รหัส Ward: ${cleanCodes.map(escapeHtml).join(', ')}`;
+  }
+
+  function renderIpdSummary(mainTotal, relatedTotal, visibleWardCount) {
+    if (!ipdSummary) return;
+    ipdSummary.innerHTML = `
+      <div class="ipd-summary-card main">
+        <span>หอผู้ป่วยรวม</span>
+        <strong>${formatNumber(mainTotal)}</strong>
+        <small>คน</small>
+      </div>
+      <div class="ipd-summary-card total">
+        <span>รวมบริการ IPD ที่เกี่ยวข้อง</span>
+        <strong>${formatNumber(relatedTotal)}</strong>
+        <small>คน</small>
+      </div>
+      <div class="ipd-summary-card balanced">
+        <span>แสดง</span>
+        <strong>${formatNumber(visibleWardCount)}</strong>
+        <small>Ward</small>
+      </div>
+    `;
+  }
+
+  function renderIpdNote() {
+    if (!ipdNote) return;
+    ipdNote.classList.add('hidden');
+  }
+
+  function renderIpdSubclinics(data) {
+    const subclinics = Array.isArray(data.subclinics) ? data.subclinics : [];
+    if (!ipdGrid) return;
+    const relatedTotal = Number(data.total || 0);
+    const mainTotal = getIpdMainTotal(data);
+    const visibleWardCountFromApi = Number(data.visible_ward_count);
+    const visibleWardCount = Number.isFinite(visibleWardCountFromApi)
+      ? visibleWardCountFromApi
+      : subclinics.filter((item) => Number(item.mapped_wards || 0) > 0).length;
+    const totals = subclinics.map((item) => Number(item.total || 0));
+    const maxTotal = Math.max(0, ...totals);
+
+    renderIpdSummary(mainTotal, relatedTotal, visibleWardCount);
+
+    ipdGrid.innerHTML = subclinics.map((item) => {
+      const mappedWards = Number(item.mapped_wards || 0);
+      const total = Number(item.total || 0);
+      const visual = getIpdSubclinicVisual(item.key);
+      const statusLines = getIpdSubclinicStatusLines(total, mappedWards);
+      const mappedWardsLine = formatMappedWards(item);
+      const roomClass = mappedWards > 0 ? 'configured' : 'not-configured';
+      const emptyClass = total === 0 ? 'empty-total' : 'has-total';
+      const topBadge = maxTotal > 0 && total === maxTotal
+        ? '<span class="ipd-subclinic-badge">สูงสุดวันนี้</span>'
+        : '';
+
+      return `
+        <article class="ipd-subclinic-card ${roomClass} ${emptyClass} theme-${visual.theme}">
+          <span class="ipd-subclinic-icon"><i class="bi ${visual.icon}"></i></span>
+          <div>
+            <div class="ipd-subclinic-card-heading">
+              <p>${escapeHtml(item.name || '-')}</p>
+              ${topBadge}
+            </div>
+            <div class="ipd-subclinic-metric">
+              <strong>${formatNumber(total)}</strong>
+              <span>คน</span>
+            </div>
+            <div class="ipd-subclinic-status-text">
+              ${statusLines.map((line) => `<small>${escapeHtml(line)}</small>`).join('')}
+              ${mappedWardsLine ? `<small class="ipd-subclinic-codes">${mappedWardsLine}</small>` : ''}
+            </div>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    if (ipdTotal) ipdTotal.textContent = `รวมบริการ IPD ที่เกี่ยวข้องวันนี้: ${formatNumber(relatedTotal)} คน`;
+    if (ipdUpdated) ipdUpdated.textContent = formatTime(data.last_updated);
+    renderIpdNote();
+  }
+
   function renderErSubclinics(data) {
     const subclinics = Array.isArray(data.services)
       ? data.services
@@ -642,7 +750,7 @@
       setIpdStatus('error', err.message || 'ไม่สามารถดึงข้อมูลคลินิกย่อย IPD ได้');
       if (ipdGrid) ipdGrid.innerHTML = '<div class="empty">ไม่สามารถแสดงข้อมูลคลินิกย่อย IPD ได้</div>';
       if (ipdSummary) ipdSummary.innerHTML = '';
-      if (ipdTotal) ipdTotal.textContent = 'รวมคลินิกย่อย IPD วันนี้: - คน';
+      if (ipdTotal) ipdTotal.textContent = 'รวมบริการ IPD ที่เกี่ยวข้องวันนี้: - คน';
       if (ipdUpdated) ipdUpdated.textContent = 'อัปเดตล่าสุด -';
       if (ipdNote) ipdNote.classList.add('hidden');
     } finally {

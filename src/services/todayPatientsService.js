@@ -924,6 +924,7 @@ function buildEmptyIpdSubclinic(key) {
     name: IPD_SUBCLINIC_META[key].name,
     total: 0,
     mapped_wards: 0,
+    mapped_codes: [],
     wards: []
   };
 }
@@ -1003,6 +1004,7 @@ async function fetchIpdSubclinicSummary() {
       name: IPD_SUBCLINIC_META[key].name,
       total,
       mapped_wards: wards.length,
+      mapped_codes: wards,
       wards: rows.map((row) => ({
         ward: normalizeCode(row.source_code),
         name: row.display_name || row.source_code
@@ -1015,7 +1017,9 @@ async function fetchIpdSubclinicSummary() {
 
   return {
     total,
+    main_total: mainIpdTotal,
     main_ipd_total: mainIpdTotal,
+    visible_ward_count: subclinics.filter((item) => Number(item.mapped_wards || 0) > 0).length,
     totals_match_main: total === mainIpdTotal,
     subclinics,
     last_updated: bangkokIsoString()

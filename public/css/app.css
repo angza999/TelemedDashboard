@@ -2270,6 +2270,12 @@ button.ncd-summary-card {
   margin-top: 0;
 }
 
+.ipd-subclinic-codes {
+  color: var(--text) !important;
+  font-weight: 900 !important;
+  overflow-wrap: anywhere;
+}
+
 .ipd-subclinic-note {
   margin: 0 0 14px;
 }
