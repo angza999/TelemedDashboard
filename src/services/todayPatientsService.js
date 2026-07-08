@@ -702,6 +702,32 @@ async function countOvstByMainDep(pool, depcodes) {
   return Number((rows[0] && rows[0].total) || 0);
 }
 
+async function countOvstByMainDepGrouped(pool, depcodes) {
+  if (!depcodes.length) return [];
+  const placeholders = depcodes.map(() => '?').join(', ');
+  const [rows] = await pool.execute(`
+    SELECT
+      o.main_dep AS depcode,
+      k.department AS department_name,
+      COUNT(DISTINCT o.vn) AS patient_total
+    FROM ovst o
+    LEFT JOIN kskdepartment k ON k.depcode = o.main_dep
+    WHERE o.vstdate = CURDATE()
+      AND o.main_dep IN (${placeholders})
+    GROUP BY
+      o.main_dep,
+      k.department
+    ORDER BY
+      patient_total DESC,
+      o.main_dep
+  `, depcodes);
+  return rows.map((row) => ({
+    depcode: normalizeCode(row.depcode),
+    department_name: row.department_name || 'ไม่ระบุชื่อห้อง',
+    patient_total: Number(row.patient_total || 0)
+  }));
+}
+
 async function countActiveIpd(pool, wards) {
   if (!wards.length) return 0;
   const placeholders = wards.map(() => '?').join(', ');
@@ -764,6 +790,7 @@ function buildEmptyErSubclinic(key) {
     name: ER_SUBCLINIC_META[key].name,
     total: 0,
     mapped_rooms: 0,
+    mapped_codes: [],
     rooms: []
   };
 }
@@ -854,6 +881,7 @@ async function fetchErSubclinicSummary() {
       name: ER_SUBCLINIC_META[key].name,
       total,
       mapped_rooms: depcodes.length,
+      mapped_codes: depcodes,
       rooms: rows.map((row) => ({
         depcode: normalizeCode(row.source_code),
         department: row.display_name || row.source_code
@@ -862,12 +890,20 @@ async function fetchErSubclinicSummary() {
   }));
 
   const total = subclinics.reduce((sum, item) => sum + Number(item.total || 0), 0);
-  const mainErTotal = await countOvstByMainDep(pool, codesFor(mainMapping.ER, 'DEP'));
+  const mainErCodes = codesFor(mainMapping.ER, 'DEP');
+  const mappedSubclinicCodes = new Set(subclinics.flatMap((item) => item.mapped_codes || []));
+  const ungroupedCodes = mainErCodes.filter((code) => !mappedSubclinicCodes.has(code));
+  const [mainErTotal, ungrouped] = await Promise.all([
+    countOvstByMainDep(pool, mainErCodes),
+    countOvstByMainDepGrouped(pool, ungroupedCodes)
+  ]);
   return {
     total,
     main_er_total: mainErTotal,
+    diff_total: mainErTotal - total,
     totals_match_main: total === mainErTotal,
     subclinics,
+    ungrouped,
     last_updated: bangkokIsoString()
   };
 }

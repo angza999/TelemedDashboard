@@ -86,9 +86,11 @@
   - `/api/today-patients/summary`
   - `/api/today-patients/ncd-subclinics`
   - `/api/today-patients/ipd-subclinics`
+  - `/api/today-patients/er-subclinics`
   - `/admin/today-patients-mapping`
   - `/admin/ncd-subclinics`
   - `/admin/ipd-subclinics`
+  - `/admin/er-subclinics`
   - `/api/admin/today-patients/departments`
   - `/api/admin/today-patients/wards`
   - `/api/admin/today-patients/mapping`
@@ -96,6 +98,8 @@
   - `/api/admin/ncd-subclinics/mapping`
   - `/api/admin/ipd-subclinics/wards`
   - `/api/admin/ipd-subclinics/mapping`
+  - `/api/admin/er-subclinics/departments`
+  - `/api/admin/er-subclinics/mapping`
 
 - `src/services/todayPatientsService.js`
   - Reads HOSxP data with SELECT-only queries and writes mapping only to WebApp runtime file `data/dashboard-service-mapping.json`
@@ -105,9 +109,10 @@
   - Counts OPD/NCD/ER by `ovst.main_dep` and active IPD by `ipt.ward`
   - Counts NCD subclinics `HT`, `DM`, `COPD`, and `CKD` by selected `ovst.main_dep` rooms without ICD10 or clinicmember logic
   - Counts IPD subclinics `หอผู้ป่วยรวม` and `Homeward` by selected `ipt.ward` values where the admission has no discharge date
+  - Counts ER subclinics `ฉีดยา/ทำแผล` and `ER Telemed`, returns mapped DEP codes per card, and returns ungrouped ER main rooms not yet mapped to an ER subclinic
 
 - `views/today-patients/dashboard.ejs`
-  - Today-patients dashboard with 4 cards plus NCD and IPD subclinic detail modals
+  - Today-patients dashboard with 4 cards plus NCD, IPD, and ER subclinic detail modals
 
 - `views/admin/today-patients-mapping.ejs`
   - Admin mapping UI for OPD/NCD/IPD/ER
@@ -119,9 +124,10 @@
   - Admin mapping UI for IPD subclinics by HOSxP Ward
 
 - `public/js/today-patients.js`
-  - Initial load, user-triggered manual refresh only, and NCD/IPD subclinic modal loading
+  - Initial load, user-triggered manual refresh only, and NCD/IPD/ER subclinic modal loading
   - NCD subclinic modal compares `main_ncd_total` with the four subclinic totals, renders the ungrouped gap, displays configured/no-patient/not-configured states, and highlights the highest subclinic for the day
   - IPD subclinic modal compares `main_ipd_total` with `หอผู้ป่วยรวม` plus `Homeward`, renders the ungrouped gap, displays configured/no-patient/not-configured states, and highlights the highest IPD subclinic for the day
+  - ER subclinic modal compares `main_er_total` with `ฉีดยา/ทำแผล` plus `ER Telemed`, shows mapped DEP codes on each card, and expands ungrouped ER rooms for audit
 
 - `public/js/today-patients-mapping.js`
   - Admin mapping tabs, search, checkbox validation, save, and reset
@@ -145,6 +151,6 @@
 
 ## ER Subclinics
 - `todayPatientsService`: WebApp mapping, validation, and SELECT-only daily counts.
-- `/api/today-patients/er-subclinics`: modal summary API.
+- `/api/today-patients/er-subclinics`: modal summary API, including `mapped_codes`, `diff_total`, and `ungrouped` room rows.
 - `/admin/er-subclinics`: admin mapping page with admin-only APIs.
 - `data/dashboard-er-subclinic-mapping.json`: runtime mapping store, excluded from Git.

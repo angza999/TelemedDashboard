@@ -66,4 +66,7 @@ Current style uses:
 - Keep the ER card keyboard accessible and show a visible click affordance.
 - Show ER main, combined subclinics, and ungrouped/mapping gap before the two cards.
 - Distinguish not configured, configured with zero visits, and active visit counts.
+- Show mapped DEP codes under each ER subclinic card so admins can verify the source rooms quickly.
+- When `ยังไม่จัดกลุ่ม` is positive, make the summary card clickable and expand room-level DEP code, department name, and count details inside the same modal.
+- When ER subclinic totals match the main ER total, use calm success wording such as `จัดกลุ่มครบแล้ว` or `ยอดคลินิกย่อยตรงกับยอด ER หลัก`.
 - Show the ER settings action only to admin users.

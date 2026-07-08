@@ -88,3 +88,4 @@ Use `git log -1 --oneline` for the latest commit. This file records feature hist
 - Added ER card drill-down with exactly `ฉีดยา/ทำแผล` and `ER Telemed`.
 - Added Admin ER mapping stored in WebApp JSON with default DEP strings `051` and `082`.
 - HOSxP remains read-only; counts use `COUNT(DISTINCT ovst.vn)` by `ovst.main_dep` for `CURDATE()`.
+- Improved the ER subclinic modal audit view: each subclinic card now shows mapped DEP codes, and the `ยังไม่จัดกลุ่ม` summary can expand to show ER main rooms that are not yet mapped to an ER subclinic.

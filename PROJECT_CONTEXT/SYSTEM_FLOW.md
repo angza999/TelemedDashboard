@@ -56,7 +56,10 @@
 10. Clicking the IPD card opens a modal and calls `/api/today-patients/ipd-subclinics`.
 11. IPD subclinic counts read `data/dashboard-ipd-subclinic-mapping.json`, then count HOSxP `ipt.ward` by selected Ward codes where the admission has no discharge date, using SELECT only.
 12. The modal compares `main_ipd_total` from the main IPD mapping with the summed IPD subclinic total; `ungrouped = max(main_ipd_total - subclinic_total, 0)` and negative gaps are shown as a mapping check.
-13. If the API fails, the page keeps the last successful numbers and shows a connection warning.
+13. Clicking the ER card opens a modal and calls `/api/today-patients/er-subclinics`.
+14. ER subclinic counts read `data/dashboard-er-subclinic-mapping.json`, then count HOSxP `ovst.main_dep` by selected DEP codes using SELECT only.
+15. The ER modal compares `main_er_total` from the main ER mapping with `ฉีดยา/ทำแผล` plus `ER Telemed`, shows mapped DEP codes on each card, and expands `ungrouped` room details for ER main DEP codes that are not yet mapped to an ER subclinic.
+16. If the API fails, the page keeps the last successful numbers and shows a connection warning.
 
 ## Today Patients Admin Mapping Flow
 1. Admin opens `/admin/today-patients-mapping`.
@@ -94,6 +97,7 @@
 ## ER Subclinic Flow
 1. Clicking the ER card calls `/api/today-patients/er-subclinics`.
 2. Service reads `data/dashboard-er-subclinic-mapping.json` and counts distinct HOSxP `ovst.vn` by mapped `main_dep` codes for today.
-3. Modal compares unchanged main ER total with the two ER subclinic totals and shows mapping gaps.
-4. Admin opens `/admin/er-subclinics`, assigns DEP rooms, and saves through admin-only APIs.
-5. Save writes only the WebApp JSON file; HOSxP is never modified.
+3. Service also reads the main ER mapping from `data/dashboard-service-mapping.json`, subtracts active ER subclinic DEP codes, and uses a SELECT-only grouped query to return ER main rooms that are not yet mapped to subclinics.
+4. Modal compares unchanged main ER total with the two ER subclinic totals, shows mapped DEP codes under each subclinic card, and lets users expand `ยังไม่จัดกลุ่ม` when a positive gap exists.
+5. Admin opens `/admin/er-subclinics`, assigns DEP rooms, and saves through admin-only APIs.
+6. Save writes only the WebApp JSON file; HOSxP is never modified.

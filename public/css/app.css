@@ -15,13 +15,27 @@
 /* ER subclinic drill-down mirrors the established NCD/IPD dashboard pattern. */
 .er-subclinic-dialog { width: min(900px, calc(100vw - 32px)); }
 .er-subclinic-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 14px; }
-.er-summary-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; display: grid; gap: 2px; }
+.er-summary-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; display: grid; gap: 2px; text-align: left; }
+button.er-summary-card { font: inherit; color: inherit; appearance: none; }
 .er-summary-card span, .er-summary-card small { color: var(--muted); }
 .er-summary-card strong { font-size: 28px; color: var(--text); }
 .er-summary-card.main { border-color: #fecaca; background: #fff7f7; }
 .er-summary-card.total { border-color: #fed7aa; background: #fff9f1; }
 .er-summary-card.attention { border-color: #fbbf24; background: #fffbeb; }
+.er-summary-card.mapping-warning { border-color: #fca5a5; background: #fff1f2; }
 .er-summary-card.balanced { border-color: #86efac; background: #f0fdf4; }
+.er-summary-card.clickable { cursor: pointer; transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease; }
+.er-summary-card.clickable:hover,
+.er-summary-card.clickable:focus-visible { border-color: #f59e0b; box-shadow: 0 10px 24px rgba(245, 158, 11, 0.14); transform: translateY(-1px); outline: none; }
+.er-summary-card:disabled { cursor: default; opacity: 1; }
+.er-summary-card em { margin-top: 3px; color: #b45309; font-style: normal; font-weight: 700; font-size: 13px; }
+.er-ungrouped-detail { grid-column: 1 / -1; border: 1px solid #fbbf24; border-radius: 8px; background: #fffaf0; padding: 14px 16px; }
+.er-ungrouped-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.er-ungrouped-heading a { color: var(--primary-dark); font-weight: 700; }
+.er-ungrouped-detail ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.er-ungrouped-detail li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid #fde68a; border-radius: 8px; background: #fff; }
+.er-ungrouped-detail li span { min-width: 0; overflow-wrap: anywhere; }
+.er-ungrouped-detail li b { color: #b45309; white-space: nowrap; }
 .er-subclinic-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
 .er-subclinic-card { min-height: 150px; display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 14px; align-items: start; padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .er-subclinic-card.theme-dressing { border-top: 4px solid #f97316; }
@@ -34,12 +48,14 @@
 .er-subclinic-metric strong { font-size: 34px; line-height: 1; }
 .er-subclinic-metric span, .er-subclinic-status-text small, .er-subclinic-footer span { color: var(--muted); }
 .er-subclinic-status-text { display: grid; gap: 2px; }
+.er-subclinic-codes { color: var(--text) !important; font-weight: 700; overflow-wrap: anywhere; }
 .er-subclinic-note { margin-top: 14px; }
 .er-subclinic-footer { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .er-subclinic-footer > div:first-child { display: grid; gap: 4px; }
 
 @media (max-width: 720px) {
   .er-subclinic-summary, .er-subclinic-grid { grid-template-columns: 1fr; }
+  .er-ungrouped-heading, .er-ungrouped-detail li { align-items: flex-start; flex-direction: column; }
   .er-subclinic-footer { align-items: stretch; flex-direction: column; }
   .er-subclinic-footer .modal-actions, .er-subclinic-footer .modal-actions > * { width: 100%; }
 }
