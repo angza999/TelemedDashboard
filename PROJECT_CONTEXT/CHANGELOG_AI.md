@@ -80,6 +80,8 @@
 - Successful login regenerates and saves the session before redirecting, storing only `id`, `username`, `name`, and `role`.
 - Logout now destroys the session and clears the matching cookie options. Protected requests also invalidate sessions for deleted or inactive users, so other tabs return to login after their next request.
 - Session cookies use `httpOnly`, `sameSite=lax`, a configurable eight-hour default, and enable `secure` only when production HTTPS is explicitly configured with `USE_HTTPS=true`.
+- Hardened `/login` against stale sessions: an inactive, deleted, or missing WebApp user is now cleared before the login page is rendered, preventing a redirect loop between `/login` and protected pages.
+- Added opt-in safe auth event logging via `LOG_AUTH_EVENTS=true` and `npm run ensure-admin` to create or repair the WebApp admin account without touching HOSxP. Existing admin passwords are reset only when `RESET_ADMIN_PASSWORD=true` is explicitly set.
 
 ### Deployment Fixes
 - Added Linux deploy scripts and systemd service.

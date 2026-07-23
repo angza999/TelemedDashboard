@@ -40,6 +40,7 @@ npm start
 - Logout ทำลาย session และล้าง cookie `telemed.sid`; แท็บอื่นจะกลับไป `/login` เมื่อมีการเปิดหน้าใหม่หรือรีเฟรช.
 - ค่า cookie ใช้ `httpOnly`, `sameSite=lax` และอายุเริ่มต้น 8 ชั่วโมง (`SESSION_MAX_AGE_MS=28800000`). ตั้ง `USE_HTTPS=true` เฉพาะเมื่อระบบเปิดผ่าน HTTPS จริงเท่านั้น; LAN HTTP ต้องคง `false`.
 - เปิด `LOG_AUTH_EVENTS=true` เมื่อต้องการ log เหตุการณ์ login/logout สำหรับตรวจสอบ โดยระบบจะไม่ log รหัสผ่าน, password hash, session secret หรือ connection string.
+- หากตรวจพบว่า user storage ไม่มี/ปิดบัญชี admin ให้ตั้ง `ADMIN_USERNAME` และ `ADMIN_PASSWORD` ใน `.env` แล้วรัน `npm run ensure-admin` เพื่อสร้างหรือซ่อมเฉพาะบัญชี admin ของ WebApp. คำสั่งนี้ไม่เชื่อมต่อและไม่แก้ไข HOSxP. การรีเซ็ตรหัสผ่าน admin ที่มีอยู่ต้องกำหนด `RESET_ADMIN_PASSWORD=true` ชั่วคราวก่อนรัน แล้วตั้งกลับเป็น `false`.
 
 ## ตั้งค่าฐานข้อมูล
 
