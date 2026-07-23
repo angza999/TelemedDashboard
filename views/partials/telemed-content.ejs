@@ -1,9 +1,22 @@
-<section class="filter-panel">
+<%
+  const isTelemedAdmin = currentUser && currentUser.role === 'admin';
+  const initialB2b = Number(data.totals.b2b || 0);
+  const initialB2c = Number(data.totals.b2c || 0);
+  const initialChannelTotal = initialB2b + initialB2c;
+  const initialChannelLabel = initialChannelTotal === 0
+    ? 'ไม่มีข้อมูล'
+    : initialB2b >= initialB2c
+      ? `B2B ${((initialB2b / initialChannelTotal) * 100).toFixed(0)}%`
+      : `B2C ${((initialB2c / initialChannelTotal) * 100).toFixed(0)}%`;
+%>
+
+<div class="telemed-dashboard" data-user-role="<%= currentUser ? currentUser.role : '' %>">
+<section class="filter-panel telemed-filter-panel">
   <% if (dbError) { %>
     <div class="alert db-alert">
       <div>
         <strong>ยังไม่พร้อมแสดงข้อมูล Telemed</strong>
-        <p><%= dbError %></p>
+        <p><%= isTelemedAdmin ? dbError : 'ไม่สามารถเชื่อมต่อหรือประมวลผลข้อมูลได้ กรุณาลองใหม่อีกครั้ง' %></p>
       </div>
       <% if (currentUser && currentUser.role === 'admin') { %>
         <a class="primary-button" href="/settings">
@@ -14,11 +27,13 @@
     </div>
   <% } %>
 
-  <div class="query-info-bar">
-    <span><i class="bi bi-database-check"></i> ใช้สูตร: <strong id="queryName"><%= data.queryInfo.name %></strong></span>
-    <span>แหล่งข้อมูล: <strong id="queryDataSource"><%= data.queryInfo.dataSource %></strong></span>
-    <span>อัปเดตล่าสุด: <strong id="lastUpdated"><%= new Date(data.queryInfo.loadedAt).toLocaleString('th-TH') %></strong></span>
-    <span>ช่วงวันที่: <strong id="queryDateRange"><%= filters.startDate %> ถึง <%= filters.endDate %></strong></span>
+  <div class="query-info-bar telemed-query-info">
+    <div class="telemed-query-context">
+      <span><i class="bi bi-patch-check"></i> ใช้สูตร: <strong id="queryName"><%= data.queryInfo.name %></strong></span>
+      <span>แหล่งข้อมูล: <strong id="queryDataSource"><%= data.queryInfo.dataSource %></strong></span>
+      <span>อัปเดตล่าสุด: <strong id="lastUpdated"><%= new Date(data.queryInfo.loadedAt).toLocaleString('th-TH') %></strong></span>
+      <span>ช่วงวันที่: <strong id="queryDateRange"><%= filters.startDate %> ถึง <%= filters.endDate %></strong></span>
+    </div>
     <button type="button" id="refreshDashboardButton" class="refresh-button">
       <i class="bi bi-arrow-clockwise"></i>
       <span>รีเฟรชข้อมูล</span>
@@ -30,19 +45,27 @@
     <% if (data.total === 0) { %>
       <div class="alert warning dashboard-alert">ไม่พบข้อมูล Telemed ในช่วงวันที่ที่เลือก</div>
     <% } else if (data.totals.b2b === 0) { %>
-      <div class="alert warning dashboard-alert">ไม่พบข้อมูล B2B ในช่วงวันที่ที่เลือก กรุณาตรวจสอบการบันทึกคำว่า B2B ใน ovstist.name หรือ opdscreen.cc</div>
+      <div class="alert warning dashboard-alert telemed-data-alert">
+        <i class="bi bi-info-circle"></i>
+        <div>
+          <strong>ยังไม่พบรายการ B2B ในช่วงวันที่เลือก</strong>
+          <% if (isTelemedAdmin) { %><small>สำหรับผู้ดูแลระบบ: ระบบตรวจสอบ B2B จากการบันทึกใน ovstist.name หรือ opdscreen.cc</small><% } %>
+        </div>
+      </div>
     <% } %>
   </div>
 
-  <form id="telemedFilterForm" action="/telemed" method="get" class="filter-grid">
-    <label>
-      วันที่เริ่มต้น
-      <input type="date" name="startDate" value="<%= filters.startDate %>">
-    </label>
-    <label>
-      วันที่สิ้นสุด
-      <input type="date" name="endDate" value="<%= filters.endDate %>">
-    </label>
+  <form id="telemedFilterForm" action="/telemed" method="get" class="filter-grid telemed-filter-grid">
+    <div class="telemed-date-range">
+      <label>
+        วันที่เริ่มต้น
+        <input type="date" name="startDate" value="<%= filters.startDate %>">
+      </label>
+      <label>
+        วันที่สิ้นสุด
+        <input type="date" name="endDate" value="<%= filters.endDate %>">
+      </label>
+    </div>
     <label>
       ปีงบประมาณ
       <input type="number" name="fiscalYear" min="2500" max="2700" placeholder="เช่น 2569" value="<%= filters.fiscalYear || '' %>">
@@ -68,47 +91,73 @@
   </form>
 </section>
 
-<section class="kpi-grid">
-  <article class="kpi-card total">
+<section class="kpi-grid telemed-primary-kpis" aria-label="สรุปตัวชี้วัด Telemed">
+  <article class="kpi-card total telemed-kpi-card">
     <span class="kpi-icon"><i class="bi bi-activity"></i></span>
     <div>
-      <p>Total</p>
-      <strong data-kpi="total"><%= data.total.toLocaleString('th-TH') %></strong>
+      <p>ผู้รับบริการ Telemed ทั้งหมด</p>
+      <strong><span data-kpi="total"><%= data.total.toLocaleString('th-TH') %></span><small>ราย</small></strong>
     </div>
   </article>
-  <% categories.forEach((category) => { %>
-    <article class="kpi-card">
-      <span class="kpi-icon <%= category.includes('DM') ? 'dm' : 'ht' %>"><i class="bi <%= category.includes('DM') ? 'bi-droplet-half' : 'bi-heart-pulse' %>"></i></span>
-      <div>
-        <p><%= category %></p>
-        <strong data-kpi="<%= category %>"><%= data.kpis[category].toLocaleString('th-TH') %></strong>
-      </div>
-    </article>
-  <% }) %>
+  <article class="kpi-card telemed-kpi-card dm-total">
+    <span class="kpi-icon dm"><i class="bi bi-droplet-half"></i></span>
+    <div><p>เบาหวานรวม <i class="bi bi-info-circle" title="จำนวน visit ที่พบ ICD10 กลุ่ม E11"></i></p><strong><span data-total="dm"><%= data.totals.dm.toLocaleString('th-TH') %></span><small>ราย</small></strong></div>
+  </article>
+  <article class="kpi-card telemed-kpi-card ht-total">
+    <span class="kpi-icon ht"><i class="bi bi-heart-pulse"></i></span>
+    <div><p>ความดันรวม <i class="bi bi-info-circle" title="จำนวน visit ที่พบ ICD10 กลุ่ม I10"></i></p><strong><span data-total="ht"><%= data.totals.ht.toLocaleString('th-TH') %></span><small>ราย</small></strong></div>
+  </article>
+  <article class="kpi-card telemed-kpi-card b2b-total">
+    <span class="kpi-icon b2b"><i class="bi bi-diagram-3"></i></span>
+    <div><p>ส่งต่อแบบ B2B</p><strong><span data-total="b2b"><%= data.totals.b2b.toLocaleString('th-TH') %></span><small>ราย</small></strong></div>
+  </article>
+  <article class="kpi-card telemed-kpi-card b2c-total">
+    <span class="kpi-icon b2c"><i class="bi bi-person-check"></i></span>
+    <div><p>ให้บริการแบบ B2C</p><strong><span data-total="b2c"><%= data.totals.b2c.toLocaleString('th-TH') %></span><small>ราย</small></strong></div>
+  </article>
 </section>
 
-<section class="summary-kpi-grid">
-  <article class="mini-kpi-card"><p>DM รวม</p><strong data-total="dm"><%= data.totals.dm.toLocaleString('th-TH') %></strong></article>
-  <article class="mini-kpi-card"><p>HT รวม</p><strong data-total="ht"><%= data.totals.ht.toLocaleString('th-TH') %></strong></article>
-  <article class="mini-kpi-card"><p>B2B รวม</p><strong data-total="b2b"><%= data.totals.b2b.toLocaleString('th-TH') %></strong></article>
-  <article class="mini-kpi-card"><p>B2C รวม</p><strong data-total="b2c"><%= data.totals.b2c.toLocaleString('th-TH') %></strong></article>
+<section class="telemed-category-section" aria-label="รายละเอียดตามโรคและช่องทาง">
+  <div class="telemed-section-heading">
+    <div><h2>รายละเอียดตามกลุ่มโรคและช่องทาง</h2><p>ใช้สำหรับตรวจสอบองค์ประกอบของยอดสรุป</p></div>
+    <span><i class="bi bi-info-circle"></i> DM และ HT อาจนับ visit เดียวกันซ้ำได้</span>
+  </div>
+  <div class="telemed-category-grid">
+    <% categories.forEach((category) => { %>
+      <% const categoryClass = category === 'DM B2B' ? 'dm-b2b' : category === 'DM B2C' ? 'dm-b2c' : category === 'HT B2B' ? 'ht-b2b' : 'ht-b2c'; %>
+      <article class="telemed-category-card <%= categoryClass %>">
+        <span class="telemed-category-icon"><i class="bi <%= category.includes('DM') ? 'bi-droplet-half' : 'bi-heart-pulse' %>"></i></span>
+        <div><p><%= category %></p><strong><span data-kpi="<%= category %>"><%= data.kpis[category].toLocaleString('th-TH') %></span><small>ราย</small></strong></div>
+      </article>
+    <% }) %>
+  </div>
 </section>
 
 <section class="dashboard-grid">
-  <article class="panel wide">
+  <article class="panel wide telemed-chart-panel">
     <div class="panel-heading">
-      <h2>แนวโน้มบริการ</h2>
+      <h2>แนวโน้มผู้รับบริการ Telemed</h2>
       <span id="trendSubtitle"><%= filters.granularity === 'month' ? 'รายเดือน' : 'รายวัน' %> | <%= filters.startDate %> ถึง <%= filters.endDate %></span>
     </div>
-    <canvas id="trendChart" height="120"></canvas>
+    <div class="telemed-chart-canvas telemed-trend-canvas">
+      <canvas id="trendChart"></canvas>
+      <div id="trendEmptyState" class="chart-empty-state" <%= data.dailySummary.length && data.total > 0 ? 'hidden' : '' %>>ไม่พบข้อมูลในช่วงวันที่เลือก</div>
+    </div>
   </article>
 
-  <article class="panel">
+  <article class="panel telemed-chart-panel">
     <div class="panel-heading">
       <h2>สัดส่วน B2B / B2C</h2>
       <span>รวมทุกกลุ่มโรค</span>
     </div>
-    <canvas id="channelChart" height="210"></canvas>
+    <div class="telemed-chart-canvas telemed-donut-canvas">
+      <canvas id="channelChart"></canvas>
+      <div class="channel-center" id="channelCenter" <%= initialChannelTotal === 0 ? 'hidden' : '' %>>
+        <strong id="channelCenterPrimary"><%= initialChannelLabel %></strong>
+        <span id="channelCenterTotal"><%= initialChannelTotal.toLocaleString('th-TH') %> ราย</span>
+      </div>
+      <div id="channelEmptyState" class="chart-empty-state compact" <%= initialChannelTotal ? 'hidden' : '' %>>ไม่พบข้อมูล B2B/B2C</div>
+    </div>
     <div class="channel-summary">
       <div><strong>B2B:</strong> <span id="b2bSummary"><%= data.totals.b2b.toLocaleString('th-TH') %> ราย (<%= data.percentages.b2b.toFixed(2) %>%)</span></div>
       <div><strong>B2C:</strong> <span id="b2cSummary"><%= data.totals.b2c.toLocaleString('th-TH') %> ราย (<%= data.percentages.b2c.toFixed(2) %>%)</span></div>
@@ -144,9 +193,12 @@
       <h2 id="tableTitle"><%= filters.granularity === 'month' ? 'ตารางสรุปรายเดือน' : 'ตารางสรุปรายวัน' %></h2>
       <span id="tableCount"><%= data.dailySummary.length.toLocaleString('th-TH') %> <%= filters.granularity === 'month' ? 'เดือน' : 'วัน' %></span>
     </div>
-    <div class="table-view-toggle" role="group" aria-label="สลับมุมมองตาราง">
+    <div class="telemed-table-control">
+      <span>มุมมองตาราง</span>
+      <div class="table-view-toggle" role="group" aria-label="สลับมุมมองตาราง">
       <button type="button" class="table-view-button active" data-table-view="summary">สรุป</button>
       <button type="button" class="table-view-button" data-table-view="detail">รายละเอียด</button>
+      </div>
     </div>
   </div>
 
@@ -210,6 +262,7 @@
   </div>
 </section>
 
+</div>
 <div id="telemedPayload" hidden><%= JSON.stringify({ trend: data.trend, channel: data.channel, categories, data, filters }) %></div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="/js/dashboard.js"></script>

@@ -661,6 +661,448 @@ tfoot td {
   display: none;
 }
 
+/* Telemed DM/HT dashboard: executive-first visual hierarchy without changing its data model. */
+.telemed-main .page-description {
+  max-width: 760px;
+}
+
+.telemed-dashboard {
+  --telemed-teal: #0f766e;
+  --telemed-blue: #2563eb;
+  --telemed-mint: #0f9d8d;
+  --telemed-rose: #d14d68;
+  --telemed-orange: #d97706;
+}
+
+.telemed-dashboard.is-loading {
+  cursor: progress;
+}
+
+.telemed-dashboard.is-loading .telemed-primary-kpis,
+.telemed-dashboard.is-loading .telemed-category-section,
+.telemed-dashboard.is-loading .dashboard-grid,
+.telemed-dashboard.is-loading .table-panel {
+  opacity: 0.58;
+  pointer-events: none;
+}
+
+.telemed-filter-panel {
+  padding: 20px;
+}
+
+.telemed-query-info {
+  justify-content: space-between;
+  gap: 12px 18px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+}
+
+.telemed-query-context {
+  display: flex;
+  flex: 1 1 640px;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+
+.telemed-query-context span {
+  white-space: nowrap;
+}
+
+.telemed-query-context i {
+  color: var(--telemed-teal);
+}
+
+.telemed-query-info .refresh-button {
+  flex: 0 0 auto;
+  margin-left: 0;
+  min-height: 38px;
+  padding: 8px 12px;
+  font-weight: 800;
+}
+
+.telemed-data-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-color: #fbd38d;
+  background: #fffbeb;
+  color: #a16207;
+}
+
+.telemed-data-alert > i {
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.telemed-data-alert div {
+  display: grid;
+  gap: 3px;
+}
+
+.telemed-data-alert small {
+  color: #9a6a10;
+  font-size: 12px;
+}
+
+.telemed-filter-grid {
+  grid-template-columns: minmax(300px, 1.5fr) minmax(130px, 0.65fr) minmax(130px, 0.65fr) auto;
+  gap: 14px;
+}
+
+.telemed-date-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.telemed-filter-grid input,
+.telemed-filter-grid select {
+  min-height: 43px;
+}
+
+.telemed-filter-grid .filter-actions {
+  align-self: end;
+}
+
+.telemed-filter-grid .primary-button {
+  min-width: 106px;
+  font-weight: 800;
+}
+
+.telemed-filter-grid .secondary-button {
+  min-width: 128px;
+}
+
+.telemed-filter-grid .secondary-button.is-exporting {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.telemed-primary-kpis {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.telemed-kpi-card {
+  min-height: 126px;
+  padding: 18px;
+  border-top: 4px solid #bfdbfe;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.telemed-kpi-card.total { border-top-color: var(--telemed-teal); }
+.telemed-kpi-card.dm-total { border-top-color: #34d399; }
+.telemed-kpi-card.ht-total { border-top-color: #fb7185; }
+.telemed-kpi-card.b2b-total { border-top-color: #60a5fa; }
+.telemed-kpi-card.b2c-total { border-top-color: #fbbf24; }
+
+.telemed-kpi-card .kpi-icon.b2b { background: #dbeafe; color: var(--telemed-blue); }
+.telemed-kpi-card .kpi-icon.b2c { background: #fef3c7; color: #b45309; }
+
+.telemed-kpi-card p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+
+.telemed-kpi-card p i {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.telemed-kpi-card strong,
+.telemed-category-card strong {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.telemed-kpi-card strong > span {
+  font-size: clamp(30px, 2.35vw, 38px);
+}
+
+.telemed-kpi-card strong small,
+.telemed-category-card strong small {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.telemed-category-section {
+  padding: 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbfd;
+}
+
+.telemed-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.telemed-section-heading h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.telemed-section-heading p,
+.telemed-section-heading > span {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.telemed-section-heading > span {
+  max-width: 330px;
+  text-align: right;
+}
+
+.telemed-category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.telemed-category-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 84px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.telemed-category-card p {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.telemed-category-card strong > span { font-size: 25px; }
+
+.telemed-category-icon {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.telemed-category-card.dm-b2b .telemed-category-icon { color: #0f766e; background: #ccfbf1; }
+.telemed-category-card.dm-b2c .telemed-category-icon { color: #0f766e; background: #e0f2fe; }
+.telemed-category-card.ht-b2b .telemed-category-icon { color: #be123c; background: #fce7f3; }
+.telemed-category-card.ht-b2c .telemed-category-icon { color: #be123c; background: #ffe4e6; }
+
+.telemed-chart-panel {
+  min-height: 0;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.telemed-chart-canvas {
+  position: relative;
+}
+
+.telemed-trend-canvas { height: 320px; }
+.telemed-donut-canvas { height: 260px; }
+
+.telemed-chart-canvas canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.channel-center {
+  position: absolute;
+  top: 47%;
+  left: 50%;
+  display: grid;
+  gap: 2px;
+  place-items: center;
+  min-width: 96px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  text-align: center;
+}
+
+.channel-center strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.channel-center span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.chart-empty-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.9);
+  color: var(--muted);
+  font-weight: 700;
+  text-align: center;
+}
+
+.chart-empty-state.compact { inset: 12px; }
+
+.telemed-chart-panel .channel-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.telemed-chart-panel .channel-summary > div {
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.telemed-table-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.telemed-table-control > span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.telemed-dashboard .enhanced-table-wrap {
+  max-height: 560px;
+}
+
+.telemed-dashboard .telemed-summary-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 800;
+}
+
+.telemed-dashboard .telemed-summary-table tbody tr {
+  transition: background-color 0.16s ease;
+}
+
+.telemed-dashboard .telemed-summary-table tbody tr:hover td {
+  background: #f0fdfa;
+}
+
+.telemed-dashboard .telemed-summary-table th,
+.telemed-dashboard .telemed-summary-table td {
+  padding: 13px 12px;
+}
+
+@media (max-width: 1180px) {
+  .telemed-primary-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .telemed-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .telemed-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .telemed-filter-grid .filter-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .telemed-filter-panel,
+  .telemed-category-section {
+    padding: 14px;
+  }
+
+  .telemed-query-info,
+  .telemed-section-heading,
+  .telemed-table-control {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .telemed-query-context {
+    display: grid;
+    gap: 7px;
+  }
+
+  .telemed-query-context span {
+    white-space: normal;
+  }
+
+  .telemed-query-info .refresh-button {
+    width: 100%;
+  }
+
+  .telemed-date-range,
+  .telemed-primary-kpis,
+  .telemed-category-grid,
+  .telemed-filter-grid,
+  .telemed-chart-panel .channel-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .telemed-filter-grid .filter-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .telemed-filter-grid .filter-actions > * {
+    width: 100%;
+  }
+
+  .telemed-kpi-card {
+    min-height: 112px;
+  }
+
+  .telemed-section-heading > span {
+    max-width: none;
+    text-align: left;
+  }
+
+  .telemed-trend-canvas {
+    height: 280px;
+  }
+
+  .telemed-donut-canvas {
+    height: 240px;
+  }
+
+  .telemed-table-control > span {
+    display: block;
+  }
+
+  .telemed-table-control .table-view-toggle,
+  .telemed-table-control .table-view-button {
+    width: 100%;
+  }
+}
+
 .date-cell {
   display: inline-flex;
   align-items: center;

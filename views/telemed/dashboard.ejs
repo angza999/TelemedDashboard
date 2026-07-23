@@ -12,11 +12,12 @@
   <div class="app-shell">
     <%- include('../partials/sidebar', { active: 'telemed' }) %>
 
-    <main class="main">
+    <main class="main telemed-main">
       <header class="topbar">
         <div>
           <p class="eyebrow">ระบบติดตามบริการ Telemedicine</p>
-          <h1><%= title %></h1>
+          <h1>รายงาน Telemed DM/HT</h1>
+          <p class="page-description">ภาพรวมการให้บริการ Telemed กลุ่มเบาหวานและความดันตามช่วงวันที่เลือก</p>
         </div>
         <% if (currentUser) { %>
           <form action="/logout" method="post" class="user-box">

@@ -12,6 +12,7 @@
 - Core Telemed filter uses `ovstist.export_code = '5'`.
 - Uses province-style logic for DM/HT and B2B/B2C summary.
 - Added date filters, fiscal year support, daily/monthly view, KPI cards, charts, table, refresh, Excel/PDF export.
+- Refined the Telemed DM/HT screen into an executive-first UI without changing its data logic: promoted Total/DM/HT/B2B/B2C to primary KPI cards, retained DM/HT B2B/B2C as secondary detail cards, clarified filters/table view, added chart empty/loading feedback and a donut centre summary, and limited B2B technical diagnostics to admins.
 
 ### Database Settings
 - Added admin-only database settings page.

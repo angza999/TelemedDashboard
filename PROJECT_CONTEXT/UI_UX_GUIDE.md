@@ -27,6 +27,8 @@
 - The `/today-patients` page should read as a compact executive dashboard: status/date/last-updated on the left where space allows, manual refresh button and helper text grouped on the right, and four equal-height cards with large baseline-aligned numbers plus `คน` units.
 - The `/today-patients` NCD subclinic modal should read as a small dashboard: show main NCD, total subclinics, and ungrouped/mapping gap before the subclinic cards; use clear status copy for not configured, configured with no patients today, and active patient counts; use soft distinct visual themes for HT, DM, COPD, and CKD; and keep the admin settings action visible only for admin users.
 - The `/today-patients` IPD subclinic modal should mirror the NCD modal pattern: show main IPD, total subclinics, and ungrouped/mapping gap before the subclinic cards; use clear status copy for missing Ward mapping, configured Ward with no active admissions, and active inpatient counts; keep `หอผู้ป่วยรวม` and `Homeward` visually distinct; and keep the admin settings action visible only for admin users.
+- The `/telemed` DM/HT dashboard should use an executive-first hierarchy: primary KPI cards are Total Telemed, DM, HT, B2B, and B2C; the four disease/channel combinations are a secondary detail row. Keep the source/query name visible but subdued, and keep B2B data-quality troubleshooting language technical only for admins.
+- Telemed charts should use soft grid lines, readable tooltips, an empty state, and a donut centre label with the dominant B2B/B2C share plus total count. Hide all-zero B2B trend series to reduce visual noise without changing table data.
 
 ## Colors
 Current style uses:

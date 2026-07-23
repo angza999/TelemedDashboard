@@ -17,6 +17,8 @@
 
   const trendEl = document.getElementById('trendChart');
   const channelEl = document.getElementById('channelChart');
+  const dashboardRoot = document.querySelector('.telemed-dashboard');
+  const isAdmin = dashboardRoot && dashboardRoot.dataset.userRole === 'admin';
 
   function formatNumber(value) {
     return Number(value || 0).toLocaleString('th-TH');
@@ -76,20 +78,28 @@
       data: trendChartData(data.trend || [], categories),
       options: {
         responsive: true,
-        maintainAspectRatio: true,
-        plugins: { legend: { position: 'bottom' } },
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 18 } },
+          tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${formatNumber(context.raw)} ราย` } }
+        },
         scales: {
-          y: { beginAtZero: true, ticks: { precision: 0 } },
-          x: { grid: { display: false } }
+          y: { beginAtZero: true, ticks: { precision: 0, color: '#64748b' }, grid: { color: 'rgba(148, 163, 184, 0.18)' } },
+          x: { grid: { display: false }, ticks: { color: '#64748b' } }
         }
       }
     });
   }
 
   function trendChartData(trend, categories) {
+    const visibleCategories = categories.filter((category) => {
+      const isB2b = category.endsWith('B2B');
+      return !isB2b || trend.some((row) => Number(row[category] || 0) > 0);
+    });
     return {
       labels: trend.map((row) => row.period),
-      datasets: categories.map((category) => ({
+      datasets: visibleCategories.map((category) => ({
         label: category,
         data: trend.map((row) => row[category] || 0),
         borderColor: colors[category],
@@ -108,8 +118,12 @@
       data: channelChartData(data.channel || {}),
       options: {
         responsive: true,
-        cutout: '64%',
-        plugins: { legend: { position: 'bottom' } }
+        maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 18 } },
+          tooltip: { callbacks: { label: (context) => `${context.label}: ${formatNumber(context.raw)} ราย` } }
+        }
       }
     });
   }
@@ -150,7 +164,10 @@
       return;
     }
     if ((data.totals.b2b || 0) === 0) {
-      alert.innerHTML = '<div class="alert warning dashboard-alert">ไม่พบข้อมูล B2B ในช่วงวันที่ที่เลือก กรุณาตรวจสอบการบันทึกคำว่า B2B ใน ovstist.name หรือ opdscreen.cc</div>';
+      const adminHint = isAdmin
+        ? '<small>สำหรับผู้ดูแลระบบ: ระบบตรวจสอบ B2B จากการบันทึกใน ovstist.name หรือ opdscreen.cc</small>'
+        : '';
+      alert.innerHTML = `<div class="alert warning dashboard-alert telemed-data-alert"><i class="bi bi-info-circle"></i><div><strong>ยังไม่พบรายการ B2B ในช่วงวันที่เลือก</strong>${adminHint}</div></div>`;
       return;
     }
     alert.innerHTML = '';
@@ -170,14 +187,30 @@
   }
 
   function renderCharts(data, categories) {
+    const trendRows = data.trend || [];
+    const channelTotal = Number(data.channel?.b2b || 0) + Number(data.channel?.b2c || 0);
+    const hasTrendValues = categories.some((category) => trendRows.some((row) => Number(row[category] || 0) > 0));
     if (trendChart) {
-      trendChart.data = trendChartData(data.trend || [], categories);
+      trendChart.data = trendChartData(trendRows, categories);
       trendChart.update();
     }
     if (channelChart) {
       channelChart.data = channelChartData(data.channel || {});
       channelChart.update();
     }
+    toggleHidden('trendEmptyState', trendRows.length > 0 && hasTrendValues);
+    toggleHidden('channelEmptyState', channelTotal > 0);
+    toggleHidden('channelCenter', channelTotal > 0);
+    renderChannelCenter(data.channel || {}, channelTotal);
+  }
+
+  function renderChannelCenter(channel, total) {
+    const b2b = Number(channel.b2b || 0);
+    const b2c = Number(channel.b2c || 0);
+    const main = b2b >= b2c ? 'B2B' : 'B2C';
+    const amount = main === 'B2B' ? b2b : b2c;
+    setText('channelCenterPrimary', total > 0 ? `${main} ${formatPercent((amount / total) * 100)}%` : 'ไม่มีข้อมูล');
+    setText('channelCenterTotal', total > 0 ? `${formatNumber(total)} ราย` : '');
   }
 
   function renderTable(data, filters, categories) {
@@ -264,6 +297,7 @@
     isRefreshing = true;
     setStatus('กำลังอัปเดต...', 'loading');
     setButtonLoading(button, true);
+    setDashboardLoading(true);
 
     try {
       const response = await fetch(`/telemed/api/summary?${buildQueryString(filters)}`, {
@@ -280,6 +314,7 @@
       setStatus('ไม่สามารถอัปเดตข้อมูลได้ กรุณาตรวจสอบการเชื่อมต่อฐานข้อมูล', 'error');
     } finally {
       setButtonLoading(button, false);
+      setDashboardLoading(false);
       isRefreshing = false;
     }
   }
@@ -297,6 +332,17 @@
     if (!status) return;
     status.textContent = message;
     status.className = `dashboard-status ${type || ''}`.trim();
+  }
+
+  function setDashboardLoading(loading) {
+    if (!dashboardRoot) return;
+    dashboardRoot.classList.toggle('is-loading', loading);
+    dashboardRoot.setAttribute('aria-busy', String(loading));
+  }
+
+  function toggleHidden(id, visible) {
+    const element = document.getElementById(id);
+    if (element) element.hidden = !visible;
   }
 
   function setText(id, value) {
@@ -329,9 +375,28 @@
     });
   }
 
+  function setupExportFeedback() {
+    document.querySelectorAll('#exportExcelLink, #exportPdfLink').forEach((link) => {
+      link.addEventListener('click', () => {
+        if (link.dataset.exporting === 'true') return;
+        link.dataset.exporting = 'true';
+        link.classList.add('is-exporting');
+        const original = link.innerHTML;
+        link.innerHTML = '<i class="bi bi-arrow-repeat"></i> กำลังสร้างไฟล์...';
+        window.setTimeout(() => {
+          link.dataset.exporting = 'false';
+          link.classList.remove('is-exporting');
+          link.innerHTML = original;
+        }, 4500);
+      });
+    });
+  }
+
   trendChart = createTrendChart(payload.data || payload, payload.categories || []);
   channelChart = createChannelChart(payload.data || payload);
+  renderCharts(payload.data || payload, payload.categories || []);
   setupTableToggle();
+  setupExportFeedback();
 
   const refreshButton = document.getElementById('refreshDashboardButton');
   if (refreshButton) refreshButton.addEventListener('click', refreshDashboard);
