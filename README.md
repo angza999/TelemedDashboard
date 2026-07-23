@@ -33,6 +33,14 @@ npm start
 
 ควรเปลี่ยน `ADMIN_USERNAME`, `ADMIN_PASSWORD` และ `SESSION_SECRET` ใน `.env` ก่อนใช้จริง
 
+## Login and Session
+
+- ผู้ใช้ที่ล็อกอินอยู่แล้วและเปิด `/login` อีกแท็บ จะถูกส่งไปหน้าเริ่มต้นตามสิทธิ์: `admin` และ `executive` ไป `/today-patients`, ส่วน `user` ไป `/telemed`.
+- เมื่อเข้าสู่ระบบ ระบบจะสร้าง session ใหม่ก่อนเก็บเฉพาะ `id`, `username`, `name` และ `role`; ไม่มี password หรือ password hash ใน session.
+- Logout ทำลาย session และล้าง cookie `telemed.sid`; แท็บอื่นจะกลับไป `/login` เมื่อมีการเปิดหน้าใหม่หรือรีเฟรช.
+- ค่า cookie ใช้ `httpOnly`, `sameSite=lax` และอายุเริ่มต้น 8 ชั่วโมง (`SESSION_MAX_AGE_MS=28800000`). ตั้ง `USE_HTTPS=true` เฉพาะเมื่อระบบเปิดผ่าน HTTPS จริงเท่านั้น; LAN HTTP ต้องคง `false`.
+- เปิด `LOG_AUTH_EVENTS=true` เมื่อต้องการ log เหตุการณ์ login/logout สำหรับตรวจสอบ โดยระบบจะไม่ log รหัสผ่าน, password hash, session secret หรือ connection string.
+
 ## ตั้งค่าฐานข้อมูล
 
 ตั้งค่าผ่านหน้าเว็บได้ที่ `http://localhost:4300/settings` หลัง Login ด้วยผู้ใช้สิทธิ์ admin

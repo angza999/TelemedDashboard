@@ -74,6 +74,13 @@
 - Last active admin cannot be disabled or demoted.
 - Added admin-only soft delete for users through `DELETE /api/admin/users/:id`, including confirmation modal, red delete action, UI count update, and protections for main admin, self-delete, and last admin.
 
+### Login and Session
+- Added a central session helper for the role-based start route, safe post-login return URLs, and consistent `telemed.sid` cookie options.
+- Opening `/login` with an existing session now redirects to `/today-patients` for `admin`/`executive` and `/telemed` for `user`; a stale login form cannot replace an active session.
+- Successful login regenerates and saves the session before redirecting, storing only `id`, `username`, `name`, and `role`.
+- Logout now destroys the session and clears the matching cookie options. Protected requests also invalidate sessions for deleted or inactive users, so other tabs return to login after their next request.
+- Session cookies use `httpOnly`, `sameSite=lax`, a configurable eight-hour default, and enable `secure` only when production HTTPS is explicitly configured with `USE_HTTPS=true`.
+
 ### Deployment Fixes
 - Added Linux deploy scripts and systemd service.
 - Added config switches:

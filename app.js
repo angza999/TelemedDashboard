@@ -16,11 +16,13 @@ const adminUsersRoutes = require('./src/routes/adminUsers');
 const adminUsersApiRoutes = require('./src/routes/adminUsersApi');
 const todayPatientsRoutes = require('./src/routes/todayPatients');
 const { ensureAuth, ensureRole } = require('./src/middleware/auth');
+const { SESSION_COOKIE_NAME, sessionCookieOptions, useSecureCookies } = require('./src/config/session');
 
 const app = express();
 const port = Number(process.env.PORT || 4300);
 const enableHsts = String(process.env.ENABLE_HSTS || '').trim().toLowerCase() === 'true';
 const enableHttpsUpgrade = String(process.env.ENABLE_HTTPS_UPGRADE || '').trim().toLowerCase() === 'true';
+const usingSecureCookies = useSecureCookies();
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -44,17 +46,17 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+if (usingSecureCookies) {
+  app.set('trust proxy', 1);
+}
+
 app.use(session({
-  name: 'telemed.sid',
+  name: SESSION_COOKIE_NAME,
   secret: process.env.SESSION_SECRET || 'replace-this-development-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: false,
-    maxAge: 1000 * 60 * 60 * 8
-  }
+  rolling: true,
+  cookie: sessionCookieOptions()
 }));
 
 app.use(rateLimit({
