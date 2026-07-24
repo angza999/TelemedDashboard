@@ -32,6 +32,7 @@
 ### Executive Dashboard
 - Added executive overview page for admin/executive.
 - Added PDF export for executive report.
+- Reordered the Executive overview for five-second scanning: moved the compact Top 5 Telemed rooms directly below KPI cards beside Executive Insights, clarified the equal-length previous-period comparison, added a caution when the minimum day is the selected range's last day, localized trend tooltips, and limited ICD-code detail hints to admins. The Telemed calculation and HOSxP SQL were not changed.
 - Added tab `เป้าหมายรายห้อง` to compare Telemed count against 50% OPD target by department.
 - Improved the `เป้าหมายรายห้อง` tab for executive scanning: total gap KPI, worst-gap card, executive summary, horizontal charts with Top 10/20/all controls, and table progress bars.
 - Fixed department target chart sizing so horizontal bars do not become oversized blocks or make the page visually unbalanced.

@@ -285,15 +285,24 @@
           },
           tooltip: {
             callbacks: {
+              title: (items) => {
+                const row = trend[items[0] ? items[0].dataIndex : 0];
+                if (!row) return '';
+                return `${payload.filters && payload.filters.granularity === 'month' ? 'เดือน' : 'วันที่'}: ${row.period}`;
+              },
               afterBody: (items) => {
                 const row = trend[items[0] ? items[0].dataIndex : 0];
                 if (!row) return [];
-                return [
+                const details = [
                   `เบาหวานรวม: ${numberFormat.format(row.dm || 0)} ครั้ง`,
                   `ความดันรวม: ${numberFormat.format(row.ht || 0)} ครั้ง`,
                   `B2B: ${numberFormat.format(row.b2b || 0)} ครั้ง`,
                   `B2C: ${numberFormat.format(row.b2c || 0)} ครั้ง`
                 ];
+                if (Number(row.total || 0) === highestTotal && highestTotal > 0) {
+                  details.push('จุดสูงสุดของช่วงวันที่เลือก');
+                }
+                return details;
               }
             }
           }

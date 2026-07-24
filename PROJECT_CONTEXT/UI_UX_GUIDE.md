@@ -75,7 +75,10 @@ Current style uses:
 - When the top B2B warning is visible, use only short supporting notes near charts, such as `B2B: 0 ราย` or `ยังไม่พบรายการ B2B`.
 
 ## Executive Dashboard
-- Order the overview for rapid scanning: compact filters, four headline KPIs, DM/HT/B2B/B2C breakdown, 3-5 decision insights, trend and distribution charts, then Top 5 rooms.
+- Order the overview for rapid scanning: compact filters, four headline KPIs, DM/HT/B2B/B2C breakdown, a compact Top 5 room ranking beside 3-5 decision insights, then trend and distribution charts.
+- Explain that the previous-period comparison uses the immediately preceding date range with the same number of days.
+- If the minimum-service day is the selected range's final day, keep the value but add a restrained note that the day's data may still be incomplete.
+- Keep ICD-code and other technical metric hints visible only to admins; executive users should see plain-language labels.
 - Use Thai metric labels and `ครั้ง` for Telemed service counts. Department-target OPD reporting may retain `ราย`.
 - Show comparison with the immediately preceding period and keep the zero-denominator state explicit instead of displaying a misleading percentage.
 - The trend chart should show the total series, a subdued average line, a visible peak marker, and a tooltip containing Total, DM, HT, B2B, and B2C from the same response payload.

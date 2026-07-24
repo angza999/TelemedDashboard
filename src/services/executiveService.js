@@ -286,13 +286,17 @@ function buildExecutiveMetrics(data, previousData, filters, target, dailyData = 
   const averagePerTrendPeriod = trend.length > 0 ? total / trend.length : 0;
   const targetPercent = executiveDashboardConfig.b2cTargetPercent;
   const topDisease = dm >= ht ? { name: 'เบาหวาน', value: dm, percent: dmPercent } : { name: 'ความดัน', value: ht, percent: htPercent };
+  const lowestDayMayBeIncomplete = Boolean(
+    extremes.lowest
+    && extremes.lowest.date === filters.endDate
+  );
   const insights = [];
 
   if (total === 0) {
     insights.push('ไม่พบข้อมูลบริการ Telemed ในช่วงวันที่ที่เลือก');
   } else {
     insights.push(`มีบริการ Telemed รวม ${total.toLocaleString('th-TH')} ครั้ง เฉลี่ย ${averagePerDay.toLocaleString('th-TH', { maximumFractionDigits: 1 })} ครั้งต่อวัน`);
-    insights.push(`${topDisease.name}เป็นกลุ่มโรคที่มีจำนวนสูงกว่า คิดเป็น ${topDisease.percent.toFixed(1)}% ของยอด DM และ HT`);
+    insights.push(`${topDisease.name} เป็นกลุ่มโรคที่มีจำนวนสูงกว่า คิดเป็น ${topDisease.percent.toFixed(1)}% ของยอด DM และ HT`);
     if (extremes.highest) {
       insights.push(`วันที่มีบริการสูงสุดคือ ${extremes.highest.date} จำนวน ${extremes.highest.total.toLocaleString('th-TH')} ครั้ง`);
     }
@@ -321,6 +325,7 @@ function buildExecutiveMetrics(data, previousData, filters, target, dailyData = 
     averagePerTrendPeriod,
     highestDay: extremes.highest,
     lowestDay: extremes.lowest,
+    lowestDayMayBeIncomplete,
     previousTotal,
     previousChangePercent: changePercent,
     previousFilters: previousPeriodFilters(filters),
