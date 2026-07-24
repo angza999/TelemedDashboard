@@ -285,6 +285,11 @@ function buildExecutiveMetrics(data, previousData, filters, target, dailyData = 
   const averagePerDay = days > 0 ? total / days : 0;
   const averagePerTrendPeriod = trend.length > 0 ? total / trend.length : 0;
   const targetPercent = executiveDashboardConfig.b2cTargetPercent;
+  const topFiveTelemedTotal = departments.topDepartments.reduce(
+    (sum, row) => sum + Number(row.telemed_total || 0),
+    0
+  );
+  const otherTelemedTotal = Math.max(total - topFiveTelemedTotal, 0);
   const topDisease = dm >= ht ? { name: 'เบาหวาน', value: dm, percent: dmPercent } : { name: 'ความดัน', value: ht, percent: htPercent };
   const lowestDayMayBeIncomplete = Boolean(
     extremes.lowest
@@ -332,6 +337,8 @@ function buildExecutiveMetrics(data, previousData, filters, target, dailyData = 
     b2cTargetPercent: targetPercent,
     b2cTargetMet: b2cPercent >= targetPercent,
     b2cTargetGap: b2cPercent - targetPercent,
+    topFiveTelemedTotal,
+    otherTelemedTotal,
     trend,
     insights: insights.slice(0, 5),
     departments

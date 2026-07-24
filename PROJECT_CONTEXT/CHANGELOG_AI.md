@@ -116,3 +116,9 @@ Use `git log -1 --oneline` for the latest commit. This file records feature hist
 - Expanded the department-target KPI summary with total visible rooms, room success rate, and the best-performing visible department.
 - Added WebApp-only `EXECUTIVE_B2C_TARGET_PERCENT` configuration with a default of 50; no configuration is written to HOSxP.
 - Reused the existing parameterized Telemed summary query for current and previous periods. No Telemed formula, SQL definition, login/session, role rule, or HOSxP data was changed.
+- Polished the Executive Top 5 room panel with a same-period Top 5 coverage total and derived `อื่น ๆ` count, clearer Thai ranking copy, a B2C 50% target tooltip, and an explicit equal-length previous-period note. No query, calculation formula, or HOSxP access behavior changed.
+
+## 2026-07-24 - Server / PM2 Deployment Context
+- Added root `AGENTS.md` as the operational reference for the shared server `192.168.1.231`.
+- Documented the separate project paths, ports, PM2 process names, preflight checks, health checks, deployment commands, and Git safety rules for ITASSET (`itasset`, port `3000`) and Telemed Dashboard (`telemed-dashboard`, port `4300`).
+- Explicitly warns that using PM2 process `itasset` for Telemed Dashboard can stop the ITASSET application. Documentation-only change; no server process, HOSxP data, `.env`, or application logic was modified.

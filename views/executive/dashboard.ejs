@@ -164,7 +164,11 @@
             <strong><%= metrics.b2c.toLocaleString('th-TH') %> <small>ครั้ง</small></strong>
             <div class="executive-target-row">
               <small><%= metrics.b2cPercent.toFixed(1) %>%</small>
-              <span class="<%= metrics.b2cTargetMet ? 'met' : 'behind' %>">เป้า <%= metrics.b2cTargetPercent.toFixed(0) %>%</span>
+              <span
+                class="<%= metrics.b2cTargetMet ? 'met' : 'behind' %>"
+                title="เป้าหมาย B2C ขั้นต่ำ 50% ของบริการ Telemed"
+                aria-label="เป้าหมาย B2C ขั้นต่ำ 50% ของบริการ Telemed"
+              >เป้า <%= metrics.b2cTargetPercent.toFixed(0) %>%</span>
             </div>
           </article>
         </section>
@@ -175,7 +179,7 @@
               <div>
                 <p class="eyebrow">ผลงานตามห้องบริการ</p>
                 <h2>Top 5 ห้องบริการ Telemed</h2>
-                <p class="panel-note">เรียงตามจำนวน visit Telemed ในช่วงวันที่เลือก</p>
+                <p class="panel-note">จัดอันดับห้องบริการตามจำนวนผู้รับบริการ Telemed ในช่วงวันที่เลือก</p>
               </div>
             </div>
             <% if (metrics.departments.topDepartments.length > 0) { %>
@@ -188,6 +192,15 @@
                   </li>
                 <% }) %>
               </ol>
+              <% if (metrics.otherTelemedTotal > 0) { %>
+                <div class="executive-top-rooms-other">
+                  <span><i class="bi bi-three-dots"></i> อื่น ๆ</span>
+                  <strong><%= metrics.otherTelemedTotal.toLocaleString('th-TH') %> ครั้ง</strong>
+                </div>
+              <% } %>
+              <p class="executive-top-rooms-coverage">
+                Top 5 ครอบคลุม <%= metrics.topFiveTelemedTotal.toLocaleString('th-TH') %> จาก <%= metrics.total.toLocaleString('th-TH') %> ครั้ง
+              </p>
             <% } else { %>
               <div class="executive-inline-empty">ไม่พบข้อมูลห้องบริการในช่วงวันที่เลือก</div>
             <% } %>
