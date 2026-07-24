@@ -1,6 +1,5 @@
 const express = require('express');
 const {
-  CATEGORY_KEYS,
   emptyDashboardModel,
   fiscalYearRange,
   parseFilters,
@@ -8,7 +7,9 @@ const {
 } = require('../services/telemedService');
 const {
   emptyDepartmentTargetModel,
-  fetchDepartmentTargetData
+  fetchDepartmentTargetData,
+  previousPeriodFilters,
+  buildExecutiveMetrics
 } = require('../services/executiveService');
 const {
   writeDepartmentTargetExcel,
@@ -45,7 +46,14 @@ function targetFilters(query, filters = effectiveFilters(query)) {
 router.get('/', async (req, res, next) => {
   try {
     const filters = effectiveFilters(req.query);
-    const data = await fetchTelemedSummary(filters);
+    const previousFilters = previousPeriodFilters(filters);
+    const [data, previousData, dailyData] = await Promise.all([
+      fetchTelemedSummary(filters),
+      fetchTelemedSummary(previousFilters),
+      filters.granularity === 'month'
+        ? fetchTelemedSummary({ ...filters, granularity: 'day' })
+        : Promise.resolve(null)
+    ]);
     let target = emptyDepartmentTargetModel();
     let targetError = null;
 
@@ -61,7 +69,7 @@ router.get('/', async (req, res, next) => {
       filters,
       targetFilters: targetFilters(req.query, filters),
       data,
-      metrics: buildExecutiveMetrics(data),
+      metrics: buildExecutiveMetrics(data, previousData, filters, target, dailyData || data),
       target,
       activeTab: req.query.tab === 'department-target' ? 'department-target' : 'overview',
       dbError: null,
@@ -71,13 +79,14 @@ router.get('/', async (req, res, next) => {
     if (isDatabaseSetupError(err)) {
       const filters = effectiveFilters(req.query);
       const data = emptyDashboardModel();
+      const target = emptyDepartmentTargetModel();
       return res.status(200).render('executive/dashboard', {
         title: 'Executive Dashboard',
         filters,
         targetFilters: targetFilters(req.query, filters),
         data,
-        metrics: buildExecutiveMetrics(data),
-        target: emptyDepartmentTargetModel(),
+        metrics: buildExecutiveMetrics(data, emptyDashboardModel(), filters, target, data),
+        target,
         activeTab: req.query.tab === 'department-target' ? 'department-target' : 'overview',
         dbError: databaseSetupMessage(err),
         targetError: null
@@ -134,33 +143,6 @@ router.get('/export.pdf', async (req, res, next) => {
     next(err);
   }
 });
-
-function buildExecutiveMetrics(data) {
-  const dm = data.kpis['DM B2B'] + data.kpis['DM B2C'];
-  const ht = data.kpis['HT B2B'] + data.kpis['HT B2C'];
-  const b2b = data.channel.b2b;
-  const b2c = data.channel.b2c;
-  const channelTotal = b2b + b2c;
-  const b2bPercent = channelTotal > 0 ? (b2b / channelTotal) * 100 : 0;
-  const b2cPercent = channelTotal > 0 ? (b2c / channelTotal) * 100 : 0;
-  const trend = data.trend.map((row) => ({
-    period: row.period,
-    total: Number(row.total || 0),
-    dm: Number(row['DM B2B'] || 0) + Number(row['DM B2C'] || 0),
-    ht: Number(row['HT B2B'] || 0) + Number(row['HT B2C'] || 0)
-  }));
-
-  return {
-    dm,
-    ht,
-    b2b,
-    b2c,
-    b2bPercent,
-    b2cPercent,
-    trend,
-    summary: `ช่วงวันที่นี้มีบริการ Telemed รวม ${data.total.toLocaleString('th-TH')} ครั้ง กลุ่ม DM รวม ${dm.toLocaleString('th-TH')} ครั้ง กลุ่ม HT รวม ${ht.toLocaleString('th-TH')} ครั้ง และสัดส่วน B2B คิดเป็น ${b2bPercent.toFixed(1)}%`
-  };
-}
 
 function isDatabaseSetupError(err) {
   return [

@@ -8,6 +8,9 @@
     : initialB2b >= initialB2c
       ? `B2B ${((initialB2b / initialChannelTotal) * 100).toFixed(0)}%`
       : `B2C ${((initialB2c / initialChannelTotal) * 100).toFixed(0)}%`;
+  const initialTrendRows = data.trend || [];
+  const initialHasTrendData = initialTrendRows.some((row) => categories.some((category) => Number(row[category] || 0) > 0));
+  const initialHasB2BTrendData = initialTrendRows.some((row) => Number(row['DM B2B'] || 0) > 0 || Number(row['HT B2B'] || 0) > 0);
 %>
 
 <div class="telemed-dashboard" data-user-role="<%= currentUser ? currentUser.role : '' %>">
@@ -49,7 +52,7 @@
         <i class="bi bi-info-circle"></i>
         <div>
           <strong>ยังไม่พบรายการ B2B ในช่วงวันที่เลือก</strong>
-          <% if (isTelemedAdmin) { %><small>สำหรับผู้ดูแลระบบ: ระบบตรวจสอบ B2B จากการบันทึกใน ovstist.name หรือ opdscreen.cc</small><% } %>
+          <% if (isTelemedAdmin) { %><small>ระบบตรวจสอบ B2B จาก ovstist.name หรือ opdscreen.cc</small><% } %>
         </div>
       </div>
     <% } %>
@@ -141,8 +144,9 @@
     </div>
     <div class="telemed-chart-canvas telemed-trend-canvas">
       <canvas id="trendChart"></canvas>
-      <div id="trendEmptyState" class="chart-empty-state" <%= data.dailySummary.length && data.total > 0 ? 'hidden' : '' %>>ไม่พบข้อมูลในช่วงวันที่เลือก</div>
+      <div id="trendEmptyState" class="chart-empty-state" <%= initialHasTrendData ? 'hidden' : '' %>>ไม่พบข้อมูลในช่วงวันที่เลือก</div>
     </div>
+    <p id="trendB2bNote" class="chart-data-note" <%= initialHasTrendData && !initialHasB2BTrendData ? '' : 'hidden' %>>B2B: 0 ราย</p>
   </article>
 
   <article class="panel telemed-chart-panel">
@@ -158,6 +162,7 @@
       </div>
       <div id="channelEmptyState" class="chart-empty-state compact" <%= initialChannelTotal ? 'hidden' : '' %>>ไม่พบข้อมูล B2B/B2C</div>
     </div>
+    <p id="channelB2bNote" class="chart-data-note" <%= initialB2b === 0 && initialB2c > 0 ? '' : 'hidden' %>>ยังไม่พบรายการ B2B</p>
     <div class="channel-summary">
       <div><strong>B2B:</strong> <span id="b2bSummary"><%= data.totals.b2b.toLocaleString('th-TH') %> ราย (<%= data.percentages.b2b.toFixed(2) %>%)</span></div>
       <div><strong>B2C:</strong> <span id="b2cSummary"><%= data.totals.b2c.toLocaleString('th-TH') %> ราย (<%= data.percentages.b2c.toFixed(2) %>%)</span></div>
@@ -202,14 +207,14 @@
     </div>
   </div>
 
-  <p class="table-note">หมายเหตุ: Total คือจำนวนบริการ Telemed ทั้งหมด ส่วน DM/HT นับเฉพาะ visit ที่พบ ICD10 E11/I10 ดังนั้น Total อาจไม่เท่ากับ DM รวม + HT รวม</p>
+  <p class="table-note">หมายเหตุ: ผู้รับบริการ Telemed ทั้งหมด คือจำนวนบริการ Telemed ทั้งหมด ส่วน DM/HT นับเฉพาะ visit ที่พบรหัสโรคตามเงื่อนไข และผู้รับบริการหนึ่งรายอาจอยู่ได้มากกว่าหนึ่งกลุ่ม</p>
 
   <div class="table-wrap enhanced-table-wrap">
     <table id="telemedSummaryTable" class="telemed-summary-table summary-mode">
       <thead>
         <tr>
           <th id="periodHeader"><%= filters.granularity === 'month' ? 'เดือน' : 'วันที่' %></th>
-          <th class="number">Total</th>
+          <th class="number">Telemed ทั้งหมด</th>
           <th class="number">DM รวม</th>
           <th class="number">HT รวม</th>
           <th class="number">B2B รวม</th>

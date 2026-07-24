@@ -1,4 +1,5 @@
 const { DEPARTMENT_TARGETS } = require('../config/departmentTargets');
+const executiveDashboardConfig = require('../config/executiveDashboard');
 const { getPool } = require('../db');
 
 const TARGET_RATE = 0.5;
@@ -151,6 +152,187 @@ function emptyDepartmentTargetModel() {
   return buildDepartmentTargetModel([], {});
 }
 
+function parseIsoDate(value) {
+  const [year, month, day] = String(value || '').split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function isoDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function previousPeriodFilters(filters) {
+  const start = parseIsoDate(filters.startDate);
+  const end = parseIsoDate(filters.endDate);
+  if (!start || !end || end < start) return { ...filters };
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const periodDays = Math.floor((end - start) / dayMs) + 1;
+  const previousEnd = new Date(start.getTime() - dayMs);
+  const previousStart = new Date(previousEnd.getTime() - ((periodDays - 1) * dayMs));
+
+  return {
+    ...filters,
+    startDate: isoDate(previousStart),
+    endDate: isoDate(previousEnd)
+  };
+}
+
+function percentOf(value, total) {
+  return total > 0 ? (value / total) * 100 : 0;
+}
+
+function percentChange(current, previous) {
+  if (previous === 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
+function inclusiveDays(filters) {
+  const start = parseIsoDate(filters.startDate);
+  const end = parseIsoDate(filters.endDate);
+  if (!start || !end || end < start) return 0;
+  return Math.floor((end - start) / (24 * 60 * 60 * 1000)) + 1;
+}
+
+function dailyExtremes(dailyData) {
+  const rows = (dailyData && dailyData.dailySummary ? dailyData.dailySummary : [])
+    .map((row) => ({
+      date: row.vstdate || row.date || row.period,
+      total: Number(row.total || 0)
+    }))
+    .filter((row) => row.date);
+
+  if (!rows.length) return { highest: null, lowest: null };
+
+  return {
+    highest: rows.reduce((best, row) => (row.total > best.total ? row : best), rows[0]),
+    lowest: rows.reduce((best, row) => (row.total < best.total ? row : best), rows[0])
+  };
+}
+
+function departmentOverview(target) {
+  const rows = (target && (target.allRows || target.rows)) || [];
+  const filteredRows = (target && target.rows) || rows;
+  const topDepartments = rows
+    .filter((row) => Number(row.telemed_total || 0) > 0)
+    .slice()
+    .sort((a, b) => Number(b.telemed_total || 0) - Number(a.telemed_total || 0))
+    .slice(0, 5);
+  const passedCount = rows.filter((row) => Number(row.diff_from_target || 0) >= 0).length;
+  const failedCount = rows.length - passedCount;
+  const bestDepartment = rows
+    .slice()
+    .sort((a, b) => {
+      const percentDiff = Number(b.telemed_percent || 0) - Number(a.telemed_percent || 0);
+      return percentDiff || Number(b.telemed_total || 0) - Number(a.telemed_total || 0);
+    })[0] || null;
+  const attentionDepartment = rows
+    .filter((row) => Number(row.diff_from_target || 0) < 0)
+    .slice()
+    .sort((a, b) => Number(a.diff_from_target || 0) - Number(b.diff_from_target || 0))[0] || null;
+  const filteredPassedCount = filteredRows.filter((row) => Number(row.diff_from_target || 0) >= 0).length;
+  const filteredBestDepartment = filteredRows
+    .slice()
+    .sort((a, b) => {
+      const percentDiff = Number(b.telemed_percent || 0) - Number(a.telemed_percent || 0);
+      return percentDiff || Number(b.telemed_total || 0) - Number(a.telemed_total || 0);
+    })[0] || null;
+
+  return {
+    roomCount: rows.length,
+    passedCount,
+    failedCount,
+    successPercent: rows.length > 0 ? (passedCount / rows.length) * 100 : 0,
+    bestDepartment,
+    attentionDepartment,
+    topDepartments,
+    filtered: {
+      roomCount: filteredRows.length,
+      passedCount: filteredPassedCount,
+      failedCount: filteredRows.length - filteredPassedCount,
+      successPercent: filteredRows.length > 0 ? (filteredPassedCount / filteredRows.length) * 100 : 0,
+      bestDepartment: filteredBestDepartment
+    }
+  };
+}
+
+function buildExecutiveMetrics(data, previousData, filters, target, dailyData = data) {
+  const dm = Number(data.totals && data.totals.dm || 0);
+  const ht = Number(data.totals && data.totals.ht || 0);
+  const b2b = Number(data.channel && data.channel.b2b || 0);
+  const b2c = Number(data.channel && data.channel.b2c || 0);
+  const total = Number(data.total || 0);
+  const previousTotal = Number(previousData && previousData.total || 0);
+  const channelTotal = b2b + b2c;
+  const diseaseTotal = dm + ht;
+  const days = inclusiveDays(filters);
+  const extremes = dailyExtremes(dailyData);
+  const departments = departmentOverview(target);
+  const trend = (data.trend || []).map((row) => ({
+    period: row.period,
+    total: Number(row.total || 0),
+    dm: Number(row['DM B2B'] || 0) + Number(row['DM B2C'] || 0),
+    ht: Number(row['HT B2B'] || 0) + Number(row['HT B2C'] || 0),
+    b2b: Number(row['DM B2B'] || 0) + Number(row['HT B2B'] || 0),
+    b2c: Number(row['DM B2C'] || 0) + Number(row['HT B2C'] || 0)
+  }));
+  const b2bPercent = percentOf(b2b, channelTotal);
+  const b2cPercent = percentOf(b2c, channelTotal);
+  const dmPercent = percentOf(dm, diseaseTotal);
+  const htPercent = percentOf(ht, diseaseTotal);
+  const changePercent = percentChange(total, previousTotal);
+  const averagePerDay = days > 0 ? total / days : 0;
+  const averagePerTrendPeriod = trend.length > 0 ? total / trend.length : 0;
+  const targetPercent = executiveDashboardConfig.b2cTargetPercent;
+  const topDisease = dm >= ht ? { name: 'เบาหวาน', value: dm, percent: dmPercent } : { name: 'ความดัน', value: ht, percent: htPercent };
+  const insights = [];
+
+  if (total === 0) {
+    insights.push('ไม่พบข้อมูลบริการ Telemed ในช่วงวันที่ที่เลือก');
+  } else {
+    insights.push(`มีบริการ Telemed รวม ${total.toLocaleString('th-TH')} ครั้ง เฉลี่ย ${averagePerDay.toLocaleString('th-TH', { maximumFractionDigits: 1 })} ครั้งต่อวัน`);
+    insights.push(`${topDisease.name}เป็นกลุ่มโรคที่มีจำนวนสูงกว่า คิดเป็น ${topDisease.percent.toFixed(1)}% ของยอด DM และ HT`);
+    if (extremes.highest) {
+      insights.push(`วันที่มีบริการสูงสุดคือ ${extremes.highest.date} จำนวน ${extremes.highest.total.toLocaleString('th-TH')} ครั้ง`);
+    }
+    if (changePercent === null) {
+      insights.push(`ช่วงก่อนหน้ามี ${previousTotal.toLocaleString('th-TH')} ครั้ง จึงยังคำนวณอัตราการเปลี่ยนแปลงไม่ได้`);
+    } else {
+      insights.push(`เทียบช่วงก่อนหน้า ${total >= previousTotal ? 'เพิ่มขึ้น' : 'ลดลง'} ${Math.abs(changePercent).toFixed(1)}%`);
+    }
+    insights.push(b2b === 0
+      ? 'ยังไม่พบรายการ B2B ในช่วงวันที่เลือก'
+      : `สัดส่วน B2B อยู่ที่ ${b2bPercent.toFixed(1)}% และ B2C อยู่ที่ ${b2cPercent.toFixed(1)}%`);
+  }
+
+  return {
+    total,
+    dm,
+    ht,
+    b2b,
+    b2c,
+    b2bPercent,
+    b2cPercent,
+    dmPercent,
+    htPercent,
+    periodDays: days,
+    averagePerDay,
+    averagePerTrendPeriod,
+    highestDay: extremes.highest,
+    lowestDay: extremes.lowest,
+    previousTotal,
+    previousChangePercent: changePercent,
+    previousFilters: previousPeriodFilters(filters),
+    b2cTargetPercent: targetPercent,
+    b2cTargetMet: b2cPercent >= targetPercent,
+    b2cTargetGap: b2cPercent - targetPercent,
+    trend,
+    insights: insights.slice(0, 5),
+    departments
+  };
+}
+
 function telemedModeClause(target) {
   const telemedMode = target.telemed_mode || 'B2C_ONLY';
   const b2b = b2bCondition('oi', 's');
@@ -239,5 +421,7 @@ module.exports = {
   TARGET_DEPARTMENTS,
   emptyDepartmentTargetModel,
   fetchDepartmentTargetData,
-  buildDepartmentTargetModel
+  buildDepartmentTargetModel,
+  previousPeriodFilters,
+  buildExecutiveMetrics
 };

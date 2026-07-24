@@ -115,7 +115,7 @@
     if (!channelEl) return null;
     return new Chart(channelEl, {
       type: 'doughnut',
-      data: channelChartData(data.channel || {}),
+      data: channelChartData(channelTotals(data)),
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -132,10 +132,19 @@
     return {
       labels: ['B2B', 'B2C'],
       datasets: [{
-        data: [channel.b2b || 0, channel.b2c || 0],
+        data: [Number(channel.b2b || 0), Number(channel.b2c || 0)],
         backgroundColor: ['#2563eb', '#f59e0b'],
         borderWidth: 0
       }]
+    };
+  }
+
+  function channelTotals(data) {
+    const channel = data.channel || {};
+    const totals = data.totals || {};
+    return {
+      b2b: Number(channel.b2b ?? totals.b2b ?? 0),
+      b2c: Number(channel.b2c ?? totals.b2c ?? 0)
     };
   }
 
@@ -165,7 +174,7 @@
     }
     if ((data.totals.b2b || 0) === 0) {
       const adminHint = isAdmin
-        ? '<small>สำหรับผู้ดูแลระบบ: ระบบตรวจสอบ B2B จากการบันทึกใน ovstist.name หรือ opdscreen.cc</small>'
+        ? '<small>ระบบตรวจสอบ B2B จาก ovstist.name หรือ opdscreen.cc</small>'
         : '';
       alert.innerHTML = `<div class="alert warning dashboard-alert telemed-data-alert"><i class="bi bi-info-circle"></i><div><strong>ยังไม่พบรายการ B2B ในช่วงวันที่เลือก</strong>${adminHint}</div></div>`;
       return;
@@ -188,20 +197,31 @@
 
   function renderCharts(data, categories) {
     const trendRows = data.trend || [];
-    const channelTotal = Number(data.channel?.b2b || 0) + Number(data.channel?.b2c || 0);
-    const hasTrendValues = categories.some((category) => trendRows.some((row) => Number(row[category] || 0) > 0));
+    const trendData = trendChartData(trendRows, categories);
+    const dmB2bSeries = trendRows.map((row) => Number(row['DM B2B'] || 0));
+    const dmB2cSeries = trendRows.map((row) => Number(row['DM B2C'] || 0));
+    const htB2bSeries = trendRows.map((row) => Number(row['HT B2B'] || 0));
+    const htB2cSeries = trendRows.map((row) => Number(row['HT B2C'] || 0));
+    const hasAnyTrendData = [dmB2bSeries, dmB2cSeries, htB2bSeries, htB2cSeries]
+      .some((series) => series.some((value) => value > 0));
+    const hasB2BData = [dmB2bSeries, htB2bSeries]
+      .some((series) => series.some((value) => value > 0));
+    const channel = channelTotals(data);
+    const channelTotal = channel.b2b + channel.b2c;
     if (trendChart) {
-      trendChart.data = trendChartData(trendRows, categories);
+      trendChart.data = trendData;
       trendChart.update();
     }
     if (channelChart) {
-      channelChart.data = channelChartData(data.channel || {});
+      channelChart.data = channelChartData(channel);
       channelChart.update();
     }
-    toggleHidden('trendEmptyState', trendRows.length > 0 && hasTrendValues);
-    toggleHidden('channelEmptyState', channelTotal > 0);
+    toggleHidden('trendEmptyState', !hasAnyTrendData);
+    toggleHidden('channelEmptyState', channelTotal === 0);
     toggleHidden('channelCenter', channelTotal > 0);
-    renderChannelCenter(data.channel || {}, channelTotal);
+    toggleHidden('trendB2bNote', hasAnyTrendData && !hasB2BData);
+    toggleHidden('channelB2bNote', channel.b2b === 0 && channel.b2c > 0);
+    renderChannelCenter(channel, channelTotal);
   }
 
   function renderChannelCenter(channel, total) {
@@ -392,9 +412,12 @@
     });
   }
 
-  trendChart = createTrendChart(payload.data || payload, payload.categories || []);
-  channelChart = createChannelChart(payload.data || payload);
-  renderCharts(payload.data || payload, payload.categories || []);
+  const initialData = payload.data || payload;
+  const initialFilters = payload.filters || {};
+  const initialCategories = payload.categories || [];
+  trendChart = createTrendChart(initialData, initialCategories);
+  channelChart = createChannelChart(initialData);
+  renderDashboard(initialData, initialFilters, initialCategories);
   setupTableToggle();
   setupExportFeedback();
 

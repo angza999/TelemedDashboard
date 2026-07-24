@@ -29,6 +29,9 @@
 - The `/today-patients` IPD subclinic modal should mirror the NCD modal pattern: show main IPD, total subclinics, and ungrouped/mapping gap before the subclinic cards; use clear status copy for missing Ward mapping, configured Ward with no active admissions, and active inpatient counts; keep `หอผู้ป่วยรวม` and `Homeward` visually distinct; and keep the admin settings action visible only for admin users.
 - The `/telemed` DM/HT dashboard should use an executive-first hierarchy: primary KPI cards are Total Telemed, DM, HT, B2B, and B2C; the four disease/channel combinations are a secondary detail row. Keep the source/query name visible but subdued, and keep B2B data-quality troubleshooting language technical only for admins.
 - Telemed charts should use soft grid lines, readable tooltips, an empty state, and a donut centre label with the dominant B2B/B2C share plus total count. Hide all-zero B2B trend series to reduce visual noise without changing table data.
+- For `/telemed`, show a chart empty state only when every visible trend series is zero. If B2C data exists while B2B is zero, keep both charts visible, show the B2C share in the donut centre, and use a small B2B data-quality note rather than an empty overlay.
+- Let the Telemed summary table use normal page scrolling; retain horizontal scrolling only for narrow screens and wide columns so users do not have to navigate nested vertical scroll areas.
+- In Telemed summary tables, label the overall visit count as `Telemed ทั้งหมด` rather than the ambiguous `Total`; DM/HT/B2B/B2C remain supporting breakdowns.
 
 ## Colors
 Current style uses:
@@ -63,6 +66,23 @@ Current style uses:
 - KPI cards should stack.
 - Filter forms should become single column.
 - Wide tables should scroll horizontally, not shrink into unreadable columns.
+
+## Telemed Dashboard
+- Use one dashboard response snapshot to render KPI cards, category details, charts, donut, table, query metadata, and export links together.
+- Keep the HOSxP source strip, status message, warning, and filter controls compact enough that notebook users can reach analytical content quickly.
+- Show `ยังไม่พบรายการ B2B ในช่วงวันที่เลือก` as the primary B2B warning for all roles.
+- Show the technical B2B source-field hint only to admin users and keep it visually subordinate.
+- When the top B2B warning is visible, use only short supporting notes near charts, such as `B2B: 0 ราย` or `ยังไม่พบรายการ B2B`.
+
+## Executive Dashboard
+- Order the overview for rapid scanning: compact filters, four headline KPIs, DM/HT/B2B/B2C breakdown, 3-5 decision insights, trend and distribution charts, then Top 5 rooms.
+- Use Thai metric labels and `ครั้ง` for Telemed service counts. Department-target OPD reporting may retain `ราย`.
+- Show comparison with the immediately preceding period and keep the zero-denominator state explicit instead of displaying a misleading percentage.
+- The trend chart should show the total series, a subdued average line, a visible peak marker, and a tooltip containing Total, DM, HT, B2B, and B2C from the same response payload.
+- Keep the B2B/B2C donut compact with a center value. If B2B is zero but B2C exists, show B2C 100% and the real total rather than an empty state.
+- Prefer compact HTML comparison bars for DM/HT when a large chart adds little decision value.
+- Store adjustable executive targets in WebApp configuration only. Never write dashboard targets or settings to HOSxP.
+- PDF export should expose a visible generating/success/error state and prevent duplicate clicks while the same export is running.
 
 ## ER Subclinic Modal
 - Keep the ER card keyboard accessible and show a visible click affordance.

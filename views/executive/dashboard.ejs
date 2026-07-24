@@ -34,7 +34,7 @@
       </div>
 
       <section class="tab-panel <%= activeTab === 'overview' ? 'active' : '' %>" data-exec-panel="overview">
-        <section class="filter-panel">
+        <section class="filter-panel executive-filter-panel">
           <% if (dbError) { %>
             <div class="alert db-alert"><strong><%= dbError %></strong></div>
           <% } %>
@@ -56,48 +56,190 @@
               </select>
             </label>
             <div class="filter-actions">
-              <button type="submit" class="primary-button"><i class="bi bi-funnel"></i> แสดงผล</button>
-              <a class="secondary-button" href="/executive/export.pdf?startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&granularity=<%= filters.granularity %>">
+              <button type="submit" class="primary-button" data-executive-submit><i class="bi bi-funnel"></i> <span>แสดงผล</span></button>
+              <a class="secondary-button" data-executive-pdf href="/executive/export.pdf?startDate=<%= filters.startDate %>&endDate=<%= filters.endDate %>&granularity=<%= filters.granularity %>">
                 <i class="bi bi-filetype-pdf"></i>
-                Export PDF
+                <span>Export PDF</span>
               </a>
             </div>
           </form>
+          <p class="executive-export-status" data-executive-status role="status" aria-live="polite"></p>
         </section>
 
-        <section class="executive-kpis">
-          <article class="executive-kpi primary"><p>Total Telemed</p><strong><%= data.total.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>DM รวม</p><strong><%= metrics.dm.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>HT รวม</p><strong><%= metrics.ht.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>B2B รวม</p><strong><%= metrics.b2b.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>B2C รวม</p><strong><%= metrics.b2c.toLocaleString('th-TH') %></strong></article>
-          <article class="executive-kpi"><p>B2B / B2C</p><strong><%= metrics.b2bPercent.toFixed(1) %>% / <%= metrics.b2cPercent.toFixed(1) %>%</strong></article>
-        </section>
-
-        <section class="panel executive-summary">
-          <h2>Executive Summary</h2>
-          <p><%= metrics.summary %></p>
-        </section>
-
-        <section class="dashboard-grid executive-charts">
-          <article class="panel wide">
-            <div class="panel-heading">
-              <h2>แนวโน้ม Telemed</h2>
-              <span><%= filters.startDate %> ถึง <%= filters.endDate %></span>
+        <section class="executive-hero-kpis" aria-label="ตัวชี้วัดสำคัญ">
+          <article class="executive-hero-kpi primary">
+            <div class="executive-kpi-heading">
+              <span class="executive-kpi-icon"><i class="bi bi-camera-video"></i></span>
+              <p>ผู้รับบริการ Telemed ทั้งหมด</p>
             </div>
-            <canvas id="execTrendChart" height="120"></canvas>
+            <div class="executive-kpi-value"><strong><%= metrics.total.toLocaleString('th-TH') %></strong><span>ครั้ง</span></div>
+            <div class="executive-comparison-badge <%= metrics.previousChangePercent === null ? 'neutral' : (metrics.previousChangePercent >= 0 ? 'up' : 'down') %>">
+              <i class="bi <%= metrics.previousChangePercent === null ? 'bi-dash' : (metrics.previousChangePercent >= 0 ? 'bi-arrow-up-right' : 'bi-arrow-down-right') %>"></i>
+              <% if (metrics.previousChangePercent === null) { %>
+                ช่วงก่อนหน้า <%= metrics.previousTotal.toLocaleString('th-TH') %> ครั้ง
+              <% } else { %>
+                <%= Math.abs(metrics.previousChangePercent).toFixed(1) %>% จากช่วงก่อนหน้า
+              <% } %>
+            </div>
           </article>
-          <article class="panel">
-            <div class="panel-heading">
-              <h2>B2B vs B2C</h2>
+          <article class="executive-hero-kpi">
+            <div class="executive-kpi-heading">
+              <span class="executive-kpi-icon blue"><i class="bi bi-calendar3"></i></span>
+              <p>เฉลี่ยต่อวัน</p>
             </div>
-            <canvas id="execChannelChart" height="210"></canvas>
+            <div class="executive-kpi-value"><strong><%= metrics.averagePerDay.toLocaleString('th-TH', { maximumFractionDigits: 1 }) %></strong><span>ครั้ง</span></div>
+            <small><%= metrics.periodDays.toLocaleString('th-TH') %> วันตามช่วงที่เลือก</small>
           </article>
-          <article class="panel">
-            <div class="panel-heading">
-              <h2>DM vs HT</h2>
+          <article class="executive-hero-kpi">
+            <div class="executive-kpi-heading">
+              <span class="executive-kpi-icon amber"><i class="bi bi-graph-up-arrow"></i></span>
+              <p>วันที่มีบริการสูงสุด</p>
             </div>
-            <canvas id="execDiseaseChart" height="210"></canvas>
+            <% if (metrics.highestDay) { %>
+              <div class="executive-kpi-value"><strong><%= metrics.highestDay.total.toLocaleString('th-TH') %></strong><span>ครั้ง</span></div>
+              <small><%= metrics.highestDay.date %></small>
+            <% } else { %>
+              <div class="executive-kpi-value"><strong>0</strong><span>ครั้ง</span></div>
+              <small>ไม่พบข้อมูล</small>
+            <% } %>
+          </article>
+          <article class="executive-hero-kpi">
+            <div class="executive-kpi-heading">
+              <span class="executive-kpi-icon rose"><i class="bi bi-graph-down-arrow"></i></span>
+              <p>วันที่มีบริการต่ำสุด</p>
+            </div>
+            <% if (metrics.lowestDay) { %>
+              <div class="executive-kpi-value"><strong><%= metrics.lowestDay.total.toLocaleString('th-TH') %></strong><span>ครั้ง</span></div>
+              <small><%= metrics.lowestDay.date %></small>
+            <% } else { %>
+              <div class="executive-kpi-value"><strong>0</strong><span>ครั้ง</span></div>
+              <small>ไม่พบข้อมูล</small>
+            <% } %>
+          </article>
+        </section>
+
+        <section class="executive-breakdown-grid" aria-label="สรุปกลุ่มโรคและรูปแบบบริการ">
+          <article class="executive-breakdown-item">
+            <span><i class="bi bi-droplet-half"></i> เบาหวานรวม <button class="info-icon-button" type="button" title="จำนวน visit ที่พบรหัสโรค E11 ตามเงื่อนไข"><i class="bi bi-info-circle"></i></button></span>
+            <strong><%= metrics.dm.toLocaleString('th-TH') %> <small>ครั้ง</small></strong>
+            <div class="executive-mini-track"><span class="dm" style="width: <%= Math.min(metrics.dmPercent, 100).toFixed(1) %>%"></span></div>
+            <small><%= metrics.dmPercent.toFixed(1) %>% ของ DM และ HT</small>
+          </article>
+          <article class="executive-breakdown-item">
+            <span><i class="bi bi-heart-pulse"></i> ความดันรวม <button class="info-icon-button" type="button" title="จำนวน visit ที่พบรหัสโรค I10 ตามเงื่อนไข"><i class="bi bi-info-circle"></i></button></span>
+            <strong><%= metrics.ht.toLocaleString('th-TH') %> <small>ครั้ง</small></strong>
+            <div class="executive-mini-track"><span class="ht" style="width: <%= Math.min(metrics.htPercent, 100).toFixed(1) %>%"></span></div>
+            <small><%= metrics.htPercent.toFixed(1) %>% ของ DM และ HT</small>
+          </article>
+          <article class="executive-breakdown-item">
+            <span><i class="bi bi-hospital"></i> ส่งต่อแบบ B2B</span>
+            <strong><%= metrics.b2b.toLocaleString('th-TH') %> <small>ครั้ง</small></strong>
+            <% if (metrics.b2b === 0) { %>
+              <span class="executive-zero-badge"><i class="bi bi-info-circle"></i> ยังไม่พบรายการ B2B</span>
+            <% } else { %>
+              <small><%= metrics.b2bPercent.toFixed(1) %>% ของ B2B/B2C</small>
+            <% } %>
+          </article>
+          <article class="executive-breakdown-item">
+            <span><i class="bi bi-person-video3"></i> ให้บริการแบบ B2C</span>
+            <strong><%= metrics.b2c.toLocaleString('th-TH') %> <small>ครั้ง</small></strong>
+            <div class="executive-target-row">
+              <small><%= metrics.b2cPercent.toFixed(1) %>%</small>
+              <span class="<%= metrics.b2cTargetMet ? 'met' : 'behind' %>">เป้า <%= metrics.b2cTargetPercent.toFixed(0) %>%</span>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel executive-insights">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">สรุปสำหรับตัดสินใจ</p>
+              <h2>Executive Insights</h2>
+            </div>
+            <span><%= filters.startDate %> ถึง <%= filters.endDate %></span>
+          </div>
+          <ul>
+            <% metrics.insights.forEach((insight) => { %>
+              <li><i class="bi bi-check2-circle"></i><span><%= insight %></span></li>
+            <% }) %>
+          </ul>
+        </section>
+
+        <section class="executive-analytics-grid">
+          <article class="panel executive-trend-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>แนวโน้มผู้รับบริการ Telemed</h2>
+                <p class="panel-note">ยอดรวม พร้อมเส้นค่าเฉลี่ยและจุดสูงสุด</p>
+              </div>
+              <span><%= filters.granularity === 'month' ? 'รายเดือน' : 'รายวัน' %></span>
+            </div>
+            <div class="executive-chart-wrap">
+              <canvas id="execTrendChart"></canvas>
+              <% if (metrics.total === 0) { %><div class="executive-chart-empty">ไม่พบข้อมูลในช่วงวันที่เลือก</div><% } %>
+            </div>
+          </article>
+          <article class="panel executive-channel-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>สัดส่วน B2B / B2C</h2>
+                <p class="panel-note">รูปแบบการให้บริการ</p>
+              </div>
+            </div>
+            <div class="executive-donut-wrap">
+              <canvas id="execChannelChart"></canvas>
+              <div class="executive-donut-center">
+                <% if ((metrics.b2b + metrics.b2c) > 0) { %>
+                  <strong><%= metrics.b2b === 0 ? 'B2C' : 'รวม' %> <%= metrics.b2b === 0 ? `${metrics.b2cPercent.toFixed(0)}%` : '' %></strong>
+                  <span><%= (metrics.b2b + metrics.b2c).toLocaleString('th-TH') %> ครั้ง</span>
+                <% } else { %>
+                  <strong>ไม่มีข้อมูล</strong>
+                  <span>B2B / B2C</span>
+                <% } %>
+              </div>
+            </div>
+            <% if (metrics.b2b === 0 && metrics.b2c > 0) { %><p class="executive-chart-note">B2B: 0 ครั้ง</p><% } %>
+          </article>
+          <article class="panel executive-disease-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>สัดส่วนกลุ่มโรค</h2>
+                <p class="panel-note">DM และ HT อาจนับ visit เดียวกันได้</p>
+              </div>
+            </div>
+            <div class="executive-disease-bars">
+              <div>
+                <span>เบาหวาน</span><strong><%= metrics.dm.toLocaleString('th-TH') %> ครั้ง</strong>
+                <div class="executive-mini-track large"><span class="dm" style="width: <%= Math.min(metrics.dmPercent, 100).toFixed(1) %>%"></span></div>
+                <small><%= metrics.dmPercent.toFixed(1) %>%</small>
+              </div>
+              <div>
+                <span>ความดัน</span><strong><%= metrics.ht.toLocaleString('th-TH') %> ครั้ง</strong>
+                <div class="executive-mini-track large"><span class="ht" style="width: <%= Math.min(metrics.htPercent, 100).toFixed(1) %>%"></span></div>
+                <small><%= metrics.htPercent.toFixed(1) %>%</small>
+              </div>
+            </div>
+          </article>
+          <article class="panel executive-top-rooms">
+            <div class="panel-heading">
+              <div>
+                <h2>Top 5 ห้องบริการ</h2>
+                <p class="panel-note">เรียงตามจำนวน Telemed ที่ทำได้</p>
+              </div>
+            </div>
+            <% if (metrics.departments.topDepartments.length > 0) { %>
+              <ol>
+                <% metrics.departments.topDepartments.forEach((row, index) => { %>
+                  <li>
+                    <span class="rank"><%= index + 1 %></span>
+                    <span class="room"><%= row.department %></span>
+                    <strong><%= Number(row.telemed_total || 0).toLocaleString('th-TH') %> ราย</strong>
+                  </li>
+                <% }) %>
+              </ol>
+            <% } else { %>
+              <div class="executive-inline-empty">ไม่พบข้อมูลห้องบริการในช่วงวันที่เลือก</div>
+            <% } %>
           </article>
         </section>
       </section>
@@ -270,6 +412,11 @@
         </section>
 
         <section class="executive-kpis target-kpis">
+          <article class="executive-kpi">
+            <p>ห้องบริการทั้งหมด</p>
+            <strong><%= metrics.departments.filtered.roomCount.toLocaleString('th-TH') %></strong>
+            <span>ห้อง</span>
+          </article>
           <article class="executive-kpi"><p>OPD รวม</p><strong><%= target.summary.opd_total.toLocaleString('th-TH') %></strong></article>
           <article class="executive-kpi"><p>จำนวน Telemed ที่ทำได้</p><strong><%= target.summary.telemed_total.toLocaleString('th-TH') %></strong></article>
           <article class="executive-kpi"><p>เป้าหมาย 50%</p><strong><%= target.summary.target_50_total.toLocaleString('th-TH') %></strong></article>
@@ -285,6 +432,20 @@
           </article>
           <article class="executive-kpi"><p>ผ่านเป้า</p><strong><%= target.summary.passed_department_count.toLocaleString('th-TH') %></strong></article>
           <article class="executive-kpi"><p>ยังไม่ผ่าน</p><strong><%= target.summary.failed_department_count.toLocaleString('th-TH') %></strong></article>
+          <article class="executive-kpi">
+            <p>ความสำเร็จรายห้อง</p>
+            <strong><%= metrics.departments.filtered.successPercent.toFixed(1) %>%</strong>
+            <span><%= metrics.departments.filtered.passedCount.toLocaleString('th-TH') %> จาก <%= metrics.departments.filtered.roomCount.toLocaleString('th-TH') %> ห้อง</span>
+          </article>
+          <article class="executive-kpi worst-gap-kpi">
+            <p>ผลงานเด่น</p>
+            <% if (metrics.departments.filtered.bestDepartment) { %>
+              <strong><%= metrics.departments.filtered.bestDepartment.department %></strong>
+              <span><%= Number(metrics.departments.filtered.bestDepartment.telemed_percent || 0).toFixed(1) %>% ของ OPD</span>
+            <% } else { %>
+              <strong>ไม่พบข้อมูล</strong>
+            <% } %>
+          </article>
           <article class="executive-kpi worst-gap-kpi">
             <p>ขาดมากที่สุด</p>
             <% if (worstDepartment) { %>

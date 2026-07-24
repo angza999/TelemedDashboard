@@ -13,6 +13,7 @@
 - Uses province-style logic for DM/HT and B2B/B2C summary.
 - Added date filters, fiscal year support, daily/monthly view, KPI cards, charts, table, refresh, Excel/PDF export.
 - Refined the Telemed DM/HT screen into an executive-first UI without changing its data logic: promoted Total/DM/HT/B2B/B2C to primary KPI cards, retained DM/HT B2B/B2C as secondary detail cards, clarified filters/table view, added chart empty/loading feedback and a donut centre summary, and limited B2B technical diagnostics to admins.
+- Corrected the Telemed DM/HT chart empty states with explicit `hasAnyTrendData` and `hasB2BData` checks: B2C/HT B2C data now keeps the trend and donut charts visible even when B2B is zero, with a small B2B availability note instead. Added scoped `[hidden]` CSS so Chart.js overlays and donut labels cannot remain visible after JavaScript hides them. Updated the table note and the overall-count column label to `Telemed ทั้งหมด`, and removed the nested vertical scroll limit from the summary table. No Telemed calculation, SQL, API, or HOSxP data access behavior changed.
 
 ### Database Settings
 - Added admin-only database settings page.
@@ -99,3 +100,18 @@ Use `git log -1 --oneline` for the latest commit. This file records feature hist
 - Added Admin ER mapping stored in WebApp JSON with default DEP strings `051` and `082`.
 - HOSxP remains read-only; counts use `COUNT(DISTINCT ovst.vn)` by `ovst.main_dep` for `CURDATE()`.
 - Improved the ER subclinic modal audit view: each subclinic card now shows mapped DEP codes, and the `ยังไม่จัดกลุ่ม` summary can expand to show ER main rooms that are not yet mapped to an ER subclinic.
+
+## 2026-07-23 - Telemed Dashboard Final UX Polish
+- Unified the initial Telemed page render and manual refresh through the same `renderDashboard` path so KPI cards, category details, charts, donut, table, query metadata, and export links all use one response snapshot.
+- Reduced vertical padding and gaps in the HOSxP query information, B2B alert, status message, and filter panel to expose KPI and chart content sooner on notebook screens.
+- Kept the main B2B warning non-technical for every role; only admin users see the small source-field hint for `ovstist.name` and `opdscreen.cc`.
+- Shortened repeated B2B chart notes while retaining the full explanation in the top alert.
+- No Telemed calculation, SQL, API, login/session, or HOSxP data changes were made.
+
+## 2026-07-24 - Executive Dashboard Modernization
+- Reorganized the Executive overview into a compact hospital dashboard with Thai KPI labels, consistent `ครั้ง` units, comparison with the immediately preceding period, average per day, highest/lowest service day, and configurable B2C target status.
+- Added decision-focused insights, a trend chart with average line and peak marker, a corrected B2B/B2C donut summary, compact DM/HT comparison bars, and Top 5 Telemed rooms sourced from the existing department-target dataset.
+- Added visible loading states for filters and PDF export with success/error feedback.
+- Expanded the department-target KPI summary with total visible rooms, room success rate, and the best-performing visible department.
+- Added WebApp-only `EXECUTIVE_B2C_TARGET_PERCENT` configuration with a default of 50; no configuration is written to HOSxP.
+- Reused the existing parameterized Telemed summary query for current and previous periods. No Telemed formula, SQL definition, login/session, role rule, or HOSxP data was changed.

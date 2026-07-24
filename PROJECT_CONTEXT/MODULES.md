@@ -149,6 +149,19 @@
 - `public/css/app.css`
   - All UI styling
 
+## Executive Overview
+- `src/config/executiveDashboard.js`
+  - WebApp-only Executive settings, including bounded `EXECUTIVE_B2C_TARGET_PERCENT` with a default of 50
+- `src/services/executiveService.js`
+  - Builds previous-period ranges, overview KPI/insight models, daily extremes, channel/disease shares, and department overview summaries
+  - Reuses already-fetched dashboard and department-target data; HOSxP access remains SELECT-only
+- `src/routes/executive.js`
+  - Loads current, previous-period, and daily-granularity summaries through the shared Telemed service
+- `views/executive/dashboard.ejs`
+  - Executive overview and department-target presentation
+- `public/js/executive.js`
+  - Executive charts, tab behavior, responsive department charts, filter loading state, and PDF export feedback
+
 ## ER Subclinics
 - `todayPatientsService`: WebApp mapping, validation, and SELECT-only daily counts.
 - `/api/today-patients/er-subclinics`: modal summary API, including `mapped_codes`, `diff_total`, and `ungrouped` room rows.

@@ -82,11 +82,57 @@
 
   const trendEl = document.getElementById('execTrendChart');
   const channelEl = document.getElementById('execChannelChart');
-  const diseaseEl = document.getElementById('execDiseaseChart');
   const departmentTargetEl = document.getElementById('departmentTargetChart');
   const departmentPercentEl = document.getElementById('departmentPercentChart');
   const numberFormat = new Intl.NumberFormat('th-TH');
   const departmentTargetPanel = document.querySelector('[data-exec-panel="department-target"]');
+
+  function setButtonLoading(button, loading, loadingText) {
+    if (!button) return;
+    const label = button.querySelector('span');
+    if (!button.dataset.defaultLabel && label) button.dataset.defaultLabel = label.textContent;
+    button.classList.toggle('is-loading', loading);
+    button.setAttribute('aria-busy', loading ? 'true' : 'false');
+    if ('disabled' in button) button.disabled = loading;
+    if (label) label.textContent = loading ? loadingText : button.dataset.defaultLabel;
+  }
+
+  document.querySelectorAll('form[action="/executive"]').forEach((form) => {
+    form.addEventListener('submit', () => {
+      setButtonLoading(form.querySelector('[data-executive-submit], button[type="submit"]'), true, 'กำลังโหลด...');
+    });
+  });
+
+  const pdfButton = document.querySelector('[data-executive-pdf]');
+  const executiveStatus = document.querySelector('[data-executive-status]');
+  if (pdfButton) {
+    pdfButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      if (pdfButton.classList.contains('is-loading')) return;
+      setButtonLoading(pdfButton, true, 'กำลังสร้าง PDF...');
+      if (executiveStatus) executiveStatus.textContent = 'กำลังสร้างรายงาน PDF กรุณารอสักครู่';
+      try {
+        const response = await fetch(pdfButton.href, { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('PDF export failed');
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const download = document.createElement('a');
+        const disposition = response.headers.get('content-disposition') || '';
+        const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
+        download.href = objectUrl;
+        download.download = filenameMatch ? filenameMatch[1] : 'telemed_executive_report.pdf';
+        document.body.appendChild(download);
+        download.click();
+        download.remove();
+        URL.revokeObjectURL(objectUrl);
+        if (executiveStatus) executiveStatus.textContent = 'สร้างรายงาน PDF สำเร็จ';
+      } catch (error) {
+        if (executiveStatus) executiveStatus.textContent = 'ไม่สามารถสร้างรายงาน PDF ได้ กรุณาลองใหม่';
+      } finally {
+        setButtonLoading(pdfButton, false, '');
+      }
+    });
+  }
 
   function statusColor(percent) {
     if (percent >= 50) return '#16a34a';
@@ -196,27 +242,72 @@
   };
 
   if (trendEl) {
+    const highestTotal = trend.reduce((max, row) => Math.max(max, Number(row.total || 0)), 0);
     charts.push(new Chart(trendEl, {
       type: 'line',
       data: {
         labels: trend.map((row) => row.period),
-        datasets: [{
-          label: 'Total Telemed',
-          data: trend.map((row) => row.total),
-          borderColor: '#0f766e',
-          backgroundColor: '#0f766e',
-          tension: 0.28,
-          borderWidth: 3,
-          pointRadius: 3
-        }]
+        datasets: [
+          {
+            label: 'ผู้รับบริการ Telemed ทั้งหมด',
+            data: trend.map((row) => row.total),
+            borderColor: '#0f766e',
+            backgroundColor: 'rgba(15, 118, 110, 0.12)',
+            fill: true,
+            tension: 0.28,
+            borderWidth: 3,
+            pointRadius: trend.map((row) => Number(row.total || 0) === highestTotal && highestTotal > 0 ? 6 : 3),
+            pointHoverRadius: 7,
+            pointBackgroundColor: trend.map((row) => Number(row.total || 0) === highestTotal && highestTotal > 0 ? '#f59e0b' : '#0f766e')
+          },
+          {
+            label: 'ค่าเฉลี่ย',
+            data: trend.map(() => Number(payload.metrics.averagePerTrendPeriod || 0)),
+            borderColor: '#64748b',
+            backgroundColor: '#64748b',
+            borderDash: [6, 5],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false
+          }
+        ]
       },
       options: {
         ...textChartOptions(),
+        maintainAspectRatio: false,
         responsive: true,
-        plugins: { legend: { display: false } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { usePointStyle: true, boxWidth: 8, font: chartFont(12, '600') }
+          },
+          tooltip: {
+            callbacks: {
+              afterBody: (items) => {
+                const row = trend[items[0] ? items[0].dataIndex : 0];
+                if (!row) return [];
+                return [
+                  `เบาหวานรวม: ${numberFormat.format(row.dm || 0)} ครั้ง`,
+                  `ความดันรวม: ${numberFormat.format(row.ht || 0)} ครั้ง`,
+                  `B2B: ${numberFormat.format(row.b2b || 0)} ครั้ง`,
+                  `B2C: ${numberFormat.format(row.b2c || 0)} ครั้ง`
+                ];
+              }
+            }
+          }
+        },
         scales: {
-          y: { beginAtZero: true, ticks: { precision: 0, font: chartFont(12) } },
-          x: { grid: { display: false }, ticks: { font: chartFont(12) } }
+          y: {
+            beginAtZero: true,
+            grid: { color: '#e7edf4' },
+            ticks: { precision: 0, font: chartFont(11), maxTicksLimit: 6 }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: chartFont(11), maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+          }
         }
       }
     }));
@@ -232,26 +323,23 @@
       options: {
         ...textChartOptions(),
         responsive: true,
+        maintainAspectRatio: false,
         cutout: '64%',
-        plugins: { legend: { position: 'bottom', labels: { font: chartFont(13, '600') } } }
-      }
-    }));
-  }
-
-  if (diseaseEl) {
-    charts.push(new Chart(diseaseEl, {
-      type: 'bar',
-      data: {
-        labels: ['DM', 'HT'],
-        datasets: [{ data: [payload.metrics.dm || 0, payload.metrics.ht || 0], backgroundColor: ['#14b8a6', '#fb7185'], borderWidth: 0 }]
-      },
-      options: {
-        ...textChartOptions(),
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, ticks: { precision: 0, font: chartFont(12) } },
-          x: { grid: { display: false }, ticks: { font: chartFont(12) } }
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { usePointStyle: true, boxWidth: 8, font: chartFont(12, '600') }
+          },
+          tooltip: {
+            callbacks: {
+              label: (item) => {
+                const total = Number(payload.metrics.b2b || 0) + Number(payload.metrics.b2c || 0);
+                const value = Number(item.raw || 0);
+                const percent = total > 0 ? (value / total) * 100 : 0;
+                return `${item.label}: ${numberFormat.format(value)} ครั้ง (${percent.toFixed(1)}%)`;
+              }
+            }
+          }
         }
       }
     }));
