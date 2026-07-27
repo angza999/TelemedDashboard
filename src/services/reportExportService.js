@@ -14,7 +14,8 @@ function ymd(value) {
   return String(value || '').replaceAll('-', '');
 }
 
-function targetDiffLabel(value) {
+function targetDiffLabel(value, row = null) {
+  if (row && row.is_no_data) return 'ประเมินไม่ได้';
   const diff = Number(value || 0);
   if (diff < 0) return `ต้องเพิ่ม ${Math.abs(diff).toLocaleString('th-TH')} ราย`;
   if (diff > 0) return `เกินเป้า ${diff.toLocaleString('th-TH')} ราย`;
@@ -22,6 +23,9 @@ function targetDiffLabel(value) {
 }
 
 function targetStatusLabel(row) {
+  if (row.is_no_data) return 'ไม่มีข้อมูล';
+  if (row.is_data_anomaly) return 'ตรวจสอบข้อมูล';
+  if (row.display_status) return row.display_status;
   if (Number(row.telemed_total || 0) >= Number(row.target_50 || 0)) return 'ผ่าน';
   if (Number(row.telemed_percent || 0) >= 45) return 'ใกล้ถึง';
   return 'ไม่ผ่าน';
@@ -168,7 +172,7 @@ async function writeDepartmentTargetExcel(res, filters, targetData) {
       row.b2c_total,
       row.target_50,
       row.telemed_percent,
-      targetDiffLabel(row.diff_from_target),
+      targetDiffLabel(row.diff_from_target, row),
       targetStatusLabel(row),
       row.note || row.calculation_note || ''
     ]);

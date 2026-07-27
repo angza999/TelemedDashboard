@@ -118,6 +118,24 @@ Use `git log -1 --oneline` for the latest commit. This file records feature hist
 - Reused the existing parameterized Telemed summary query for current and previous periods. No Telemed formula, SQL definition, login/session, role rule, or HOSxP data was changed.
 - Polished the Executive Top 5 room panel with a same-period Top 5 coverage total and derived `อื่น ๆ` count, clearer Thai ranking copy, a B2C 50% target tooltip, and an explicit equal-length previous-period note. No query, calculation formula, or HOSxP access behavior changed.
 
+## 2026-07-24 - Executive Department Target UX Safety
+- Reorganized the `เป้าหมายรายห้อง` tab into a compact action-first layout: compact filters, one Action Required summary, seven KPI cards in a balanced desktop grid, a ranked follow-up list, focused charts, and an executive-first table with search and Top 10 default. Numeric table values are right-aligned for easier comparison.
+- Added presentation-only data-quality classification for rows with no OPD base or Telemed greater than OPD. These rows remain visible in `ข้อมูลควรตรวจสอบ` and the detailed table, but are excluded from pass/fail interpretation, performance highlights, and target-gap charts.
+- Kept the existing OPD/Telemed counting, target formula, parameterized SQL, and HOSxP read-only access unchanged. Excel now uses the same display status for these rows.
+- Added presentation-only risk levels and Thai quick recommendations, contextual formula tooltips, and a drill-down room modal that uses the already-loaded target rows. The modal reserves daily room trends for a future phase so this page does not add HOSxP queries.
+
+## 2026-07-27 - Executive Department Target Interaction Polish
+- Added client-side actionable KPI behavior, status chips, a clear-filter action, compact sticky summary, and an on-demand total-gap breakdown. Each interaction reuses the loaded department target result set and does not add a HOSxP request.
+- Added compact room previews for pointer and keyboard users, with click-to-open detail dialogs on touch devices. Detail and gap dialogs now support Escape, focus trapping, and restoring focus to the originating control.
+- Added a dedicated near-target list and ensured anomaly rows are excluded from Top 5 performance highlights. Updated executive wording so technical mapping details remain confined to admin-specific views.
+- Completed interaction polish with a source-backed action recommendation, no-data success states for near-target and data-quality sections, an open-by-default collapsible data-quality list, keyboard-labelled formula hints, and reduced-motion-safe scrolling/transitions. No SQL, HOSxP write operation, new endpoint, or target formula change was introduced.
+
+## 2026-07-27 - Executive Department Target Final State Polish
+- Separated neutral `ไม่มีข้อมูล` rows (OPD=0 and Telemed=0) from review/anomaly rows, while keeping all rows available for audit in the existing table and data-quality section.
+- Limited passed, near-target, failed, follow-up, and performance chart interpretation to valid rows. Review/anomaly/no-data rows no longer inflate performance status counts.
+- Added a dedicated no-data status filter and neutral table/export wording, compact chart empty states, a compact near-target empty state, and a less repetitive action/sticky summary.
+- Preserved the existing per-room `CEIL(OPD * 0.50)` target formula, parameter-bound reporting SQL, routes, and HOSxP read-only behavior. No deployment, server restart, commit, or push was performed.
+
 ## 2026-07-24 - Server / PM2 Deployment Context
 - Added root `AGENTS.md` as the operational reference for the shared server `192.168.1.231`.
 - Documented the separate project paths, ports, PM2 process names, preflight checks, health checks, deployment commands, and Git safety rules for ITASSET (`itasset`, port `3000`) and Telemed Dashboard (`telemed-dashboard`, port `4300`).

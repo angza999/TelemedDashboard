@@ -87,3 +87,17 @@ pm2 logs telemed-dashboard --lines 100
 - HOSxP is read-only for this WebApp. Do not create tables or write service data.
 - Permitted HOSxP operations are reporting reads only, such as `SELECT`, `SHOW`, and `DESCRIBE`.
 - Do not modify `.env`, database settings, application logic, or server processes unless explicitly requested.
+
+## Executive Department Target Interaction
+
+- Route: `/executive?tab=department-target`; it reuses the already-loaded department target dataset for client-side filtering, room previews, and room detail dialogs. Do not add a HOSxP query for hover or local interaction.
+- Actionable KPI cards and the sticky summary can filter the existing table to passed, failed, or data-check rows. The gap card opens a client-side breakdown of the current result set.
+- Department target presentation states are distinct: `no_data` means OPD=0 and Telemed=0, `review` means OPD=0 and Telemed>0, `anomaly` means Telemed>OPD, and `valid` means the row can be evaluated normally.
+- `no_data` rows are neutral and must not increase the review/anomaly count. Review/anomaly rows remain visible for audit but must not be treated as passing performance or appear in target-performance charts/highlights.
+- Passed, near-target, and failed counts are derived from valid rows only. The target comparison chart uses valid rows; the gap chart and follow-up list use valid rows that remain below target.
+- Room dialogs must remain keyboard accessible: focus moves into the dialog, `Escape` closes it, and focus returns to the originating control. Test the page at 1366x768 and 1920x1080 with browser zoom 100%.
+- Keep the department-target action recommendation derived from the currently loaded rows: data-quality items first, then the largest actual deficit, then a near-target item, then the valid all-passed state. Do not add a query or infer an unverified cause.
+- The `ข้อมูลควรตรวจสอบ` section separates review/anomaly rows from neutral no-data rooms. It is collapsible when either group contains rows and otherwise keeps a compact success state instead of an empty panel.
+- Keep chart empty states compact and hide the canvas when no eligible rows exist; never leave an empty Chart.js axis occupying a full panel.
+- The target total remains the sum of each room's `CEIL(OPD * 0.50)` target. Do not replace it with 50% of combined OPD without explicit approval.
+- Respect `prefers-reduced-motion`: client-side scroll actions use non-animated scrolling and target-card, sticky-summary, and progress transitions are disabled. Test KPI actions, status chips, data-quality collapse, modal keyboard flow, and the sticky bar with 1366x768 and 1920x1080 at zoom 100%.

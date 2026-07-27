@@ -22,6 +22,14 @@
 - Keep department target charts focused on Top 10 by default. Top 20/all are optional views for deeper inspection.
 - Prefer target-gap charts over percent-only charts when most departments are far below target; executives need to see how many visits must be added.
 - In the Executive department target tab, use `จำนวน Telemed ที่ทำได้` for visible Telemed count labels. Reserve `สัดส่วน Telemed ต่อ OPD` for `telemed_total / opd_total * 100`, and `ความคืบหน้าสู่เป้าหมาย` for `telemed_total / target_50_total * 100`.
+- In the Executive department target tab, keep four presentation states distinct: OPD=0/Telemed=0 is neutral `ไม่มีข้อมูล`, OPD=0/Telemed>0 is `ตรวจสอบข้อมูล`, Telemed>OPD is `ตรวจสอบข้อมูล`, and normal rows are eligible for target evaluation.
+- Do not include `ไม่มีข้อมูล` or `ตรวจสอบข้อมูล` rows in passed/near/failed counts, performance highlights, follow-up rankings, or target charts. Keep both groups visible for audit, with neutral styling for no-data rooms.
+- Use six to eight primary KPIs at most on the department target tab. Use a four-column desktop grid so a seven-card set remains balanced, show the Top 5 shortage rooms as a compact ranked list, keep charts side by side on desktop, and default long tables to Top 10 with room search and an explicit `ดูทั้งหมด` control. Right-align numeric table fields for easier comparison.
+- Department target action KPIs may be interactive only when they lead to a clear local action: passed/failed filters the already-loaded table, data-check navigates to the review list, and total gap opens a derived breakdown. Keep all other KPIs informational.
+- Put compact status chips before the department target table. Filtering must be client-side, keyboard accessible, visibly active, and paired with a clear-filter control when a local filter is active.
+- Use a compact sticky department-target summary only after the main KPI group has left the viewport. It must stay clear of the sidebar, expose the key gap and room statuses, and not add a second navigation layer.
+- Room hover previews must use the already-loaded target row, stay compact, and fall back to the room detail dialog on touch devices.
+- Use risk labels for target rows: shortage over 500 is `เร่งด่วนมาก`, 200-499 is `เร่งด่วน`, and 1-199 is `ควรติดตาม`; preserve `ใกล้ถึงเป้า`, `ผ่านเป้า`, and `ตรวจสอบข้อมูล` for their corresponding states. Present recommendations in plain Thai and keep source/mapping information inside the admin-only part of the room detail modal.
 - Department target chart tooltips should show room, service group, OPD total, Telemed achieved, 50% target, Telemed-to-OPD percent, and the gap wording (`ต้องเพิ่ม`, `เกินเป้า`, or `ถึงเป้า`).
 - Service-group quick filters should update the whole department target tab, including KPI cards, summaries, charts, table, and Excel export.
 - The `/today-patients` page should read as a compact executive dashboard: status/date/last-updated on the left where space allows, manual refresh button and helper text grouped on the right, and four equal-height cards with large baseline-aligned numbers plus `คน` units.
@@ -86,6 +94,11 @@ Current style uses:
 - Prefer compact HTML comparison bars for DM/HT when a large chart adds little decision value.
 - Store adjustable executive targets in WebApp configuration only. Never write dashboard targets or settings to HOSxP.
 - PDF export should expose a visible generating/success/error state and prevent duplicate clicks while the same export is running.
+- The `/executive?tab=department-target` action summary should include one short, evidence-based recommendation from the active result set. Prioritize data-quality review, then the largest remaining target gap, then near-target follow-up, and finally the all-passed state. Do not speculate about a clinical or workflow cause.
+- For department targets, always show a compact `ใกล้ถึงเป้า` or no-near-target state and a `ข้อมูลควรตรวจสอบ` or no-anomaly state; empty panels make the executive workflow ambiguous. Keep anomaly rows out of performance charts and pass/fail highlights.
+- When no eligible department rows exist, replace the chart canvas with a compact explanation instead of leaving empty axes. If the gap chart has no below-target room, show the compact all-clear state in the existing chart panel.
+- Formula information icons must provide a title and keyboard-accessible label. Target total must state that it is the sum of each room's rounded 50% target, so it can differ slightly from 50% of combined OPD.
+- Prefer restrained motion: card hover lift, progress/sticky transitions, and dialogs may animate subtly, but all of them must honor `prefers-reduced-motion`.
 
 ## ER Subclinic Modal
 - Keep the ER card keyboard accessible and show a visible click affordance.
