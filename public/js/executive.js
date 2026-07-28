@@ -578,6 +578,21 @@
     document.getElementById('departmentTargetTable')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
   }
 
+  document.querySelectorAll('[data-target-view-all]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (targetRoomSearch) targetRoomSearch.value = '';
+      targetTableShowAll = true;
+      targetTableStatusFilter = 'all';
+      targetStatusFilterButtons.forEach((item) => {
+        const active = item.dataset.targetStatusFilter === 'all';
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+      updateTargetTableRows();
+      scrollToTargetTable();
+    });
+  });
+
   function setTargetStatusFilter(status, shouldScroll = false) {
     targetTableStatusFilter = ['passed', 'near', 'failed', 'data_check', 'no_data'].includes(status) ? status : 'all';
     targetTableShowAll = false;
@@ -829,7 +844,7 @@
       }
       return;
     }
-    if (action === 'passed' || action === 'failed') setTargetStatusFilter(action, true);
+    if (action === 'passed' || action === 'near' || action === 'failed') setTargetStatusFilter(action, true);
   }
 
   document.querySelectorAll('[data-target-kpi-action]').forEach((element) => {
@@ -844,9 +859,26 @@
     }
   });
 
+  const noDataSummary = document.querySelector('[data-target-no-data-summary]');
+  const noDataDisclosure = noDataSummary?.closest('details');
+  if (noDataSummary && noDataDisclosure) {
+    const syncNoDataDisclosureState = () => {
+      noDataSummary.setAttribute('aria-expanded', String(noDataDisclosure.open));
+    };
+
+    noDataDisclosure.addEventListener('toggle', syncNoDataDisclosureState);
+    noDataSummary.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      noDataDisclosure.open = !noDataDisclosure.open;
+    });
+    syncNoDataDisclosureState();
+  }
+
   const stickySummary = document.querySelector('[data-target-sticky-summary]');
   const targetKpiAnchor = document.getElementById('departmentTargetKpis');
   const targetStatusChips = document.querySelector('.target-status-chips');
+  const stickyStatusActions = document.querySelector('[data-target-sticky-status-actions]');
   if (stickySummary && targetKpiAnchor && 'IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => {
       const visible = !entry.isIntersecting && entry.boundingClientRect.top < 0;
@@ -857,6 +889,8 @@
   if (stickySummary && targetStatusChips && 'IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => {
       stickySummary.classList.toggle('status-chips-visible', entry.isIntersecting);
+      stickyStatusActions?.toggleAttribute('inert', entry.isIntersecting);
+      stickyStatusActions?.setAttribute('aria-hidden', String(entry.isIntersecting));
     }, { threshold: 0.15 }).observe(targetStatusChips);
   }
 

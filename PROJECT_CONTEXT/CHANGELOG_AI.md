@@ -136,6 +136,29 @@ Use `git log -1 --oneline` for the latest commit. This file records feature hist
 - Added a dedicated no-data status filter and neutral table/export wording, compact chart empty states, a compact near-target empty state, and a less repetitive action/sticky summary.
 - Preserved the existing per-room `CEIL(OPD * 0.50)` target formula, parameter-bound reporting SQL, routes, and HOSxP read-only behavior. No deployment, server restart, commit, or push was performed.
 
+## 2026-07-27 - Executive Department Target Metric Hierarchy
+- Reorganized the existing department-target summary into four primary metrics plus compact gap and status widgets, without changing the underlying values or target formula.
+- Preserved the existing client-side actions: gap opens its breakdown, status rows filter the loaded table, and `ดูทั้งหมด` clears local filters before scrolling to the table.
+- Refined the Top 5 follow-up block as a ranked list with normalized mini gap bars, real shortage values, risk badges, and a visible room count.
+- Kept `no_data`, `review`, and `anomaly` rows out of performance rankings while retaining them in the audit workflow.
+- Verified the updated tab locally at a 1280x720 viewport, including gap and room dialogs, failed/all table filters, chart/table/export/sticky-summary presence, and regression routes `/executive?tab=overview` and `/telemed`.
+- No SQL, API, service, login/session, HOSxP write, deployment, server restart, commit, or push was performed.
+
+## 2026-07-27 - Executive Department Target Insight Polish
+- Replaced the duplicate shortage hero in `ต้องดำเนินการ` with a compact insight strip that shows Telemed-to-OPD performance, the distance from the 50% target, and the existing data-derived recommendation.
+- Added the existing near-target count to the status widget, while preserving local passed/near/failed/data-check filtering and the compact sticky-summary behavior.
+- Reduced the zero near-target state to one inline row, converted review/anomaly items to a divided list, and separated neutral no-data rooms into a gray disclosure collapsed by default.
+- Added synchronized `aria-expanded` state and explicit Enter/Space handling to the no-data disclosure, without adding a query or changing any target calculation.
+- Rechecked the ranked Top 5 list, normalized mini gap bars, status filters, `ดูทั้งหมด`, room dialog focus restoration, Excel action, overview route, Telemed route, and Browser Console.
+- No SQL, API, service, login/session, HOSxP write, deployment, server restart, commit, or push was performed.
+
+## 2026-07-28 - Executive Department Target Final UI Polish
+- Tightened the department-target filter panel for notebook widths, including a wrapped action row that keeps Export Excel inside the page instead of producing horizontal overflow.
+- Kept the existing action recommendation but presented it as a compact two-column insight strip with Telemed-to-OPD performance and distance from the target.
+- Refined the KPI/gap/status hierarchy, the ranked Top 5 follow-up rows, the compact near-target empty state, the divided data-review list, chart headings, and sticky-summary transition behavior.
+- Verified the department-target page locally at notebook and Full HD widths, checked the Top 20 chart control, sticky-summary state, existing Executive overview, Telemed route, and browser console.
+- No calculation, SQL, API, service, login/session, HOSxP access, deployment, server restart, commit, or push was changed or performed.
+
 ## 2026-07-24 - Server / PM2 Deployment Context
 - Added root `AGENTS.md` as the operational reference for the shared server `192.168.1.231`.
 - Documented the separate project paths, ports, PM2 process names, preflight checks, health checks, deployment commands, and Git safety rules for ITASSET (`itasset`, port `3000`) and Telemed Dashboard (`telemed-dashboard`, port `4300`).

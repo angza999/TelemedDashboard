@@ -99,6 +99,15 @@ Current style uses:
 - When no eligible department rows exist, replace the chart canvas with a compact explanation instead of leaving empty axes. If the gap chart has no below-target room, show the compact all-clear state in the existing chart panel.
 - Formula information icons must provide a title and keyboard-accessible label. Target total must state that it is the sum of each room's rounded 50% target, so it can differ slightly from 50% of combined OPD.
 - Prefer restrained motion: card hover lift, progress/sticky transitions, and dialogs may animate subtly, but all of them must honor `prefers-reduced-motion`.
+- In the department-target summary, use four primary metric cards for OPD, Telemed achieved, summed 50% targets, and Telemed-to-OPD ratio. Keep gap and status as separate executive widgets so actions are clear without creating nested card layouts.
+- The target-gap widget may show Telemed progress toward the summed room target. Cap its visual fill at 100% while retaining the actual displayed percentage and a safe zero-target state.
+- Present the Top 5 follow-up rooms as a compact ranked list. Each row should show rank, room name, normalized shortage bar, shortage count, and risk badge; the list must use valid below-target rows only.
+- The Top 5 `ดูทั้งหมด` control should reset client-side table filters and move focus toward the existing audit table. It must not trigger another database request.
+- Keep `ต้องดำเนินการ` as an insight strip rather than a duplicate KPI: show Telemed-to-OPD performance, the point difference from the 50% target, and one evidence-based recommendation. Leave the shortage total to the gap widget.
+- Include `ใกล้ถึงเป้า` in the compact status widget when the existing near-target count is available. A zero count remains visible but disabled; an enabled row filters the loaded table locally.
+- Show review/anomaly rows as a divided review list without nested cards. Put neutral no-data rooms in a separate gray disclosure, collapsed by default, with click and keyboard access plus synchronized `aria-expanded`.
+- When the table's status chips are within the viewport, suppress duplicate status actions in the sticky summary and retain only Telemed, summed target, and gap.
+- At notebook widths, the department-target filter controls may wrap into two deliberate rows, but action buttons must remain inside the page without horizontal overflow. Keep the action-required strip compact: performance and target distance on the left, one evidence-based recommendation on the right.
 
 ## ER Subclinic Modal
 - Keep the ER card keyboard accessible and show a visible click affordance.
