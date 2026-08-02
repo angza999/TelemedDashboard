@@ -27,6 +27,7 @@
 ## Tests To Run
 
 ```bash
+ npm test
 node --check app.js
 node --check src/routes/telemed.js
 node --check src/routes/executive.js
@@ -35,6 +36,8 @@ node --check src/services/executiveService.js
 node --check public/js/dashboard.js
 node --check public/js/executive.js
 ```
+
+Also compile every EJS template after view changes. Executive QA must reconcile the hospital-wide KPI with the trend total, reconcile valid-room OPD/Telemedicine/targets, verify `SUM(MAX(target - actual, 0))`, confirm anomaly/no-data exclusion from performance, and check that zero denominators produce neither `NaN` nor `Infinity`.
 
 Manual checks:
 - Login admin and check all menus.
@@ -45,6 +48,9 @@ Manual checks:
 - Test Query Tool SELECT and blocked DELETE/UPDATE.
 - Test Query Tool result with sensitive columns such as `hn` or `cid`; warning should appear and Excel metadata should include the warning.
 - Test Executive overview trend: `Total Telemed` chart should use actual Telemed `total`, not DM/HT-only totals.
+- Test daily Executive trend as bars and monthly trend as a line; no-service dates must stay `null`, the average must use active service days, and only one highest period may be highlighted.
+- Test the Executive overview at 1366x768 and 1920x1080, zoom 100%, with no horizontal overflow or browser console errors.
+- Test Executive PDF magic/header, Thai text rendering, KPI scope labels, Top 5 valid rooms, trend, and aggregate quality status.
 - Test PDF export on Linux server for readable Thai text; install Noto Sans Thai if needed.
 - Test `/today-patients` NCD card opens the subclinic modal and `/admin/ncd-subclinics` saves mapping without writing to HOSxP.
 - Test `/today-patients` IPD card opens the subclinic modal and `/admin/ipd-subclinics` saves Ward mapping without writing to HOSxP.

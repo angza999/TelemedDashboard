@@ -37,6 +37,20 @@
           <span><i class="bi bi-shield-lock"></i> Admin only</span>
         </div>
 
+        <div class="database-safety-banner" role="status">
+          <div>
+            <strong><i class="bi bi-shield-check" aria-hidden="true"></i> HOSxP Read-only Guard ทำงานอยู่</strong>
+            <small>WebApp อนุญาตเฉพาะ SELECT, SHOW, DESCRIBE และ EXPLAIN SELECT และปฏิเสธคำสั่งเขียนหรือหลาย statement</small>
+          </div>
+          <span class="database-safety-status">Read-only</span>
+        </div>
+        <% if (config.privilegedAccountWarning || /^(?:root|admin|administrator)$/i.test(String(config.user || '').trim())) { %>
+          <div class="alert warning database-account-warning">
+            <strong>ควรเปลี่ยนบัญชีเชื่อมต่อ HOSxP เป็นบัญชีสำหรับรายงานที่มีสิทธิ์ SELECT เท่านั้น</strong>
+            <span>Application guard ช่วยป้องกันคำสั่งเขียน แต่สิทธิ์ระดับฐานข้อมูลยังเป็นแนวป้องกันที่จำเป็น</span>
+          </div>
+        <% } %>
+
         <% if (status) { %>
           <div class="alert success"><%= status %></div>
         <% } %>

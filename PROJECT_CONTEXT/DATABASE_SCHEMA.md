@@ -91,6 +91,10 @@ This is an application runtime file only:
 
 Important rule: this project must not create tables, alter tables, or write any configuration back into HOSxP. Mapping writes use this JSON-backed WebApp store only, and HOSxP remains read-only.
 
+All HOSxP connections are wrapped by `src/utils/hosxpReadOnly.js`. Allowed reporting commands are `SELECT`, `SHOW`, `DESCRIBE`, and `EXPLAIN SELECT`; write, DDL, administrative, multiple-statement, locking, and file-output operations are rejected before dispatch. Production should use a database account with SELECT-only privileges in addition to this application guard.
+
+Executive target configuration is WebApp configuration, not HOSxP schema. Per-room targets use the existing configured percentage and `CEIL(OPD * target_percent / 100)`. Aggregate performance includes only valid evaluable rows; no-data and anomaly rows remain audit evidence but are excluded from target totals.
+
 ### `data/dashboard-ncd-subclinic-mapping.json`
 Runtime WebApp storage for NCD subclinic mapping in `/today-patients`. Do not commit.
 

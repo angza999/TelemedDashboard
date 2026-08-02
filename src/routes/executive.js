@@ -1,16 +1,20 @@
 const express = require('express');
 const {
-  emptyDashboardModel,
   fiscalYearRange,
-  parseFilters,
-  fetchTelemedSummary
+  parseFilters
 } = require('../services/telemedService');
 const {
+  buildDepartmentTargetModel,
+  departmentTargetServiceGroups,
   emptyDepartmentTargetModel,
-  fetchDepartmentTargetData,
-  previousPeriodFilters,
-  buildExecutiveMetrics
+  fetchDepartmentTargetData
 } = require('../services/executiveService');
+const {
+  buildExecutiveMetrics,
+  emptyExecutiveOverviewModel,
+  fetchExecutiveOverview,
+  previousPeriodFilters
+} = require('../services/executiveOverviewService');
 const {
   writeDepartmentTargetExcel,
   writeTelemedPdf
@@ -20,24 +24,31 @@ const router = express.Router();
 
 function effectiveFilters(query) {
   const fiscal = fiscalYearRange(query.fiscalYear);
+  const requestedGranularity = ['day', 'week', 'month'].includes(query.granularity)
+    ? query.granularity
+    : 'day';
   if (fiscal) {
     return {
       ...parseFilters({ ...query, ...fiscal }),
+      granularity: requestedGranularity,
       fiscalYear: query.fiscalYear
     };
   }
-  return parseFilters(query);
+  return {
+    ...parseFilters(query),
+    granularity: requestedGranularity
+  };
 }
 
 function targetFilters(query, filters = effectiveFilters(query)) {
-  const allowedServiceGroups = ['Telemed', 'กายภาพ', 'อุบัติเหตุฉุกเฉิน', 'แผนไทย'];
+  const allowedServiceGroups = departmentTargetServiceGroups();
 
   return {
     ...filters,
     depcode: query.depcode || 'all',
     serviceGroup: allowedServiceGroups.includes(query.serviceGroup) ? query.serviceGroup : 'all',
     status: ['passed', 'near', 'failed', 'data_check', 'no_data'].includes(query.status) ? query.status : 'all',
-    sortBy: ['target_gap', 'percent_low', 'telemed_desc', 'opd_desc'].includes(query.sortBy)
+    sortBy: ['target_gap', 'percent_low', 'telemed_desc', 'opd_desc', 'name_asc'].includes(query.sortBy)
       ? query.sortBy
       : 'target_gap'
   };
@@ -47,12 +58,9 @@ router.get('/', async (req, res, next) => {
   try {
     const filters = effectiveFilters(req.query);
     const previousFilters = previousPeriodFilters(filters);
-    const [data, previousData, dailyData] = await Promise.all([
-      fetchTelemedSummary(filters),
-      fetchTelemedSummary(previousFilters),
-      filters.granularity === 'month'
-        ? fetchTelemedSummary({ ...filters, granularity: 'day' })
-        : Promise.resolve(null)
+    const [data, previousData] = await Promise.all([
+      fetchExecutiveOverview(filters),
+      fetchExecutiveOverview(previousFilters)
     ]);
     let target = emptyDepartmentTargetModel();
     let targetError = null;
@@ -64,13 +72,15 @@ router.get('/', async (req, res, next) => {
       targetError = databaseSetupMessage(err);
     }
 
+    const overviewTarget = buildDepartmentTargetModel(target.allRows || [], { sortBy: 'target_gap' });
     res.render('executive/dashboard', {
       title: 'Executive Dashboard',
       filters,
       targetFilters: targetFilters(req.query, filters),
       data,
-      metrics: buildExecutiveMetrics(data, previousData, filters, target, dailyData || data),
+      metrics: buildExecutiveMetrics(data, previousData, filters, overviewTarget),
       target,
+      overviewTarget,
       activeTab: req.query.tab === 'department-target' ? 'department-target' : 'overview',
       dbError: null,
       targetError
@@ -78,15 +88,17 @@ router.get('/', async (req, res, next) => {
   } catch (err) {
     if (isDatabaseSetupError(err)) {
       const filters = effectiveFilters(req.query);
-      const data = emptyDashboardModel();
+      const data = emptyExecutiveOverviewModel(filters);
       const target = emptyDepartmentTargetModel();
+      const overviewTarget = emptyDepartmentTargetModel();
       return res.status(200).render('executive/dashboard', {
         title: 'Executive Dashboard',
         filters,
         targetFilters: targetFilters(req.query, filters),
         data,
-        metrics: buildExecutiveMetrics(data, emptyDashboardModel(), filters, target, data),
+        metrics: buildExecutiveMetrics(data, emptyExecutiveOverviewModel(previousPeriodFilters(filters)), filters, overviewTarget),
         target,
+        overviewTarget,
         activeTab: req.query.tab === 'department-target' ? 'department-target' : 'overview',
         dbError: databaseSetupMessage(err),
         targetError: null
@@ -131,10 +143,18 @@ router.get('/department-target.xlsx', async (req, res, next) => {
 router.get('/export.pdf', async (req, res, next) => {
   try {
     const filters = effectiveFilters(req.query);
-    const data = await fetchTelemedSummary({ ...filters, granularity: 'month' });
+    const reportFilters = { ...filters };
+    const previousFilters = previousPeriodFilters(reportFilters);
+    const [data, previousData, target] = await Promise.all([
+      fetchExecutiveOverview(reportFilters),
+      fetchExecutiveOverview(previousFilters),
+      fetchDepartmentTargetData(targetFilters(req.query, reportFilters))
+    ]);
+    const overviewTarget = buildDepartmentTargetModel(target.allRows || [], { sortBy: 'target_gap' });
     writeTelemedPdf(res, filters, data, {
       title: 'รายงานผู้บริหาร Telemedicine',
-      executive: true
+      executive: true,
+      metrics: buildExecutiveMetrics(data, previousData, reportFilters, overviewTarget)
     });
   } catch (err) {
     if (isDatabaseSetupError(err)) {

@@ -43,6 +43,17 @@
 5. If target SQL mapping fails, overview still renders and target tab shows a mapping message.
 6. Target tab shows Action Required, executive summary, overall target progress, KPI, Top 5 shortage rooms, compact charts, and a department table with `ผู้บริหาร` / `รายละเอียด` modes.
 
+## Executive Overview Flow
+1. User requests `/executive?tab=overview` with an inclusive ISO date range and day/week/month granularity; the browser submits ISO values while the page and PDF display the same period with shared Thai date helpers.
+2. `executiveOverviewService` reads canonical Telemedicine rows from HOSxP through the protected read-only pool and reduces them to one row per distinct Telemedicine VN.
+3. The same canonical current-period model supplies the hospital KPI, trend, active service days, disease/channel partitions, main-room coverage, data-quality checks, and Executive PDF.
+4. The view presents that snapshot in one sequence: compact filters with Thai date context, scoped KPI cards, per-room target progress, hospital-wide trend plus valid below-target Top 5, a three-line decision insight, collapsed eight-item supporting details, and aggregate data quality.
+5. Filter submission marks the active panel busy. Empty/error responses replace analytical content with compact states; they do not render zero-valued KPIs as if they were real observations.
+6. `executiveService` separately loads department-target rows. Only valid evaluable rows supply OPD, Telemedicine achieved, room targets, rate, and target shortage; no-data/review/anomaly rows remain audit-only.
+7. Total room shortage is the sum of each valid room's positive shortfall. An over-target room is retained as excess audit evidence but does not offset another room's shortage.
+8. Daily charts render bars and no-service dates as `null`; monthly charts render a line. The average uses active service days only and remains a continuous presentation line.
+9. The screen and PDF receive the same aggregate models. Neither path exposes patient identifiers or writes to HOSxP.
+
 ## Today Patients Flow
 1. Admin or executive opens `/today-patients`.
 2. Page loads immediately, then `public/js/today-patients.js` calls `/api/today-patients/summary`.
@@ -93,6 +104,14 @@
 5. Delete uses `DELETE /api/admin/users/:id` and performs a WebApp-only soft delete by setting `deletedAt`, `deletedBy`, and `isActive = false`.
 6. Main `admin`, the current session user, and the last admin cannot be deleted.
 7. Last active admin cannot be disabled or demoted.
+
+## Executive Overview Presentation Flow
+1. `/executive?tab=overview` loads the existing canonical Executive overview aggregate and department-target aggregate for the selected period.
+2. The screen renders hospital-wide Telemedicine separately from valid evaluable-room OPD, Telemedicine, target, rate, and shortage so scopes cannot be mixed in the UI.
+3. Day, week, and month trend grouping happens in application memory after the reporting result is loaded. Weekly periods begin on Monday.
+4. Target progress, decision summary, Top 5 follow-up, trend, support metrics, and export render from the same response snapshot.
+5. `/executive?tab=department-target` uses the existing loaded room data for name search, status filtering, A-Z sorting, previews, and dialogs. These local actions do not issue HOSxP queries.
+6. HOSxP remains reporting-read-only throughout this flow; no executive interaction creates tables or writes HOSxP data.
 
 ## ER Subclinic Flow
 1. Clicking the ER card calls `/api/today-patients/er-subclinics`.

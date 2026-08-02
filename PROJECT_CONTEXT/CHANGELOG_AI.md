@@ -1,5 +1,12 @@
 # AI Changelog
 
+- Refined the Executive overview decision hierarchy without changing SQL, API contracts, HOSxP access, or formulas: clarified the separate hospital-wide and evaluable-room scopes, placed the per-room target progress ahead of the trend/Top 5 decision grid, moved supporting metrics into collapsed details, and added aggregate issue categories with executive-facing impact text.
+- Standardized the Executive display period using shared Thai date helpers while retaining browser-native ISO query values, and updated the Top 5 follow-up list with explicit achieved, target, gap, progress, and status evidence.
+
+- Refined the Executive overview presentation without changing data semantics: shortened the five KPI labels, standardized `ห้องที่ประเมิน`, made the summary three decision-focused lines, compacted Top 5 rows into rank/room/achieved/target/gap/status, clarified the daily/monthly hospital trend, and arranged supporting metrics as an 8-item responsive grid. No SQL, API contract, target formula, HOSxP write, deployment, commit, or push was performed.
+- Finalized Executive overview interpretation safeguards: kept no-service visit dates as chart gaps while making the canonical active-day average line continuous, added shared Thai Buddhist-date helpers for UI/tooltips/PDF, reused tied high/low extremes for KPI and chart highlights, clarified the `ovst.main_dep` Top 5 basis, and expanded the reconciliation/regression tests to 24 cases. No SQL, Telemed formula, HOSxP data, deployment, or server process was changed.
+- Refined Executive overview analytics without changing the canonical Telemed totals: exposed the non-DM/HT group, clarified complete channel data when B2B is zero, documented the configurable B2C target denominator, retained tied highest/lowest service dates, represented no-service calendar days as chart gaps, and made Top 5 main-room reconciliation auditable. HOSxP access remains read-only.
+
 ## Current Baseline
 - Project is on GitHub under `angza999/TelemedDashboard`.
 - Linux deployment is configured for server `192.168.1.231`.
@@ -163,3 +170,30 @@ Use `git log -1 --oneline` for the latest commit. This file records feature hist
 - Added root `AGENTS.md` as the operational reference for the shared server `192.168.1.231`.
 - Documented the separate project paths, ports, PM2 process names, preflight checks, health checks, deployment commands, and Git safety rules for ITASSET (`itasset`, port `3000`) and Telemed Dashboard (`telemed-dashboard`, port `4300`).
 - Explicitly warns that using PM2 process `itasset` for Telemed Dashboard can stop the ITASSET application. Documentation-only change; no server process, HOSxP data, `.env`, or application logic was modified.
+
+## 2026-08-01 - Executive Dashboard Final Scope And Metric Governance
+- Separated the Executive KPI hierarchy into one hospital-wide distinct-VN Telemedicine total and four evaluable-room target measures with explicit `ครั้ง` units.
+- Reworked the executive summary into at most three decision-focused lines and retained Top 5 follow-up rooms from valid below-target rows only.
+- Changed the daily trend to bars and the monthly trend to a line, kept no-service dates as `null`, rendered the active-service-day average continuously, highlighted only one highest period, and kept low periods neutral.
+- Added the Executive trend and quality summary to PDF output using the same loaded aggregate services as the screen.
+- Corrected total target shortage to `SUM(MAX(room target - room Telemed, 0))`; over-target rooms no longer offset another room's shortage. Net difference remains available only as an audit field.
+- Evaluable OPD, Telemedicine, target, and rate now exclude neutral no-data and review/anomaly rows while retaining those rows in the audit presentation.
+- Added governance tests for scope wording, non-offset shortages, valid-row aggregation, daily/monthly chart semantics, HOSxP read-only enforcement, null dates, active-day averages, and reconciliation.
+- No HOSxP SQL formula, HOSxP schema/data, login/session, production deployment, PM2 process, commit, or push was changed or performed.
+
+## 2026-08-01 - Executive Dashboard Decision Hierarchy Refresh
+- Reframed the Executive overview around four evaluable-room KPIs: OPD base, achieved Telemedicine, summed per-room targets, and Telemedicine-to-OPD ratio. The hospital-wide Telemedicine total remains separately scoped to avoid mixing hospital and target-room denominators.
+- Added a compact target-progress panel showing achieved, target, and non-offset shortage from the same loaded department-target aggregate. The visual progress bar is capped at 100 percent while the displayed percentage remains truthful.
+- Added weekly grouping to the existing overview response in memory. It uses Monday-start periods and does not introduce a new database query, SQL formula, API contract, or HOSxP write operation.
+- Kept the department-target workflow client-side for room search and A-Z sorting, refined room/table terminology, and strengthened mobile table presentation without a nested table scrollbar.
+- Added regression coverage for weekly presentation grouping and updated governance expectations. `npm test` passes 48 tests.
+- No HOSxP SQL, schema, or data was changed. No deployment, PM2 restart, commit, or push was performed.
+
+## 2026-08-02 - Executive Overview UX And Design QA Polish
+- Added visible Thai Buddhist date labels to both Executive date filters while retaining ISO request values and timezone-safe date-only parsing.
+- Replaced the overview follow-up comparison table with a compact maximum-five ranked list showing room gap, achieved/target context, and accessible progress.
+- Clarified achieved-to-target progress with a teal bar, neutral remainder, truthful text, and ARIA values; the calculation remains evaluated Telemedicine divided by the summed per-room target.
+- Standardized the trend to teal and added a `สูงสุด` label plus peak tooltip instead of using an unexplained orange highlight.
+- Reduced the decision summary to two lines, kept additional information collapsed by default, and retained aggregate-only data-quality messaging.
+- Verified 48 automated tests, JavaScript syntax, EJS compilation, browser console, and responsive layouts at 1024, 768, and 375 pixels without horizontal page overflow.
+- No SQL, API contract, HOSxP schema/data, login/session, deployment, PM2 restart, commit, or push was changed or performed.

@@ -15,6 +15,7 @@ const executiveRoutes = require('./src/routes/executive');
 const adminUsersRoutes = require('./src/routes/adminUsers');
 const adminUsersApiRoutes = require('./src/routes/adminUsersApi');
 const todayPatientsRoutes = require('./src/routes/todayPatients');
+const dataQualityRoutes = require('./src/routes/dataQuality');
 const { ensureAuth, ensureRole } = require('./src/middleware/auth');
 const { SESSION_COOKIE_NAME, sessionCookieOptions, useSecureCookies } = require('./src/config/session');
 
@@ -95,6 +96,7 @@ app.use('/settings', ensureAuth, ensureRole(['admin']), settingsRoutes);
 app.use('/admin/query-tool', ensureAuth, ensureRole(['admin']), queryToolRoutes);
 app.use('/api/admin/users', ensureAuth, ensureApiAdmin, adminUsersApiRoutes);
 app.use('/admin/users', ensureAuth, ensureRole(['admin']), adminUsersRoutes);
+app.use('/admin/data-quality', ensureAuth, ensureRole(['admin']), dataQualityRoutes);
 app.use('/', ensureAuth, ensureRole(['admin']), todayPatientsRoutes.adminRouter);
 app.use('/admin', ensureAuth, ensureRole(['admin']), (req, res) => {
   res.status(404).render('errors/404', { title: 'ไม่พบหน้า' });

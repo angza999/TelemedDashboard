@@ -152,15 +152,23 @@
 ## Executive Overview
 - `src/config/executiveDashboard.js`
   - WebApp-only Executive settings, including bounded `EXECUTIVE_B2C_TARGET_PERCENT` with a default of 50
+- `src/config/dashboardTargets.js`
+  - Central bounded default for department target percentages; per-room overrides remain in WebApp mapping/config
+- `src/services/executiveOverviewService.js`
+  - Canonical one-row-per-distinct-Telemed-VN aggregation for hospital-wide KPIs, trend, active service days, disease/channel partitions, main-room reconciliation, previous periods, and aggregate diagnostics
 - `src/services/executiveService.js`
-  - Builds previous-period ranges, overview KPI/insight models, daily extremes, channel/disease shares, and department overview summaries
-  - Reuses already-fetched dashboard and department-target data; HOSxP access remains SELECT-only
+  - Fetches configured department target counts and builds valid/no-data/review/anomaly presentation states
+  - Sums evaluable OPD, Telemedicine, room targets, and non-offset room shortages from valid rows only
 - `src/routes/executive.js`
-  - Loads current, previous-period, and daily-granularity summaries through the shared Telemed service
+  - Loads current/previous canonical overview data and the shared department-target model; PDF/Excel reuse those same services
 - `views/executive/dashboard.ejs`
-  - Executive overview and department-target presentation
+  - Separates hospital-wide KPIs from evaluable-room target KPIs and keeps the summary, Top 5, trend, quality status, and department target audit views compact
 - `public/js/executive.js`
-  - Executive charts, tab behavior, responsive department charts, filter loading state, and PDF export feedback
+  - Daily bar/monthly line trend rendering, continuous active-day average, Thai tooltips, department gap charts, loaded-row filtering/dialogs, loading state, and PDF export feedback
+- `src/utils/hosxpReadOnly.js`
+  - Validates every protected HOSxP pool call before dispatch and logs aggregate read metadata without SQL text, parameters, or patient identifiers
+- `src/services/dataQualityService.js` and `src/routes/dataQuality.js`
+  - Admin-only aggregate reconciliation view; never serializes patient-level identifiers
 
 ## ER Subclinics
 - `todayPatientsService`: WebApp mapping, validation, and SELECT-only daily counts.

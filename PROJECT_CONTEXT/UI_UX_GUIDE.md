@@ -83,13 +83,23 @@ Current style uses:
 - When the top B2B warning is visible, use only short supporting notes near charts, such as `B2B: 0 ราย` or `ยังไม่พบรายการ B2B`.
 
 ## Executive Dashboard
-- Order the overview for rapid scanning: compact filters, four headline KPIs, DM/HT/B2B/B2C breakdown, a compact Top 5 room ranking beside 3-5 decision insights, then trend and distribution charts.
+- Present the Executive overview with four compact scoped cards: `OPD ห้องที่ประเมิน`, `Telemedicine ที่ใช้ประเมิน`, `สัดส่วน Telemedicine ต่อ OPD`, and `Telemedicine ทั้งโรงพยาบาล`. Keep target, shortage, and achieved-to-target progress together in the following target-progress panel rather than presenting them as competing KPI cards.
+- Place one target-progress panel immediately below the KPI group. It shows actual, target, positive room shortage, and actual-to-target progress without repeating the same total in adjacent cards.
+- Keep Executive filters compact and allow daily, weekly, or monthly display grouping. Date inputs retain browser-native ISO values for safe submission, while the visible period context, tooltips, charts, and PDF use the shared Thai date helpers. Weekly is a Monday-start presentation grouping; label its trend and chart tooltip as weekly rather than daily.
+- For department targets, retain filters at the top, include one room-name search field there, and use `ห้องบริการ` plus `ร้อยละ Telemedicine ต่อ OPD` in the executive table. On mobile, present rows as readable stacked fields and avoid nested scrolling.
+- Order the overview for rapid scanning: compact filters with a Thai date context, the four scoped KPI cards, one per-room target-progress panel, a trend and Top 5 follow-up decision grid, a three-line Executive Insight, collapsed supporting details, and aggregate data quality. The insight may wrap compactly on mobile.
+- Use `ห้องที่ประเมิน` consistently. Never combine the hospital-wide distinct-VN total with the evaluable-room OPD denominator or room target formula.
+- Present the Top 5 as `5 ห้องที่ควรเร่งติดตาม`; each compact desktop row shows rank, room, achieved, target, gap, progress, and status with thin separators. On mobile, the same evidence is stacked into labelled fields without an internal scrollbar.
+- Use `แนวโน้มบริการ Telemedicine รายวัน` for the daily chart and the monthly equivalent when grouped by month. Preserve daily null gaps, use short Thai date labels, and keep the average line visibly distinct.
+- Use an eight-item desktop support grid inside the collapsed `ข้อมูลเพิ่มเติม` disclosure: active-day average, DM, HT, B2C, highest service day, lowest service day, B2B, and aggregate quality. Move DM/HT overlap and room reconciliation to the same disclosure.
+- On filter submission, show a restrained loading skeleton and `aria-busy`. If the period is empty or the database fails, hide KPI/Top 5/chart content and use a compact empty/error state with retry guidance rather than displaying fabricated zeros.
+- The four scoped KPI cards and target-progress panel must distinguish the hospital-wide distinct-VN total from evaluable-room OPD, evaluable Telemedicine, evaluable rate, summed target, and non-offset room shortage. Use `ครั้ง` for every distinct-VN visit count.
 - Explain that the previous-period comparison uses the immediately preceding date range with the same number of days.
 - If the minimum-service day is the selected range's final day, keep the value but add a restrained note that the day's data may still be incomplete.
 - Keep ICD-code and other technical metric hints visible only to admins; executive users should see plain-language labels.
-- Use Thai metric labels and `ครั้ง` for Telemed service counts. Department-target OPD reporting may retain `ราย`.
+- Use Thai metric labels and `ครั้ง` for distinct-VN Telemed and OPD visit counts. Reserve `ราย` or `คน` for true unique-person counts such as distinct HN.
 - Show comparison with the immediately preceding period and keep the zero-denominator state explicit instead of displaying a misleading percentage.
-- The trend chart should show the total series, a subdued average line, a visible peak marker, and a tooltip containing Total, DM, HT, B2B, and B2C from the same response payload.
+- The hospital-wide trend uses daily bars and a monthly line. It shows a subdued continuous active-day average, highlights at most one peak, keeps low values neutral, uses Thai tooltips, and preserves no-service dates as gaps.
 - Keep the B2B/B2C donut compact with a center value. If B2B is zero but B2C exists, show B2C 100% and the real total rather than an empty state.
 - Prefer compact HTML comparison bars for DM/HT when a large chart adds little decision value.
 - Store adjustable executive targets in WebApp configuration only. Never write dashboard targets or settings to HOSxP.
@@ -108,6 +118,8 @@ Current style uses:
 - Show review/anomaly rows as a divided review list without nested cards. Put neutral no-data rooms in a separate gray disclosure, collapsed by default, with click and keyboard access plus synchronized `aria-expanded`.
 - When the table's status chips are within the viewport, suppress duplicate status actions in the sticky summary and retain only Telemed, summed target, and gap.
 - At notebook widths, the department-target filter controls may wrap into two deliberate rows, but action buttons must remain inside the page without horizontal overflow. Keep the action-required strip compact: performance and target distance on the left, one evidence-based recommendation on the right.
+- The Executive summary must avoid technical terms and use short label/value items rather than a dense paragraph. Top 5 must rank only valid below-target rows by positive shortfall and link to the existing department-target tab for full detail.
+- Data-quality details belong to Admin. Executive pages show only `ข้อมูลครบถ้วน` or a compact `ข้อมูลควรตรวจสอบ N รายการ` status and never display HN, VN, CID, patient names, SQL, or raw errors.
 
 ## ER Subclinic Modal
 - Keep the ER card keyboard accessible and show a visible click affordance.
@@ -117,3 +129,12 @@ Current style uses:
 - When `ยังไม่จัดกลุ่ม` is positive, make the summary card clickable and expand room-level DEP code, department name, and count details inside the same modal.
 - When ER subclinic totals match the main ER total, use calm success wording such as `จัดกลุ่มครบแล้ว` or `ยอดคลินิกย่อยตรงกับยอด ER หลัก`.
 - Show the ER settings action only to admin users.
+
+## Executive Overview QA Polish (2026-08-02)
+- Date filters display short Thai Buddhist dates while preserving ISO values for request parameters. Date-only parsing must be timezone-safe.
+- The overview Top 5 is a compact ranked list with a maximum of five valid below-target rooms. Each row shows room/gap, achieved/target, and progress; it must not create a nested horizontal scrollbar.
+- Target progress communicates `evaluated Telemedicine / summed room targets`, uses a teal achieved segment with a neutral remainder, and exposes an accessible progress value. Only the visual width is capped at 100%.
+- Trend values use one teal series. The highest period is labelled `สูงสุด` and explained in the tooltip instead of relying on an unexplained accent color.
+- `สรุปเพื่อการตัดสินใจ` is limited to two decision lines. `ข้อมูลเพิ่มเติม` is collapsed by default and keeps `aria-expanded` synchronized.
+- Data-quality states use aggregate category/impact language only. Never expose patient identifiers, SQL, or raw database errors.
+- Responsive QA covers 1366/1024/768/375 widths at 100% zoom with no page-level horizontal overflow.

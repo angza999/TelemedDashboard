@@ -2,6 +2,7 @@
 
 ## Data Safety
 - Never write to HOSxP clinical tables.
+- HOSxP accepts reporting reads only: `SELECT`, `SHOW`, `DESCRIBE`, and `EXPLAIN SELECT`. The central guard must reject writes, DDL, administrative statements, multiple statements, and SELECT side effects.
 - Never add patient-level output unless the user explicitly requests it and privacy is reviewed.
 - Exports should stay summary-level by default.
 - Query Tool exports may include patient-level data if admin queries it; show privacy warnings when sensitive column names are detected.
@@ -19,6 +20,14 @@ Do not change the province-aligned formula without explicit instruction:
 - ICD10 `I10%` for HT
 - B2B if `ovstist.name` or `opdscreen.cc` contains `b2b`
 - Executive trend `Total Telemed` must use the actual `total` field, not `DM + HT`, because some Telemed visits may not have ICD10 E11/I10.
+
+## Executive Scope And Target Logic
+- Hospital-wide Executive totals are distinct Telemedicine VN values and use the unit `ครั้ง`.
+- Evaluable target totals include only `valid` department rows; `no_data`, `review`, and `anomaly` rows remain auditable but do not count as performance.
+- Evaluable rate is `Telemed / OPD * 100` with a zero-denominator guard.
+- Each room target uses its configured WebApp percentage and the existing `CEIL(OPD * percent)` rule.
+- Total target is the sum of valid room targets. Total shortage is the sum of `max(room target - room Telemed, 0)` and must not be reduced by over-target rooms.
+- Daily Executive charts use bars; monthly charts use lines. No-service calendar dates remain `null` and are excluded from active-service-day averages and low-day extrema.
 
 ## Access Control
 - Hide menus by role and protect routes by role.
@@ -41,6 +50,7 @@ Do not change the province-aligned formula without explicit instruction:
 - Commit only source/config-template/deploy docs.
 - Do not commit `.env` or `data/`.
 - After pushing, server can update with `git pull origin main`.
+- Do not commit, push, deploy, or restart a server unless the user explicitly requests that operation.
 
 ## ER Subclinic Rules
 - Support only `ฉีดยา/ทำแผล` and `ER Telemed` in this release.

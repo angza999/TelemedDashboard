@@ -19,7 +19,9 @@ The system must not create, edit, or delete patient service records in HOSxP. Al
 - Database connection: `src/db.js`
 - Auth middleware: `src/middleware/auth.js`
 - Telemed logic: `src/services/telemedService.js`
-- Executive target logic: `src/services/executiveService.js`
+- Executive hospital-wide logic: `src/services/executiveOverviewService.js`
+- Executive department-target logic: `src/services/executiveService.js`
+- HOSxP read-only guard: `src/utils/hosxpReadOnly.js`
 - Export logic: `src/services/reportExportService.js`
 - Routes: `src/routes/`
 - Views: `views/`
@@ -31,8 +33,9 @@ The system must not create, edit, or delete patient service records in HOSxP. Al
 - Login/logout
 - Role based access: `admin`, `executive`, `user`
 - Telemed Dashboard with KPI, charts, daily/monthly table, refresh, Excel/PDF export
-- Executive Dashboard with overview tab
-- Executive department target tab for 50% Telemed target by department
+- Executive Dashboard with a canonical hospital-wide distinct-VN overview, a separate valid-evaluable-room target scope, Thai date context for display, and aggregate data-quality explanations without patient identifiers
+- Executive department target tab using per-room WebApp target configuration and valid-row-only performance summaries
+- Admin aggregate Data Quality page without patient identifiers
 - Admin database settings
 - Admin Query Tool for SELECT-only checks
 - Admin user management with persistent `data/users.json`
@@ -53,3 +56,4 @@ npm install --omit=dev
 sudo systemctl restart telemed-dashboard
 ```
 
+Do not run deployment or restart commands unless the user explicitly requests production deployment. Verify the `telemed-dashboard` process, port `4300`, and `/home/telemed/TelemedDashboard` working directory first; never operate on the separate `itasset` process.

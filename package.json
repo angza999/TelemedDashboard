@@ -13,7 +13,8 @@
     "deploy:status": "powershell -ExecutionPolicy Bypass -File .\\deploy\\status-telemed.ps1",
     "linux:start": "bash deploy/linux-start.sh",
     "linux:status": "bash deploy/linux-status.sh",
-    "ensure-admin": "node scripts/ensure-admin.js"
+    "ensure-admin": "node scripts/ensure-admin.js",
+    "test": "node --test"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

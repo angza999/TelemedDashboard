@@ -26,7 +26,7 @@
     <% if (currentUser && currentUser.role === 'admin') { %>
       <%
         const adminSystemActive = ['settings', 'query-tool', 'users'].includes(active);
-        const adminDashboardActive = ['today-patients-mapping', 'ncd-subclinics', 'ipd-subclinics', 'er-subclinics'].includes(active);
+        const adminDashboardActive = ['today-patients-mapping', 'ncd-subclinics', 'ipd-subclinics', 'er-subclinics', 'data-quality'].includes(active);
       %>
       <div class="nav-section">Admin</div>
       <details class="nav-group" <%= adminSystemActive ? 'open' : '' %>>
@@ -57,7 +57,7 @@
         <summary class="nav-group-summary">
           <span>
             <i class="bi bi-layout-text-window-reverse"></i>
-            Dashboard
+            ตั้งค่า Dashboard
           </span>
           <i class="bi bi-chevron-right nav-group-chevron"></i>
         </summary>
@@ -77,6 +77,10 @@
           <a class="nav-link nav-sub-link <%= active === 'er-subclinics' ? 'active' : '' %>" href="/admin/er-subclinics">
             <i class="bi bi-lightning-charge"></i>
             <span>บริการ ER</span>
+          </a>
+          <a class="nav-link nav-sub-link <%= active === 'data-quality' ? 'active' : '' %>" href="/admin/data-quality">
+            <i class="bi bi-clipboard2-pulse"></i>
+            <span>ตรวจสอบคุณภาพข้อมูล</span>
           </a>
         </div>
       </details>

@@ -3,9 +3,49 @@
   const payload = payloadEl ? JSON.parse(payloadEl.textContent) : { metrics: { trend: [] }, channel: {}, target: { rows: [] } };
   const trend = payload.metrics.trend || [];
   const targetRows = (payload.target && payload.target.rows) || [];
+  const overviewTargetRows = (payload.overviewTarget && (payload.overviewTarget.allRows || payload.overviewTarget.rows)) || [];
   const charts = [];
   const chartFontFamily = "'Segoe UI', Tahoma, 'Noto Sans Thai', 'Sarabun', sans-serif";
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const thaiShortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+  function parseIsoDateParts(value) {
+    const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+    return { year, month, day };
+  }
+
+  function formatThaiShortDate(value, includeYear = true) {
+    const parts = parseIsoDateParts(value);
+    if (!parts) return String(value || '');
+    const day = String(parts.day).padStart(2, '0');
+    return `${day} ${thaiShortMonths[parts.month - 1]}${includeYear ? ` ${parts.year + 543}` : ''}`;
+  }
+
+  document.querySelectorAll('[data-thai-date-input]').forEach((input) => {
+    const control = input.closest('.thai-date-control');
+    const display = control && control.querySelector('[data-thai-date-display]');
+    const updateDisplay = () => {
+      if (!display) return;
+      display.textContent = formatThaiShortDate(input.value);
+      input.setAttribute('aria-label', `${input.name === 'startDate' ? 'วันที่เริ่มต้น' : 'วันที่สิ้นสุด'} ${display.textContent}`);
+    };
+    input.addEventListener('input', updateDisplay);
+    input.addEventListener('change', updateDisplay);
+    updateDisplay();
+  });
+
+  document.querySelectorAll('[data-executive-details]').forEach((details) => {
+    const summary = details.querySelector('summary');
+    const updateExpanded = () => summary && summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+    details.addEventListener('toggle', updateExpanded);
+    updateExpanded();
+  });
 
   function preferredScrollBehavior() {
     return prefersReducedMotion.matches ? 'auto' : 'smooth';
@@ -19,6 +59,17 @@
       }
     });
     refreshDepartmentCharts();
+    updateTruncatedRoomTooltips();
+  }
+
+  function updateTruncatedRoomTooltips() {
+    document.querySelectorAll('[data-room-label]').forEach((element) => {
+      if (element.scrollWidth > element.clientWidth) {
+        element.setAttribute('title', element.dataset.roomLabel || element.textContent.trim());
+      } else {
+        element.removeAttribute('title');
+      }
+    });
   }
 
   function chartFont(size = 12, weight = '500') {
@@ -85,6 +136,8 @@
     });
   });
 
+  window.requestAnimationFrame(updateTruncatedRoomTooltips);
+
   const trendEl = document.getElementById('execTrendChart');
   const channelEl = document.getElementById('execChannelChart');
   const departmentTargetEl = document.getElementById('departmentTargetChart');
@@ -105,6 +158,11 @@
   document.querySelectorAll('form[action="/executive"]').forEach((form) => {
     form.addEventListener('submit', () => {
       setButtonLoading(form.querySelector('[data-executive-submit], button[type="submit"]'), true, 'กำลังโหลด...');
+      const panel = form.closest('[data-exec-panel]');
+      if (panel) {
+        panel.classList.add('is-loading');
+        panel.setAttribute('aria-busy', 'true');
+      }
     });
   });
 
@@ -139,9 +197,15 @@
     });
   }
 
-  function statusColor(percent) {
-    if (percent >= 50) return '#16a34a';
-    if (percent >= 45) return '#f59e0b';
+  function targetPercentFor(row) {
+    const value = Number(row && row.target_percent);
+    return Number.isFinite(value) ? value : Number(payload.target && payload.target.targetPercent || 0);
+  }
+
+  function statusColor(percent, row = null) {
+    const targetPercent = targetPercentFor(row);
+    if (percent >= targetPercent) return '#16a34a';
+    if (percent >= Math.max(targetPercent - 5, 0)) return '#f59e0b';
     return '#f97316';
   }
 
@@ -210,8 +274,8 @@
 
   function diffText(value) {
     const diff = Number(value || 0);
-    if (diff < 0) return `ต้องเพิ่ม ${numberFormat.format(Math.abs(diff))} ราย`;
-    if (diff > 0) return `เกินเป้า ${numberFormat.format(diff)} ราย`;
+    if (diff < 0) return `ต้องเพิ่ม ${numberFormat.format(Math.abs(diff))} ครั้ง`;
+    if (diff > 0) return `เกินเป้า ${numberFormat.format(diff)} ครั้ง`;
     return 'ถึงเป้า';
   }
 
@@ -222,9 +286,9 @@
     return [
       `ห้องส่งตรวจ: ${row.department || 'ไม่ระบุห้อง'}`,
       `กลุ่มบริการ: ${row.service_group || 'ไม่ระบุกลุ่ม'}`,
-      `OPD ทั้งหมด: ${numberFormat.format(row.opd_total)} ราย`,
-      `จำนวน Telemed ที่ทำได้: ${numberFormat.format(row.telemed_total)} ราย`,
-      `เป้าหมาย 50%: ${numberFormat.format(row.target_50)} ราย`,
+      `OPD ทั้งหมด: ${numberFormat.format(row.opd_total)} ครั้ง`,
+      `จำนวน Telemed ที่ทำได้: ${numberFormat.format(row.telemed_total)} ครั้ง`,
+      `เป้าหมาย ${numberFormat.format(targetPercentFor(row))}%: ${numberFormat.format(row.target_50)} ครั้ง`,
       `สัดส่วน Telemed ต่อ OPD: ${Number(row.telemed_percent || 0).toFixed(2)}%`,
       diffText(row.diff_from_target)
     ];
@@ -255,66 +319,200 @@
     }
   };
 
+  const averageLineEndLabelPlugin = {
+    id: 'averageLineEndLabelPlugin',
+    afterDatasetsDraw(chart, args, options) {
+      if (!options || !options.enabled) return;
+      const datasetIndex = chart.data.datasets.findIndex((dataset) => dataset.metricKind === 'average');
+      if (datasetIndex < 0) return;
+      const points = chart.getDatasetMeta(datasetIndex).data || [];
+      const point = points.slice().reverse().find((item) => Number.isFinite(item && item.y));
+      if (!point) return;
+      const { ctx, chartArea } = chart;
+      ctx.save();
+      ctx.font = `700 11px ${chartFontFamily}`;
+      ctx.fillStyle = '#475569';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(options.label || '', chartArea.right - 4, Math.max(chartArea.top + 14, point.y - 6));
+      ctx.restore();
+    }
+  };
+
+  const trendPeakLabelPlugin = {
+    id: 'trendPeakLabelPlugin',
+    afterDatasetsDraw(chart, args, options) {
+      if (!options || !options.enabled || !Number.isInteger(options.dataIndex)) return;
+      const element = chart.getDatasetMeta(0).data[options.dataIndex];
+      if (!element) return;
+      const { ctx, chartArea } = chart;
+      const text = options.label || 'สูงสุด';
+      ctx.save();
+      ctx.font = `700 11px ${chartFontFamily}`;
+      const width = ctx.measureText(text).width + 14;
+      const x = Math.min(Math.max(element.x - (width / 2), chartArea.left), chartArea.right - width);
+      const y = Math.max(chartArea.top + 2, element.y - 24);
+      ctx.fillStyle = '#0f766e';
+      ctx.beginPath();
+      ctx.roundRect(x, y, width, 20, 4);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x + (width / 2), y + 10);
+      ctx.restore();
+    }
+  };
+
   if (trendEl) {
-    const highestTotal = trend.reduce((max, row) => Math.max(max, Number(row.total || 0)), 0);
+    const trendGranularity = payload.filters && payload.filters.granularity || 'day';
+    const isDailyTrend = trendGranularity === 'day';
+    const trendPeriodName = trendGranularity === 'month'
+      ? 'เดือน'
+      : (trendGranularity === 'week' ? 'สัปดาห์' : 'วันที่');
+    const extremes = payload.metrics && payload.metrics.extremes ? payload.metrics.extremes : {};
+    const highestTotal = Number(extremes.highest && extremes.highest.value || 0);
+    const lowestTotal = Number(extremes.lowest && extremes.lowest.value || 0);
+    const primaryHighestDate = (extremes.highest && extremes.highest.dates || [])[0] || null;
+    const highestDates = new Set(primaryHighestDate ? [primaryHighestDate] : []);
+    const lowestDates = new Set(extremes.lowest && extremes.lowest.dates || []);
+    const averagePerServiceDay = Number(payload.metrics.averagePerDay || 0);
+    const chartDateLabel = (row) => row && row.periodLabel ? row.periodLabel : (row ? row.period : '');
+    const compactDailyLabel = (row) => row && row.period ? formatThaiShortDate(row.period, false) : '';
+    const pointRadius = trend.map((row) => {
+      if (highestDates.has(row.period) && highestTotal > 0) return 6;
+      if (lowestDates.has(row.period) && lowestTotal > 0) return 5;
+      return 3;
+    });
+    const pointColor = trend.map((row) => {
+      return '#0f766e';
+    });
+    const barColors = trend.map((row) => {
+      if (row.isServiceDay === false) return 'rgba(15, 118, 110, 0)';
+      return '#0f766e';
+    });
+    const trendDatasets = [
+      {
+        type: isDailyTrend ? 'bar' : 'line',
+        label: isDailyTrend
+          ? 'บริการ Telemedicine รายวัน'
+          : (trendGranularity === 'week' ? 'บริการ Telemedicine รายสัปดาห์' : 'บริการ Telemedicine รายเดือน'),
+        data: trend.map((row) => row.isServiceDay === false ? null : row.total),
+        borderColor: isDailyTrend ? barColors : '#0f766e',
+        backgroundColor: isDailyTrend ? barColors : 'rgba(15, 118, 110, 0.12)',
+        borderWidth: isDailyTrend ? 0 : 3,
+        borderRadius: isDailyTrend ? 4 : 0,
+        maxBarThickness: isDailyTrend ? 28 : undefined,
+        fill: false,
+        tension: isDailyTrend ? 0 : 0.28,
+        spanGaps: false,
+        pointRadius: isDailyTrend ? 0 : pointRadius,
+        pointHoverRadius: 7,
+        pointBackgroundColor: pointColor,
+        metricKind: 'visits'
+      }
+    ];
+
+    if (isDailyTrend) {
+      trendDatasets.push({
+        type: 'line',
+        label: 'เฉลี่ยต่อวันให้บริการ',
+        data: trend.map(() => payload.metrics.total > 0 ? averagePerServiceDay : null),
+        borderColor: '#64748b',
+        backgroundColor: '#64748b',
+        borderDash: [6, 5],
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+        spanGaps: true,
+        metricKind: 'average'
+      });
+      trendDatasets.push({
+        type: 'line',
+        label: 'สถานะวันให้บริการ',
+        data: trend.map((row) => row.isServiceDay === false ? averagePerServiceDay : null),
+        borderColor: 'transparent',
+        backgroundColor: 'transparent',
+        pointBackgroundColor: 'transparent',
+        pointBorderWidth: 0,
+        pointRadius: 0,
+        pointHitRadius: 14,
+        showLine: false,
+        metricKind: 'serviceStatus'
+      });
+    }
+
     charts.push(new Chart(trendEl, {
-      type: 'line',
+      type: isDailyTrend ? 'bar' : 'line',
       data: {
-        labels: trend.map((row) => row.period),
-        datasets: [
-          {
-            label: 'ผู้รับบริการ Telemed ทั้งหมด',
-            data: trend.map((row) => row.total),
-            borderColor: '#0f766e',
-            backgroundColor: 'rgba(15, 118, 110, 0.12)',
-            fill: true,
-            tension: 0.28,
-            borderWidth: 3,
-            pointRadius: trend.map((row) => Number(row.total || 0) === highestTotal && highestTotal > 0 ? 6 : 3),
-            pointHoverRadius: 7,
-            pointBackgroundColor: trend.map((row) => Number(row.total || 0) === highestTotal && highestTotal > 0 ? '#f59e0b' : '#0f766e')
-          },
-          {
-            label: 'ค่าเฉลี่ย',
-            data: trend.map(() => Number(payload.metrics.averagePerTrendPeriod || 0)),
-            borderColor: '#64748b',
-            backgroundColor: '#64748b',
-            borderDash: [6, 5],
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: false
-          }
-        ]
+        labels: trend.map((row) => isDailyTrend ? compactDailyLabel(row) : chartDateLabel(row)),
+        datasets: trendDatasets
       },
+      plugins: [averageLineEndLabelPlugin, trendPeakLabelPlugin],
       options: {
         ...textChartOptions(),
         maintainAspectRatio: false,
         responsive: true,
+        animation: prefersReducedMotion.matches ? false : { duration: 250 },
         interaction: { mode: 'index', intersect: false },
         plugins: {
+          averageLineEndLabelPlugin: {
+            enabled: isDailyTrend && payload.metrics.total > 0,
+            label: `เฉลี่ย ${averagePerServiceDay.toFixed(1)} ครั้ง/วันให้บริการ`
+          },
+          trendPeakLabelPlugin: {
+            enabled: isDailyTrend && highestTotal > 0 && primaryHighestDate !== null,
+            dataIndex: trend.findIndex((row) => row.period === primaryHighestDate),
+            label: `สูงสุด ${numberFormat.format(highestTotal)} ครั้ง`
+          },
           legend: {
             display: true,
             position: 'bottom',
-            labels: { usePointStyle: true, boxWidth: 8, font: chartFont(12, '600') }
+            labels: {
+              usePointStyle: true,
+              boxWidth: 8,
+              font: chartFont(12, '600'),
+              filter: (item) => item.text !== 'สถานะวันให้บริการ'
+            }
           },
           tooltip: {
+            filter: (item) => {
+              const row = trend[item.dataIndex];
+              if (!row) return false;
+              if (row.isServiceDay === false) return item.dataset.metricKind === 'serviceStatus';
+              return item.dataset.metricKind !== 'serviceStatus';
+            },
             callbacks: {
               title: (items) => {
                 const row = trend[items[0] ? items[0].dataIndex : 0];
                 if (!row) return '';
-                return `${payload.filters && payload.filters.granularity === 'month' ? 'เดือน' : 'วันที่'}: ${row.period}`;
+                return `${trendPeriodName}: ${chartDateLabel(row)}`;
+              },
+              label: (item) => {
+                const row = trend[item.dataIndex];
+                if (!row) return '';
+                if (row.isServiceDay === false) return 'สถานะ: ไม่มีการให้บริการ Telemed';
+                if (item.dataset.metricKind === 'average') {
+                  return `ค่าเฉลี่ยต่อวันให้บริการ: ${averagePerServiceDay.toFixed(1)} ครั้ง`;
+                }
+                return `บริการ Telemedicine: ${numberFormat.format(Number(row.total || 0))} ครั้ง`;
               },
               afterBody: (items) => {
                 const row = trend[items[0] ? items[0].dataIndex : 0];
-                if (!row) return [];
+                if (!row || row.isServiceDay === false) return [];
+                const difference = Number(row.total || 0) - averagePerServiceDay;
                 const details = [
+                  `${difference >= 0 ? 'สูงกว่า' : 'ต่ำกว่า'}ค่าเฉลี่ย: ${Math.abs(difference).toFixed(1)} ครั้ง`,
                   `เบาหวานรวม: ${numberFormat.format(row.dm || 0)} ครั้ง`,
                   `ความดันรวม: ${numberFormat.format(row.ht || 0)} ครั้ง`,
                   `B2B: ${numberFormat.format(row.b2b || 0)} ครั้ง`,
                   `B2C: ${numberFormat.format(row.b2c || 0)} ครั้ง`
                 ];
-                if (Number(row.total || 0) === highestTotal && highestTotal > 0) {
+                if (highestDates.has(row.period) && highestTotal > 0) {
                   details.push('จุดสูงสุดของช่วงวันที่เลือก');
+                }
+                if (lowestDates.has(row.period) && lowestTotal > 0) {
+                  details.push('จุดต่ำสุดของวันที่มีการให้บริการ');
                 }
                 return details;
               }
@@ -337,11 +535,22 @@
   }
 
   if (channelEl) {
+    const channelValues = [
+      Number(payload.metrics.b2b || 0),
+      Number(payload.metrics.b2c || 0),
+      Number(payload.metrics.unclassifiedChannel || 0),
+      Number(payload.metrics.conflictChannel || 0)
+    ];
+    const channelTotal = channelValues.reduce((sum, value) => sum + value, 0);
     charts.push(new Chart(channelEl, {
       type: 'doughnut',
       data: {
-        labels: ['B2B', 'B2C'],
-        datasets: [{ data: [payload.metrics.b2b || 0, payload.metrics.b2c || 0], backgroundColor: ['#2563eb', '#f59e0b'], borderWidth: 0 }]
+        labels: ['B2B', 'B2C', 'ไม่ระบุ', 'ขัดแย้ง'],
+        datasets: [{
+          data: channelValues,
+          backgroundColor: ['#2563eb', '#f59e0b', '#94a3b8', '#dc2626'],
+          borderWidth: 0
+        }]
       },
       options: {
         ...textChartOptions(),
@@ -356,9 +565,8 @@
           tooltip: {
             callbacks: {
               label: (item) => {
-                const total = Number(payload.metrics.b2b || 0) + Number(payload.metrics.b2c || 0);
                 const value = Number(item.raw || 0);
-                const percent = total > 0 ? (value / total) * 100 : 0;
+                const percent = channelTotal > 0 ? (value / channelTotal) * 100 : 0;
                 return `${item.label}: ${numberFormat.format(value)} ครั้ง (${percent.toFixed(1)}%)`;
               }
             }
@@ -443,7 +651,7 @@
             borderWidth: 0
           },
           {
-            label: 'เป้าหมาย 50%',
+            label: 'เป้าหมายตามห้อง',
             data: targetDataRows.map((row) => row.target_50),
             backgroundColor: '#f59e0b',
             barThickness: 14,
@@ -517,7 +725,7 @@
                 const row = gapDataRows[items[0] ? items[0].dataIndex : 0];
                 return row ? row.department : '';
               },
-              label: (item) => `${item.dataset.label}: ${numberFormat.format(item.raw)} ราย`,
+              label: (item) => `${item.dataset.label}: ${numberFormat.format(item.raw)} ครั้ง`,
               afterBody: tooltipAfterBody
             }
           }
@@ -664,7 +872,9 @@
   const dataQualityPanel = document.getElementById('departmentTargetDataQuality');
   const dataQualityContent = document.querySelector('[data-target-data-quality-content]');
   const dataQualityToggle = document.querySelector('[data-target-data-quality-toggle]');
-  const targetRowsByDepcode = new Map(targetRows.map((row) => [String(row.depcode || ''), row]));
+  const targetRowsByDepcode = new Map(
+    [...overviewTargetRows, ...targetRows].map((row) => [String(row.depcode || ''), row])
+  );
   let lastModalTrigger = null;
 
   function setDataQualityCollapsed(collapsed) {
@@ -685,7 +895,7 @@
     if (hasDataAnomaly(row)) return 'ตรวจสอบข้อมูล';
     if (row.display_status) return row.display_status;
     if (Number(row.telemed_total || 0) >= Number(row.target_50 || 0)) return 'ผ่าน';
-    if (Number(row.telemed_percent || 0) >= 45) return 'ใกล้ถึงเป้า';
+    if (Number(row.telemed_percent || 0) >= Math.max(targetPercentFor(row) - 5, 0)) return 'ใกล้ถึงเป้า';
     return 'ไม่ผ่าน';
   }
 
@@ -716,7 +926,7 @@
     if (hasDataAnomaly(row)) return 'ควรตรวจสอบข้อมูลก่อนใช้ประเมินเป้าหมาย';
     const shortage = Math.abs(Math.min(Number(row.diff_from_target || 0), 0));
     return shortage > 0
-      ? `ควรเพิ่มอีก ${numberFormat.format(shortage)} รายเพื่อถึงเป้าหมาย 50%`
+      ? `ควรเพิ่มอีก ${numberFormat.format(shortage)} ครั้งเพื่อถึงเป้าหมาย ${numberFormat.format(targetPercentFor(row))}%`
       : 'ผลการดำเนินงานถึงเป้าหมายแล้ว ควรรักษาแนวทางการให้บริการปัจจุบัน';
   }
 
@@ -737,9 +947,9 @@
 
     setDetailText('[data-target-detail-name]', row.department || 'ไม่ระบุห้อง');
     setDetailText('[data-target-detail-group]', row.service_group || 'ไม่ระบุกลุ่มบริการ');
-    setDetailText('[data-target-detail-opd]', `${numberFormat.format(row.opd_total || 0)} ราย`);
-    setDetailText('[data-target-detail-telemed]', `${numberFormat.format(row.telemed_total || 0)} ราย`);
-    setDetailText('[data-target-detail-target]', `${numberFormat.format(row.target_50 || 0)} ราย`);
+    setDetailText('[data-target-detail-opd]', `${numberFormat.format(row.opd_total || 0)} ครั้ง`);
+    setDetailText('[data-target-detail-telemed]', `${numberFormat.format(row.telemed_total || 0)} ครั้ง`);
+    setDetailText('[data-target-detail-target]', `${numberFormat.format(row.target_50 || 0)} ครั้ง (${numberFormat.format(targetPercentFor(row))}%)`);
     setDetailText('[data-target-detail-percent]', noData ? 'ไม่มีข้อมูล' : (anomaly ? 'สูงผิดปกติ' : `${Number(row.telemed_percent || 0).toFixed(2)}%`));
     setDetailText('[data-target-detail-gap]', noData ? 'ประเมินไม่ได้' : diffText(row.diff_from_target));
     setDetailText('[data-target-detail-recommendation]', targetRecommendation(row));

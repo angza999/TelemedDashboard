@@ -1,11 +1,13 @@
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
+const { protectHOSxPPool } = require('./utils/hosxpReadOnly');
 
 const dataDir = path.join(__dirname, '..', 'data');
 const configPath = path.join(dataDir, 'db-config.json');
 
 let pool;
+let readOnlyPool;
 let poolKey;
 
 function envConfig() {
@@ -37,7 +39,9 @@ function publicDbConfig() {
     user: config.user,
     database: config.database,
     connectionLimit: config.connectionLimit,
-    hasPassword: Boolean(config.password)
+    hasPassword: Boolean(config.password),
+    readOnlyGuard: true,
+    privilegedAccountWarning: /^(?:root|admin|administrator)$/i.test(String(config.user || '').trim())
   };
 }
 
@@ -73,16 +77,18 @@ function getPool() {
   if (!pool || poolKey !== nextKey) {
     if (pool) pool.end().catch(() => {});
     pool = createPool(config);
+    readOnlyPool = protectHOSxPPool(pool);
     poolKey = nextKey;
   }
-  return pool;
+  return readOnlyPool;
 }
 
 async function testConnection(input) {
   const config = normalizeConfig(input);
   const testPool = createPool(config);
+  const protectedPool = protectHOSxPPool(testPool);
   try {
-    const [rows] = await testPool.execute('SELECT 1 AS ok');
+    const [rows] = await protectedPool.execute('SELECT 1 AS ok');
     return rows[0] && rows[0].ok === 1;
   } finally {
     await testPool.end();
@@ -96,6 +102,7 @@ async function saveDbConfig(input) {
   if (pool) {
     await pool.end().catch(() => {});
     pool = null;
+    readOnlyPool = null;
     poolKey = null;
   }
   return publicDbConfig();
