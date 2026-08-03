@@ -83,6 +83,22 @@ function getPool() {
   return readOnlyPool;
 }
 
+function getPoolDiagnostics() {
+  const internalPool = pool && pool.pool;
+  const config = internalPool && internalPool.config;
+  return {
+    initialized: Boolean(internalPool),
+    connectionLimit: Number(config && config.connectionLimit || getDbConfig().connectionLimit || 10),
+    waitForConnections: config ? Boolean(config.waitForConnections) : true,
+    queueLimit: Number(config && config.queueLimit || 0),
+    maxIdle: Number(config && config.maxIdle || 0),
+    idleTimeoutMs: Number(config && config.idleTimeout || 0),
+    totalConnections: Number(internalPool && internalPool._allConnections && internalPool._allConnections.length || 0),
+    freeConnections: Number(internalPool && internalPool._freeConnections && internalPool._freeConnections.length || 0),
+    queuedRequests: Number(internalPool && internalPool._connectionQueue && internalPool._connectionQueue.length || 0)
+  };
+}
+
 async function testConnection(input) {
   const config = normalizeConfig(input);
   const testPool = createPool(config);
@@ -111,6 +127,7 @@ async function saveDbConfig(input) {
 module.exports = {
   getPool,
   getDbConfig,
+  getPoolDiagnostics,
   publicDbConfig,
   saveDbConfig,
   testConnection

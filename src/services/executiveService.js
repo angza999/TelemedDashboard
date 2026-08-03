@@ -273,15 +273,18 @@ function modeTotals(telemedTotal, telemedMode) {
   return { b2b_total: 0, b2c_total: 0 };
 }
 
-async function fetchTargetCounts(pool, filters, target) {
+function targetCountSelect(filters, target, targetIndex) {
   const opdDeps = uniqueDepcodes(target.opd_source_deps || []);
   const telemedDeps = uniqueDepcodes(target.telemed_count_deps || []);
   const opdPlaceholders = opdDeps.map(() => '?').join(', ');
   const telemedPlaceholders = telemedDeps.map(() => '?').join(', ');
   const telemedMode = target.telemed_mode || 'B2C_ONLY';
   const modeClause = telemedModeClause(target);
-  const [rows] = await pool.execute(`
+
+  return {
+    sql: `
     SELECT
+      ? AS target_index,
       (
         SELECT COUNT(DISTINCT v.vn)
         FROM ovst v
@@ -298,16 +301,30 @@ async function fetchTargetCounts(pool, filters, target) {
           AND oi.export_code = '5'
           ${modeClause}
       ) AS telemed_total
-  `, [
-    filters.startDate,
-    filters.endDate,
-    ...opdDeps,
-    filters.startDate,
-    filters.endDate,
-    ...telemedDeps
-  ]);
+    `,
+    values: [
+      targetIndex,
+      filters.startDate,
+      filters.endDate,
+      ...opdDeps,
+      filters.startDate,
+      filters.endDate,
+      ...telemedDeps
+    ],
+    telemedMode
+  };
+}
 
-  const result = rows[0] || {};
+function buildTargetCountBatch(filters, targets) {
+  const parts = targets.map((target, index) => targetCountSelect(filters, target, index));
+  return {
+    sql: parts.map((part) => part.sql).join('\nUNION ALL\n'),
+    values: parts.flatMap((part) => part.values)
+  };
+}
+
+function targetCountResult(target, result = {}) {
+  const telemedMode = target.telemed_mode || 'B2C_ONLY';
   const telemedTotal = Number(result.telemed_total || 0);
   const channelTotals = modeTotals(telemedTotal, telemedMode);
 
@@ -328,23 +345,29 @@ async function fetchTargetCounts(pool, filters, target) {
   };
 }
 
-async function fetchDepartmentTargetData(filters) {
-  const pool = getPool();
-  const targets = activeDepartmentTargets();
-  const rows = [];
-  for (const target of targets) {
-    rows.push(await fetchTargetCounts(pool, filters, target));
-  }
+async function fetchDepartmentTargetDataWithPool(pool, filters, targets = activeDepartmentTargets()) {
+  if (targets.length === 0) return buildDepartmentTargetModel([], filters);
+
+  const batch = buildTargetCountBatch(filters, targets);
+  const [results] = await pool.executeNamed('executive_department_targets', batch.sql, batch.values);
+  const resultByIndex = new Map(results.map((result) => [Number(result.target_index), result]));
+  const rows = targets.map((target, index) => targetCountResult(target, resultByIndex.get(index)));
 
   return buildDepartmentTargetModel(rows, filters);
+}
+
+async function fetchDepartmentTargetData(filters) {
+  return fetchDepartmentTargetDataWithPool(getPool(), filters);
 }
 
 module.exports = {
   TARGET_RATE,
   TARGET_PERCENT: departmentTargetPercent,
   TARGET_DEPARTMENTS,
+  buildTargetCountBatch,
   departmentTargetServiceGroups,
   emptyDepartmentTargetModel,
   fetchDepartmentTargetData,
+  fetchDepartmentTargetDataWithPool,
   buildDepartmentTargetModel
 };

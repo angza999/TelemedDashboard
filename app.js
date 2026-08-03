@@ -18,6 +18,7 @@ const todayPatientsRoutes = require('./src/routes/todayPatients');
 const dataQualityRoutes = require('./src/routes/dataQuality');
 const { ensureAuth, ensureRole } = require('./src/middleware/auth');
 const { SESSION_COOKIE_NAME, sessionCookieOptions, useSecureCookies } = require('./src/config/session');
+const { requestContextMiddleware } = require('./src/utils/requestContext');
 
 const app = express();
 const port = Number(process.env.PORT || 4300);
@@ -45,6 +46,7 @@ app.use(helmet({
 }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(requestContextMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 
 if (usingSecureCookies) {

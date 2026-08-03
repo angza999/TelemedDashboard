@@ -108,6 +108,14 @@ Dashboard หลักรองรับ:
 
 Executive Dashboard เข้าใช้งานที่ `http://localhost:4300/executive`
 
+### Executive performance diagnostics
+
+- A normal Executive page request runs three concurrent reporting reads: current overview, previous-period overview, and one batched department-target read.
+- The Executive browser code does not poll HOSxP automatically. Filter submission reloads one snapshot; tab changes and loaded-row interactions are local.
+- Set `LOG_HOSXP_READS=true` only when detailed successful-read timing is needed. Production keeps fast successful reads quiet by default.
+- `HOSXP_SLOW_QUERY_MS` controls the slow-read log threshold and defaults to `1000` milliseconds.
+- Diagnostic logs contain only safe aggregate metadata and request correlation. They never contain SQL text, parameters, credentials, HN, VN, or patient identifiers.
+
 สิทธิ์ที่เข้าได้:
 
 - `admin`

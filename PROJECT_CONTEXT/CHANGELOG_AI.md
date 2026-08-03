@@ -1,5 +1,12 @@
 # AI Changelog
 
+## 2026-08-02 - Executive read performance audit
+- Traced `/executive` end to end and confirmed that the repeated HOSxP log entries came from one current overview read, one previous-period read, and twelve sequential department-target room reads; there was no frontend polling, duplicate event handler, React, or StrictMode replay.
+- Replaced the twelve target round trips with one parameterized `UNION ALL` batch while retaining the same room mappings, channel conditions, target formulas, and KPI normalization.
+- Started current overview, previous overview, and department-target reads concurrently and added aggregate-only request correlation, query names, durations, row counts, and safe error metadata.
+- Added regression coverage for batched target execution and secure read logging. Read-only DEV verification reconciled every KPI and department row before and after the change.
+- No business formula, API response contract, authentication rule, `.env`, HOSxP data, deployment, server process, commit, or push was changed by this audit.
+
 - Refined the Executive overview decision hierarchy without changing SQL, API contracts, HOSxP access, or formulas: clarified the separate hospital-wide and evaluable-room scopes, placed the per-room target progress ahead of the trend/Top 5 decision grid, moved supporting metrics into collapsed details, and added aggregate issue categories with executive-facing impact text.
 - Standardized the Executive display period using shared Thai date helpers while retaining browser-native ISO query values, and updated the Top 5 follow-up list with explicit achieved, target, gap, progress, and status evidence.
 

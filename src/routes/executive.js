@@ -58,19 +58,21 @@ router.get('/', async (req, res, next) => {
   try {
     const filters = effectiveFilters(req.query);
     const previousFilters = previousPeriodFilters(filters);
-    const [data, previousData] = await Promise.all([
-      fetchExecutiveOverview(filters),
-      fetchExecutiveOverview(previousFilters)
+    const targetRequest = fetchDepartmentTargetData(targetFilters(req.query, filters))
+      .then((target) => ({ target, targetError: null }))
+      .catch((err) => {
+        if (!isDatabaseSetupError(err)) throw err;
+        return {
+          target: emptyDepartmentTargetModel(),
+          targetError: databaseSetupMessage(err)
+        };
+      });
+    const [data, previousData, targetResult] = await Promise.all([
+      fetchExecutiveOverview(filters, { queryName: 'executive_overview_current' }),
+      fetchExecutiveOverview(previousFilters, { queryName: 'executive_overview_previous' }),
+      targetRequest
     ]);
-    let target = emptyDepartmentTargetModel();
-    let targetError = null;
-
-    try {
-      target = await fetchDepartmentTargetData(targetFilters(req.query, filters));
-    } catch (err) {
-      if (!isDatabaseSetupError(err)) throw err;
-      targetError = databaseSetupMessage(err);
-    }
+    const { target, targetError } = targetResult;
 
     const overviewTarget = buildDepartmentTargetModel(target.allRows || [], { sortBy: 'target_gap' });
     res.render('executive/dashboard', {
@@ -146,8 +148,8 @@ router.get('/export.pdf', async (req, res, next) => {
     const reportFilters = { ...filters };
     const previousFilters = previousPeriodFilters(reportFilters);
     const [data, previousData, target] = await Promise.all([
-      fetchExecutiveOverview(reportFilters),
-      fetchExecutiveOverview(previousFilters),
+      fetchExecutiveOverview(reportFilters, { queryName: 'executive_overview_current' }),
+      fetchExecutiveOverview(previousFilters, { queryName: 'executive_overview_previous' }),
       fetchDepartmentTargetData(targetFilters(req.query, reportFilters))
     ]);
     const overviewTarget = buildDepartmentTargetModel(target.allRows || [], { sortBy: 'target_gap' });

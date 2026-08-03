@@ -88,6 +88,18 @@ pm2 logs telemed-dashboard --lines 100
 - Permitted HOSxP operations are reporting reads only, such as `SELECT`, `SHOW`, and `DESCRIBE`.
 - Do not modify `.env`, database settings, application logic, or server processes unless explicitly requested.
 
+## Executive Performance and HOSxP Read Diagnostics
+
+- The Executive Dashboard is server-rendered with Express/EJS and plain browser JavaScript. It does not use React or React StrictMode.
+- `/executive` has no polling or automatic refresh. A filter submission performs one document request; tab changes, loaded-row filters, previews, and dialogs remain client-side.
+- One normal `/executive` page load performs three named HOSxP reporting reads in parallel: current overview, previous-period overview, and one batched department-target read. Do not restore one query per configured room.
+- `/executive/department-target-data` and the department-target Excel export each use the same single batched target read. Executive PDF generation uses the same three shared services as the page.
+- HOSxP read logs may include only aggregate diagnostics: command, safe query name, duration, row count, request ID, route, level, and UTC timestamp. Never log SQL text, bound parameters, credentials, HN, VN, or patient identifiers.
+- `LOG_HOSXP_READS=true` enables verbose successful-read diagnostics. In production, fast successful reads are quiet by default; slow reads and errors remain visible. `HOSXP_SLOW_QUERY_MS` defaults to `1000` ms.
+- `src/utils/requestContext.js` supplies per-request correlation and the `X-Request-ID` response header. Keep this context free of authentication details and patient data.
+- MySQL pool diagnostics are internal-only and must not be exposed as a public endpoint. Do not increase `DB_CONNECTION_LIMIT` without measuring the server and HOSxP capacity.
+- Performance checks against HOSxP must stay read-only and limited. Do not run production stress tests; use small DEV checks only and verify that all pool connections return to the free pool.
+
 ## Executive Department Target Interaction
 
 - Route: `/executive?tab=department-target`; it reuses the already-loaded department target dataset for client-side filtering, room previews, and room detail dialogs. Do not add a HOSxP query for hover or local interaction.

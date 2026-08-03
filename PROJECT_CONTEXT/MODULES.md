@@ -159,6 +159,7 @@
 - `src/services/executiveService.js`
   - Fetches configured department target counts and builds valid/no-data/review/anomaly presentation states
   - Sums evaluable OPD, Telemedicine, room targets, and non-offset room shortages from valid rows only
+  - Batches every configured department target into one parameterized read instead of issuing one database round trip per room
 - `src/routes/executive.js`
   - Loads current/previous canonical overview data and the shared department-target model; PDF/Excel reuse those same services
 - `views/executive/dashboard.ejs`
@@ -166,7 +167,11 @@
 - `public/js/executive.js`
   - Daily bar/monthly line trend rendering, continuous active-day average, Thai tooltips, department gap charts, loaded-row filtering/dialogs, loading state, and PDF export feedback
 - `src/utils/hosxpReadOnly.js`
-  - Validates every protected HOSxP pool call before dispatch and logs aggregate read metadata without SQL text, parameters, or patient identifiers
+  - Validates every protected HOSxP pool call before dispatch and logs named aggregate timing metadata without SQL text, parameters, credentials, or patient identifiers
+- `src/utils/requestContext.js`
+  - Adds an AsyncLocalStorage request ID and safe route context for correlated diagnostics and the `X-Request-ID` response header
+- `src/db.js`
+  - Owns the shared `mysql2/promise` pool and provides internal-only, credential-free pool diagnostics for DEV verification
 - `src/services/dataQualityService.js` and `src/routes/dataQuality.js`
   - Admin-only aggregate reconciliation view; never serializes patient-level identifiers
 

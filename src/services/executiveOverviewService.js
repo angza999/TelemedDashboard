@@ -461,9 +461,13 @@ function emptyExecutiveOverviewModel(filters = {}) {
   return aggregateExecutiveOverview([], filters);
 }
 
-async function fetchExecutiveOverview(filters) {
+async function fetchExecutiveOverview(filters, options = {}) {
   const pool = getPool();
-  const [rows] = await pool.execute(EXECUTIVE_VISIT_QUERY, [filters.startDate, filters.endDate]);
+  const [rows] = await pool.executeNamed(
+    options.queryName || 'executive_overview_visits',
+    EXECUTIVE_VISIT_QUERY,
+    [filters.startDate, filters.endDate]
+  );
   const model = aggregateExecutiveOverview(rows, filters);
   logExecutiveDiagnostics(model, filters);
   return model;

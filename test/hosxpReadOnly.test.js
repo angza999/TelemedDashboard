@@ -6,6 +6,7 @@ const {
   assertReadOnlySql,
   protectHOSxPPool
 } = require('../src/utils/hosxpReadOnly');
+const { runWithRequestContext } = require('../src/utils/requestContext');
 
 function assertRejected(sql) {
   assert.throws(
@@ -69,10 +70,19 @@ test('protected pool validates before dispatch and logs no SQL or parameters', a
   };
   const guarded = protectHOSxPPool(pool, { logger: (line) => logs.push(line) });
 
-  await guarded.execute('SELECT ? AS ok', ['patient-secret']);
+  await runWithRequestContext(
+    { requestId: 'safe-request-id', route: '/executive' },
+    () => guarded.executeNamed('executive_test_read', 'SELECT ? AS ok', ['patient-secret'])
+  );
   assert.equal(calls.length, 1);
   assert.equal(logs.length, 1);
   assert.match(logs[0], /"command":"SELECT"/);
+  assert.match(logs[0], /"queryName":"executive_test_read"/);
+  assert.match(logs[0], /"durationMs":/);
+  assert.match(logs[0], /"rows":1/);
+  assert.match(logs[0], /"requestId":"safe-request-id"/);
+  assert.match(logs[0], /"route":"\/executive"/);
+  assert.match(logs[0], /"atUtc":/);
   assert.doesNotMatch(logs[0], /patient-secret|SELECT \?/);
 
   await assert.rejects(
@@ -80,4 +90,20 @@ test('protected pool validates before dispatch and logs no SQL or parameters', a
     (error) => error && error.code === READ_ONLY_ERROR_CODE
   );
   assert.equal(calls.length, 1);
+});
+
+test('production logging keeps fast reads quiet unless explicitly enabled', async () => {
+  const logs = [];
+  const pool = {
+    execute: async () => [[{ ok: 1 }], []],
+    query: async () => [[], []]
+  };
+  const guarded = protectHOSxPPool(pool, {
+    logger: (line) => logs.push(line),
+    log: false,
+    slowQueryMs: 60_000
+  });
+
+  await guarded.executeNamed('quiet_read', 'SELECT 1', []);
+  assert.equal(logs.length, 0);
 });

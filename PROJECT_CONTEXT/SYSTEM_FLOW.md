@@ -37,9 +37,9 @@
 
 ## Executive Target Flow
 1. User requests `/executive?tab=department-target`.
-2. Route loads normal executive overview data.
-3. Route also calls `fetchDepartmentTargetData()`.
-4. `fetchDepartmentTargetData()` loads rows from `src/config/departmentTargets.js`, counts OPD from `opd_source_deps`, counts Telemed achieved from `telemed_count_deps`, and applies `B2C_ONLY` / `B2B_ONLY`.
+2. Route starts the current overview, previous-period overview, and department-target reads concurrently.
+3. `fetchDepartmentTargetData()` loads rows from `src/config/departmentTargets.js` and sends one parameterized `UNION ALL` batch read for all configured rooms.
+4. The batched result preserves the existing per-room OPD sources, Telemed source mappings, and `B2C_ONLY` / `B2B_ONLY` conditions before the existing KPI normalization runs.
 5. If target SQL mapping fails, overview still renders and target tab shows a mapping message.
 6. Target tab shows Action Required, executive summary, overall target progress, KPI, Top 5 shortage rooms, compact charts, and a department table with `ผู้บริหาร` / `รายละเอียด` modes.
 
@@ -53,6 +53,7 @@
 7. Total room shortage is the sum of each valid room's positive shortfall. An over-target room is retained as excess audit evidence but does not offset another room's shortage.
 8. Daily charts render bars and no-service dates as `null`; monthly charts render a line. The average uses active service days only and remains a continuous presentation line.
 9. The screen and PDF receive the same aggregate models. Neither path exposes patient identifiers or writes to HOSxP.
+10. A normal page load therefore performs three named HOSxP reads: `executive_overview_current`, `executive_overview_previous`, and `executive_department_targets`. There is no browser polling or idle refresh.
 
 ## Today Patients Flow
 1. Admin or executive opens `/today-patients`.

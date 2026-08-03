@@ -22,6 +22,7 @@ The system must not create, edit, or delete patient service records in HOSxP. Al
 - Executive hospital-wide logic: `src/services/executiveOverviewService.js`
 - Executive department-target logic: `src/services/executiveService.js`
 - HOSxP read-only guard: `src/utils/hosxpReadOnly.js`
+- Request correlation: `src/utils/requestContext.js`
 - Export logic: `src/services/reportExportService.js`
 - Routes: `src/routes/`
 - Views: `views/`
@@ -39,6 +40,13 @@ The system must not create, edit, or delete patient service records in HOSxP. Al
 - Admin database settings
 - Admin Query Tool for SELECT-only checks
 - Admin user management with persistent `data/users.json`
+
+## Executive Performance Baseline
+- The application is Express/EJS with plain browser JavaScript; React StrictMode is not applicable.
+- A normal `/executive` request uses three concurrent, named HOSxP reads: current overview, previous-period overview, and one batched department-target read.
+- The Executive frontend has no automatic polling. Filters submit one page request; tabs and loaded-row interactions do not query HOSxP.
+- HOSxP diagnostics are aggregate-only and may contain query name, duration, row count, request ID, route, severity, and UTC time. SQL text, parameters, credentials, and patient identifiers must never be logged.
+- Fast successful reads are quiet by default in production unless `LOG_HOSXP_READS=true`; `HOSXP_SLOW_QUERY_MS` controls the slow-read threshold and defaults to 1000 ms.
 
 ## Deployment Summary
 - GitHub repo: `https://github.com/angza999/TelemedDashboard.git`
